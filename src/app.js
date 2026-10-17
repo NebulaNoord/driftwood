@@ -21,6 +21,10 @@ const I = {
   sun: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#f4c95d"/><g stroke="#f4a261" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></g></svg>',
   cloud: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="9" cy="9" r="4" fill="#f4c95d"/><path d="M6 19h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 19z" fill="#e8eef4" stroke="#9fb0c2" stroke-width="1.4"/></svg>',
   rain: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 15h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 15z" fill="#d5dee8" stroke="#8597aa" stroke-width="1.4"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="#3d7cc9" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  overcast: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M5.5 18h12a4.2 4.2 0 000-8.4 5.4 5.4 0 00-10.3 1.6A3.4 3.4 0 005.5 18z" fill="#dde4ea" stroke="#8b99a8" stroke-width="1.4"/><path d="M14 8.2a4 4 0 017.2 2.6" fill="none" stroke="#a9b5c1" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  drizzle: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 14h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 14z" fill="#e2e8ee" stroke="#8b99a8" stroke-width="1.4"/><g stroke="#5f8fc4" stroke-width="1.6" stroke-linecap="round"><path d="M9 17.5v1.2M13 18.5v1.2M16.5 17v1.2"/></g></svg>',
+  storm: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 14h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 14z" fill="#b8c2cc" stroke="#6b7785" stroke-width="1.4"/><path d="M12.5 13l-2.5 4.5h3l-2 4.5" fill="none" stroke="#f2b33d" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+  fog: '<svg width="26" height="26" viewBox="0 0 24 24"><g stroke="#9aa7b4" stroke-width="2" stroke-linecap="round"><path d="M4 9h12M7 13h13M3 17h10M15 17h4"/></g></svg>',
   moon: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M15 3a8 8 0 100 18 9 9 0 010-18z" fill="#c9d4f2" stroke="#7f8fbf" stroke-width="1.4"/></svg>',
   pause: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
   play: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 1l10 6-10 6z" fill="currentColor"/></svg>',
@@ -169,13 +173,14 @@ const Amb = {
       wind: this.layer(white, 'bandpass', 520, 0.9), rain: this.layer(white, 'highpass', 2600, 0.5),
       hum: this.layer(white, 'bandpass', 620, 1.4),
     };
-    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12 };
+    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 };
   },
   set(l, v, k) { l.g.gain.setTargetAtTime(Math.max(0, v), Sfx.ctx.currentTime, k || 0.6); },
   update(dt) {
     if (!this.L || !Sfx.ctx || UI.world <= 0 || Sfx.hidden) return;
     this.t += dt;
-    const h = S.t % 24, night = h < 5.8 || h >= 19.8, dawn = h >= 5.5 && h < 10, rain = S.weather === 'rain', cloud = S.weather === 'cloud';
+    const WV = world.wxv || { rain: 0, wind: 0.3, storm: 0, fog: 0, cloud: 0 };
+    const h = S.t % 24, night = h < 5.8 || h >= 19.8, dawn = h >= 5.5 && h < 10, rain = WV.rain > 0.2, cloud = WV.cloud > 0.6;
     const far = clamp((cam.dist - 14) / 70, 0, 1), near = 1 - far, pop = Sim.pop(S), town = clamp(pop / 50, 0, 1);
     // surf: a slow swell with the odd bigger wave, louder when you pull back to see the sea
     this.swellV += (Math.random() - 0.5) * dt * 0.9 - this.swell * dt * 0.35; this.swellV *= 1 - dt * 0.4; this.swell = clamp(this.swell + this.swellV * dt, -1, 1);
@@ -184,9 +189,9 @@ const Amb = {
     this.set(this.L.wash, (0.012 + 0.012 * far) * Math.max(0, wave - 0.45) * 2.2, 0.15);
     // wind: picks up when zoomed out, in cloud and rain, and a little at night
     const gust = 0.6 + 0.4 * Math.sin(this.t * 0.21) * Math.sin(this.t * 0.083 + 1);
-    this.set(this.L.wind, (0.012 + 0.05 * far + (rain ? 0.035 : cloud ? 0.015 : 0) + (night ? 0.01 : 0)) * gust, 0.8);
-    this.L.wind.f.frequency.setTargetAtTime(380 + 420 * gust, Sfx.ctx.currentTime, 1.2);
-    this.set(this.L.rain, rain ? 0.05 + 0.02 * near : 0, 1.5);
+    this.set(this.L.wind, (0.008 + 0.045 * far + WV.wind * 0.07 + WV.storm * 0.04 + (night ? 0.01 : 0)) * gust, 0.8);
+    this.L.wind.f.frequency.setTargetAtTime(360 + 380 * gust + WV.wind * 250, Sfx.ctx.currentTime, 1.2);
+    this.set(this.L.rain, Math.min(1.4, WV.rain) * (0.045 + 0.02 * near), 1.5);
     // the colony's hum: footsteps, voices and work, from the settlers when you're close in
     this.hum += ((Math.random() - 0.5) * 3 - this.hum) * Math.min(1, dt * 2);
     const busy = night ? 0.25 : 1;
@@ -200,11 +205,19 @@ const Amb = {
       this.next.hammer = 1.2 + Math.random() * 2.2;
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
+    if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
     if (due('cart')) { this.next.cart = 10 + Math.random() * 18; if (!night && town > 0.2 && near > 0.3) for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W); }
   },
   gull(v) {
     const W = Sfx.world, p = 0.9 + Math.random() * 0.25, n = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < n; i++) { const d = i * (0.32 + Math.random() * 0.1); Sfx.tone(1500 * p, 950 * p, 0.28, 'triangle', v, d, W); Sfx.tone(3000 * p, 1900 * p, 0.22, 'sine', v * 0.25, d + 0.01, W); }
+  },
+  // a crack for close strikes, then a long low roll
+  thunder(delay, strength) {
+    if (!Sfx.ctx || UI.world <= 0) return;
+    const W = Sfx.world, s = strength || 0.7;
+    if (s > 0.8) Sfx.noise(0.25, 1400, 0.12 * s, delay, W);
+    Sfx.noise(2.8, 80, 0.55 * s, delay + 0.05, W); Sfx.noise(2.2, 160, 0.25 * s, delay + 0.25, W); Sfx.tone(55, 32, 2.4, 'sine', 0.2 * s, delay + 0.1, W);
   },
   songbird(v) {
     const W = Sfx.world, base = 2600 + Math.random() * 1400, n = 3 + Math.floor(Math.random() * 4);
@@ -532,9 +545,9 @@ function renderStock() {
 }
 function renderClock() {
   const h = S.t % 24, day = Math.floor(S.t / 24) + 1, night = h < 6 || h >= 19.5, wd = Sim.WEEKDAYS[(day - 1) % 7];
-  const wIcon = S.weather === 'rain' ? I.rain : S.weather === 'cloud' ? (night ? I.moon : I.cloud) : night ? I.moon : I.sun;
+  const wk = Sim.wxKind(S), wIcon = { clear: night ? I.moon : I.sun, fair: night ? I.moon : I.cloud, cloudy: I.overcast, drizzle: I.drizzle, rain: I.rain, storm: I.storm, fog: I.fog }[wk] || I.sun;
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60 / 10) * 10;
-  const html = `<div class="time" title="${S.weather === 'rain' ? 'Rain' : S.weather === 'cloud' ? 'Cloudy' : 'Clear'}">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
+  const html = `<div class="time" data-act="forecast" role="button" tabindex="0" title="${esc(Sim.WX[wk].name)} · tap for the forecast">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
     <div class="speeds" role="group" aria-label="Speed">${[I.pause, I.play, I.fast, I.faster].map((ic, k) => `<button data-speed="${k}" class="${UI.speed === k ? 'on' : ''}" title="${['Pause (Space)', 'Normal (1)', 'Fast (2)', 'Fastest (3)'][k]}" aria-label="${['Pause', 'Normal speed', 'Fast', 'Fastest'][k]}">${ic}</button>`).join('')}</div>
     ${Online.mode ? '' : `<button class="round" data-act="army" title="Your army" aria-label="Your army">${I.army.replace(/26/g, '20')}</button>`}${Online.mode ? '' : `<button class="round sea" data-act="online" title="Other islands: visit and raid" aria-label="Other islands">${I.ship}</button>`}<button class="round" data-act="menu" title="Menu" aria-label="Menu">${I.menu}</button>`;
   const el = $('#clock'); if (el._h !== html) { el.innerHTML = html; el._h = html; }
@@ -776,6 +789,7 @@ function openCat(id) {
 function act(a, el) {
   const b = UI.sel ? S.b.find(x => x.id === UI.sel) : null;
   if (a === 'menu') { showMenu(); return; }
+  if (a === 'forecast') { showForecast(); return; }
   if (a === 'online') { Sfx.play('click'); openOnline(); return; }
   if (a === 'goalsMin') { UI.goalsMin = !UI.goalsMin; savePrefs(); renderGoals(); return; }
   if (a === 'closeInsp') { UI.sel = null; UI.selAgent = null; UI.follow = null; renderInsp(); return; }
@@ -1099,6 +1113,19 @@ function showHelp() {
     <p class="lead">Coastal buildings turn to face the water by themselves. Ground under a new building is levelled for free.</p>
     <button class="btn" data-m="close">Back to the island</button>`);
 }
+const WX_EFFECT = { clear: 'Settlers are a little happier in the sun.', fair: 'A good day for everything.', cloudy: 'Nothing special.', drizzle: 'Farms +10%, fishing −15%.',
+  rain: 'Farms +15%, fishing −30%, building is slower.', storm: 'Fishing −65%, building at half speed, and settlers are miserable. Expect lightning.', fog: 'Fishing −20%. The world goes quiet and grey.' };
+const windWord = w => w < 0.12 ? 'calm' : w < 0.35 ? 'a light breeze' : w < 0.6 ? 'breezy' : w < 0.85 ? 'windy' : 'a gale';
+const clockStr = t => { const h = Math.floor(t % 24); return String(h).padStart(2, '0') + ':00'; };
+function showForecast() {
+  if (!S.wx) return;
+  const ico = k => ({ clear: I.sun, fair: I.cloud, cloudy: I.overcast, drizzle: I.drizzle, rain: I.rain, storm: I.storm, fog: I.fog }[k]);
+  const dayOff = t => { const d = Math.floor(t / 24) - Math.floor(S.t / 24); return d <= 0 ? '' : d === 1 ? 'tomorrow ' : 'in ' + d + ' days '; };
+  const rows = [S.wx.now, ...S.wx.q].map((f, n) => `<div class="fc ${n ? '' : 'now'}">${ico(f.k)}<div><b>${n ? 'From ' + dayOff(f.from) + clockStr(f.from) : 'Now, until ' + dayOff(f.to) + clockStr(f.to)}: ${esc(Sim.WX[f.k].name)}</b>
+    <span>${esc(WX_EFFECT[f.k])} Wind: ${windWord(f.wind)}.</span></div></div>`).join('');
+  openModal(`<div class="ol-head"><h2>Weather</h2><button class="x" data-m="close" aria-label="Close">×</button></div><p class="lead">The harbourmaster’s forecast for the next few fronts.</p>${rows}
+    <div class="row2"><button class="btn primary" data-m="close">Back to the island</button></div>`);
+}
 function showMenu() {
   const arm = UI.confirm === 'new';
   openModal(`<h2>${esc(islandName())}</h2><p class="lead">Day ${Math.floor(S.t / 24) + 1} · ${Sim.pop(S)} settlers. Your island saves itself in this browser.</p>
@@ -1184,6 +1211,7 @@ function start(data) {
   world = new World(R);
   // settlers felling trees is part of the world; everything else the world reports is a game effect
   world.sfx = (k, ev) => k === 'chop' && ev === 'work' ? Sfx.play(k, Sfx.world) : Sfx.play(k);
+  world.onThunder = (delay, strength) => Amb.thunder(delay, strength);
   let loaded = false;
   const src = data.save || readSave();
   if (src) { try { S = Sim.deserialize(src); loaded = true; } catch (e) { console.warn(e); S = null; } }

@@ -313,6 +313,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .vol2 .vt b { font-weight: 900; font-size: 15px; } .vol2 .vt em { font-style: normal; font-weight: 800; font-size: 14px; color: var(--ink-soft); }
 .vol2 small { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
 .vol2 input { width: 100%; accent-color: var(--sea); height: 30px; margin: 2px 0 0; }
+.fc { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; background: var(--paper-2); margin-bottom: 8px; }
+.fc.now { background: #fff; border: 2px solid var(--line); }
+.fc b { display: block; font-weight: 900; font-size: 14.5px; } .fc span { display: block; font-size: 13px; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
+.fc svg { flex: none; margin-top: 2px; }
+#clock .time { cursor: pointer; }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
@@ -504,8 +509,8 @@ const TYPES = {
   dock:       { name: 'Fishing Dock', size: 1, jobs: 2, coastal: true, cost: { wood: 15 }, prod: { food: 1.3 }, desc: 'A boat goes out each morning. Feeds about 30 settlers.' },
   bakery:     { name: 'Bakery', size: 1, jobs: 3, cost: { wood: 20, stone: 10, gold: 30 }, prod: { food: 2.2 }, unlock: 30, build: 1.2, desc: 'Bakes bread from your farms’ wheat. Needs a working farm somewhere on the island.' },
   sawmill:    { name: 'Sawmill', size: 2, jobs: 3, radius: 8, cost: { wood: 30, stone: 20, gold: 60 }, prod: { wood: 3.5 }, unlock: 45, build: 2, desc: 'Saws logs into planks. Needs a lumber camp within 8 tiles.' },
-  quarry:     { name: 'Quarry', size: 2, jobs: 4, radius: 3, cost: { wood: 20, gold: 30 }, prod: { stone: 2.2 }, unlock: 25, build: 2, desc: 'Cuts stone. Must sit beside rocky ground. Noisy neighbour.' },
-  mine:       { name: 'Mine', size: 2, jobs: 4, radius: 3, cost: { wood: 40, stone: 20, gold: 80 }, prod: { gold: 3.5 }, unlock: 60, build: 2.5, desc: 'Digs ore out of the hills and sells it. Must sit beside rocky ground.' },
+  quarry:     { name: 'Quarry', size: 2, jobs: 4, radius: 3, cost: { wood: 20, gold: 30 }, prod: { stone: 2.2 }, unlock: 25, build: 2, desc: 'Cuts stone. Build it beside a stone field (grey, broken ground with boulders) or rocky hills. Noisy neighbour.' },
+  mine:       { name: 'Mine', size: 2, jobs: 4, radius: 3, cost: { wood: 40, stone: 20, gold: 80 }, prod: { gold: 3.5 }, unlock: 60, build: 2.5, desc: 'Digs ore out of the rock and sells it. Build it beside a stone field or rocky hills.' },
   blacksmith: { name: 'Blacksmith', size: 1, jobs: 2, cost: { wood: 15, stone: 25, gold: 40 }, prod: { gold: 2.2 }, unlock: 35, build: 1.2, desc: 'Forges tools and horseshoes to sell. Noisy, but pays well.' },
   shipyard:   { name: 'Shipyard', size: 2, jobs: 4, coastal: true, cost: { wood: 80, stone: 20, gold: 120 }, prod: { gold: 5 }, unlock: 110, build: 3, desc: 'Builds boats and sells them. Must face open water.' },
   stable:     { name: 'Stable', size: 2, jobs: 2, cost: { wood: 40, gold: 60 }, unlock: 30, build: 2, desc: 'Horses and carts. Carts haul goods to the hall, adding 15% to all production. Settlers ride on long trips.' },
@@ -562,6 +567,38 @@ const ROADS = {
 const QUAY_Y = 0.42;
 const HARBOUR = { wood: 40, stone: 60, gold: 150 };
 const DAY = 24;
+/* Weather comes in fronts that last a few hours each. The island always knows the next three, which is the forecast.
+   base maps each kind onto the old sun / cloud / rain that the rest of the game checks. */
+const WX = {
+  clear:   { name: 'Clear skies', base: 'sun', h: [6, 14], wind: [0.1, 0.3], next: { fair: 5, cloudy: 2 } },
+  fair:    { name: 'Fair', base: 'sun', h: [5, 12], wind: [0.2, 0.4], next: { clear: 4, cloudy: 4, drizzle: 1 } },
+  cloudy:  { name: 'Overcast', base: 'cloud', h: [3, 8], wind: [0.3, 0.5], next: { fair: 4, drizzle: 2, rain: 2, clear: 2 } },
+  drizzle: { name: 'Drizzle', base: 'rain', h: [2, 5], wind: [0.25, 0.45], next: { cloudy: 3, rain: 2, fair: 1 } },
+  rain:    { name: 'Rain', base: 'rain', h: [3, 8], wind: [0.4, 0.65], next: { cloudy: 3, drizzle: 2, storm: 1.4 } },
+  storm:   { name: 'Storm', base: 'rain', h: [2, 4], wind: [0.8, 1], next: { rain: 3, cloudy: 1 } },
+  fog:     { name: 'Fog', base: 'cloud', h: [2, 5], wind: [0, 0.08], next: { fair: 3, clear: 2, cloudy: 1 } },
+};
+function wxFront(S, k, from) {
+  const W = WX[k], len = W.h[0] + Math.floor(rnd(S) * (W.h[1] - W.h[0] + 1));
+  return { k, from, to: from + len, wind: Math.round((W.wind[0] + rnd(S) * (W.wind[1] - W.wind[0])) * 100) / 100 };
+}
+function wxNext(S, prev) {
+  const hr = prev.to % DAY;
+  // mist rolls in on calm nights and burns off in the morning
+  if (hr >= 2 && hr <= 6 && (prev.k === 'clear' || prev.k === 'fair' || prev.k === 'cloudy') && rnd(S) < 0.3) return wxFront(S, 'fog', prev.to);
+  const opts = WX[prev.k].next; let tot = 0; for (const k in opts) tot += opts[k];
+  let r = rnd(S) * tot;
+  for (const k in opts) { r -= opts[k]; if (r <= 0) return wxFront(S, k, prev.to); }
+  return wxFront(S, 'fair', prev.to);
+}
+function wxFill(S) {
+  const W = S.wx;
+  while (W.now.to <= S.t) { W.now = W.q.shift() || wxNext(S, W.now); }
+  while (W.q.length < 3) W.q.push(wxNext(S, W.q.length ? W.q[W.q.length - 1] : W.now));
+  S.weather = WX[W.now.k].base;
+}
+function wxInit(S, k) { S.wx = { now: wxFront(S, k || 'fair', Math.floor(S.t)), q: [] }; wxFill(S); }
+const wxKind = S => (S.wx ? S.wx.now.k : S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'clear');
 
 /* ---------------- Random & noise ---------------- */
 function rnd(o) {
@@ -595,10 +632,11 @@ function cellSlope(S, i, j) {
   const h = S.h, a = h[vi(i, j)], b = h[vi(i + 1, j)], c = h[vi(i, j + 1)], d = h[vi(i + 1, j + 1)];
   return Math.max(a, b, c, d) - Math.min(a, b, c, d);
 }
-function cellKind(S, i, j) { // 0 water, 1 sand, 2 grass, 3 rock
+function cellKind(S, i, j) { // 0 water, 1 sand, 2 grass, 3 rock (hills, cliffs and stone fields)
   const h = cellH(S, i, j);
   if (h < 0) return 0;
   if (h < 0.5) return 1;
+  if (S.rock && S.rock[ci(i, j)]) return 3;
   if (h > 5.5 || cellSlope(S, i, j) > 1.7) return 3;
   return 2;
 }
@@ -649,6 +687,39 @@ function genIsland(S) {
     }
   }
   placeHall(S, r);
+  genRock(S);
+}
+
+/* Stone fields: patches of broken rock, gravel and boulders on ordinary ground, so quarries don't have to climb mountains.
+   They come from the island's seed with their own random stream, so islands saved before stone fields existed get the same ones. */
+function genRock(S) {
+  const rs = { rng: (S.seed ^ 0x51ed2701) | 0 }, r = () => rnd(rs), nz = makeNoise(r);
+  S.rock = new Uint8Array(N * N);
+  const hall = S.b.find(b => b.type === 'hall'), hc = hall ? [hall.i + 1, hall.j + 1] : [N / 2, N / 2];
+  const ok = (i, j) => inB(i, j) && i > 2 && j > 2 && i < N - 3 && j < N - 3 && !S.occ[ci(i, j)] && !S.road[ci(i, j)] && cellH(S, i, j) >= 0.6 && cellH(S, i, j) <= 4.8 && cellSlope(S, i, j) < 1.3;
+  const cand = [];
+  for (let j = 3; j < N - 3; j++) for (let i = 3; i < N - 3; i++) if (ok(i, j) && Math.hypot(i - hc[0], j - hc[1]) >= 9) cand.push([i, j]);
+  if (!cand.length) return;
+  const centres = [];
+  // the first field sits a short walk from the hall, so an early quarry is always possible
+  const nearHall = cand.filter(([i, j]) => { const d = Math.hypot(i - hc[0], j - hc[1]); return d >= 11 && d <= 22; });
+  const pick = list => list[Math.floor(r() * list.length)];
+  if (nearHall.length) centres.push(pick(nearHall));
+  const want = 3 + Math.floor(r() * 3);
+  for (let a = 0; a < 400 && centres.length < want; a++) { const c = pick(cand); if (centres.every(p => Math.hypot(p[0] - c[0], p[1] - c[1]) >= 15)) centres.push(c); }
+  for (const [ci0, cj0] of centres) {
+    const R = 2.8 + r() * 2.6, sx = 0.75 + r() * 0.6, sz = 0.75 + r() * 0.6, rotA = r() * 3.14, ca = Math.cos(rotA), sa = Math.sin(rotA);
+    const ext = Math.ceil(R * 1.9);
+    for (let dj = -ext; dj <= ext; dj++) for (let di = -ext; di <= ext; di++) {
+      const i = ci0 + di, j = cj0 + dj; if (!ok(i, j)) continue;
+      const u = (di * ca + dj * sa) / sx, v = (-di * sa + dj * ca) / sz;
+      const d = Math.hypot(u, v) / R + (fbm(nz, i * 0.23 + 40, j * 0.23 + 40) - 0.5) * 0.9;
+      if (d >= 1) continue;
+      const c = ci(i, j);
+      S.rock[c] = d < 0.5 ? 2 : 1;
+      S.tree[c] = 0; S.treeG[c] = 0;
+    }
+  }
 }
 
 function distToWater(S, i, j, max) {
@@ -707,12 +778,13 @@ function newGame(seed) {
     tree: new Uint8Array(N * N), treeG: new Uint8Array(N * N),
     b: [], nextId: 1, goals: {}, pending: null, starving: false, happy: 60, news: [],
     stats: { wood: 0, stone: 0, food: 0, gold: 0, trades: 0, days: [], arrivals: 0, meetings: 0 }, landing: null,
-    weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N),
+    weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N), wear: new Uint8Array(N * N),
   };
   attach(S);
   genIsland(S);
   recompute(S);
   placePier(S);
+  wxInit(S, 'fair');
   S.week = weekSnap(S);
   rates(S);
   S._ev.length = 0;
@@ -903,7 +975,7 @@ function coverage(S) {
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
   S.foodMood = foodMood;
-  const weather = S.weather === 'rain' ? -2 : S.weather === 'sun' ? 1 : 0;
+  const weather = { clear: 2, fair: 1, cloudy: 0, fog: 0, drizzle: -1, rain: -2, storm: -5 }[wxKind(S)] || 0;
   const fxh = fxHappy(S);
   let tot = 0, wsum = 0;
   for (const b of S.b) {
@@ -950,7 +1022,10 @@ function prodMult(S, b) {
   let m = 1;
   const has = (t, f) => S.b.some(x => x.type === t && x.conn && done(x) && (!f || f(x)));
   if (has('stable', x => x.staff > 0)) m *= 1.15;
-  if (S.weather === 'rain') { if (b.type === 'farm' || b.type === 'orchard') m *= 1.15; if (b.type === 'dock') m *= 0.7; }
+  const wk = wxKind(S);
+  if (b.type === 'farm' || b.type === 'orchard') m *= wk === 'rain' ? 1.15 : wk === 'drizzle' ? 1.1 : wk === 'storm' ? 0.9 : 1;
+  if (b.type === 'dock' || b.type === 'fishhut') m *= wk === 'storm' ? 0.35 : wk === 'rain' ? 0.7 : wk === 'drizzle' ? 0.85 : wk === 'fog' ? 0.8 : 1;
+  if (wk === 'storm' && (b.type === 'lumber' || b.type === 'quarry' || b.type === 'shipyard')) m *= 0.75;
   if (b.type === 'lumber' && b.status === 'notrees') m *= 0.35;
   if (b.type === 'bakery' && !has('farm', x => x.staff > 0)) m = 0;
   if (b.type === 'sawmill' && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) m = 0;
@@ -1024,7 +1099,7 @@ function canPlace(S, type, i, j, rot) {
     if (r2 === undefined) return { ok: false, reason: 'Must face open water along the shore.', rot };
     rot = r2;
   }
-  if ((type === 'quarry' || type === 'mine') && rockNear(S, { type, i, j }, T.radius) < 4) return { ok: false, reason: 'Must be next to rocky ground.', rot };
+  if ((type === 'quarry' || type === 'mine') && rockNear(S, { type, i, j }, T.radius) < 4) return { ok: false, reason: 'Must be next to a stone field or rocky hills.', rot };
   if (T.nearWater && distToWater(S, i, j, T.nearWater) > T.nearWater) return { ok: false, reason: `Must be within ${T.nearWater} tiles of the water.`, rot };
   if (type === 'academy' && !S.b.some(b => b.type === 'school' && done(b))) return { ok: false, reason: 'Build a school first.', rot };
   if (!affordable(S, T.cost)) return { ok: false, reason: 'Needs ' + costText(T.cost) + '.', rot, cost: true };
@@ -1352,7 +1427,7 @@ function plantTrees(S, x, z, r, n) {
     const i = Math.floor(gx + Math.cos(ang) * d), j = Math.floor(gz + Math.sin(ang) * d);
     if (!inB(i, j)) continue;
     const c = ci(i, j), k = cellKind(S, i, j);
-    if (S.tree[c] || S.occ[c] || S.road[c] || k === 0 || (k === 3 && cellH(S, i, j) > 8)) continue;
+    if (S.tree[c] || S.occ[c] || S.road[c] || k === 0 || (S.rock && S.rock[c]) || (k === 3 && cellH(S, i, j) > 8)) continue;
     if (S.gold < COST.tree) break;
     S.gold -= COST.tree;
     S.tree[c] = cellH(S, i, j) > 2.2 || k === 1 ? (k === 1 ? 2 : 1) : (rnd(S) < 0.5 ? 1 : 2);
@@ -1393,7 +1468,7 @@ function sproutNear(S, b, r) {
     const x = b.i + Math.floor((rnd(S) * 2 - 1) * r), y = b.j + Math.floor((rnd(S) * 2 - 1) * r);
     if (!inB(x, y)) continue;
     const c = ci(x, y), k = cellKind(S, x, y);
-    if (S.tree[c] || S.occ[c] || S.road[c] || (k !== 2 && k !== 3)) continue;
+    if (S.tree[c] || S.occ[c] || S.road[c] || (S.rock && S.rock[c]) || (k !== 2 && k !== 3)) continue;
     S.tree[c] = cellH(S, x, y) > 2.2 ? 1 : (rnd(S) < 0.5 ? 1 : 2); S.treeG[c] = 20;
     ev(S, { type: 'sprout', c }); S._dirty.trees = true;
     return true;
@@ -1406,7 +1481,7 @@ function tick(S, dt) {
   let rebuilt = false;
   for (const b of S.b) {
     if (!done(b)) {
-      b.build = Math.min(1, b.build + dt / (TYPES[b.type].build || 1));
+      b.build = Math.min(1, b.build + dt / (TYPES[b.type].build || 1) * (wxKind(S) === 'storm' ? 0.5 : wxKind(S) === 'rain' ? 0.8 : 1));
       b.status = 'building';
       if (b.build >= 1) { b.status = ''; rebuilt = true; ev(S, { type: 'built', id: b.id }); }
       continue;
@@ -1474,6 +1549,16 @@ const DAILY = [
 
 function hourly(S) {
   const hr = Math.floor(S.t % DAY + 1e-6);
+  // weather fronts roll in and out
+  if (!S.wx) wxInit(S, S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'fair');
+  const wasK = S.wx.now.k; wxFill(S);
+  const nowK = S.wx.now.k;
+  if (nowK !== wasK && hr >= 6 && hr <= 21) {
+    const line = { storm: 'A storm is rolling in. Fishing stops and building slows until it passes.', rain: 'Rain’s setting in. Good for the crops, bad for fishing.',
+      fog: 'Fog has settled over the island.', drizzle: 'A light drizzle. The farms won’t complain.' }[nowK];
+    if (line) say(S, line, nowK === 'storm' ? 'bad' : 'info');
+    if ((nowK === 'clear' || nowK === 'fair') && (wasK === 'storm' || wasK === 'rain')) say(S, 'The rain has cleared.', 'info');
+  }
   // tree growth & spread
   let grew = false;
   for (let c = 0; c < N * N; c++) {
@@ -1495,9 +1580,6 @@ function hourly(S) {
   const p = pop(S), R = rates(S);
   // morning: weather and the odd surprise
   if (hr === 5) {
-    const r = rnd(S);
-    S.weather = r < 0.62 ? 'sun' : r < 0.85 ? 'cloud' : 'rain';
-    if (S.weather === 'rain') say(S, 'Rain today. Good for the crops, bad for fishing.', 'info');
     if (dayOf(S) > 0 && rnd(S) < 0.35) {
       const pool = DAILY.filter(e => !e.need || e.need(S));
       const e = pool[Math.floor(rnd(S) * pool.length)];
@@ -1672,7 +1754,7 @@ const GOALS = [
   { id: 'market', title: 'Market day', desc: 'Build a market. It unlocks at 20 settlers.', reward: { gold: 150 }, prog: S => count(S, 'market', b => b.conn) },
   { id: 'lvl2', title: 'Moving up', desc: 'Let a cottage grow into a townhouse. It needs a market nearby.', reward: { stone: 30 }, prog: S => count(S, 'house', b => b.level >= 1) },
   { id: 'meeting', title: 'Have your say', desc: 'Hold your first Sunday town meeting at the Colony Hall.', reward: { gold: 100 }, prog: S => S.stats.meetings || 0 },
-  { id: 'quarry', title: 'Solid ground', desc: 'Build a quarry beside rocky hills. Unlocks at 25 settlers.', reward: { gold: 120 }, prog: S => count(S, 'quarry', b => b.conn) },
+  { id: 'quarry', title: 'Solid ground', desc: 'Build a quarry beside one of the grey stone fields. Unlocks at 25 settlers.', reward: { gold: 120 }, prog: S => count(S, 'quarry', b => b.conn) },
   { id: 'bread', title: 'Fresh bread', desc: 'Build a bakery. It turns your farms’ wheat into bread.', reward: { gold: 80 }, prog: S => count(S, 'bakery', b => b.conn) },
   { id: 'paved', title: 'Paved with stone', desc: 'Lay 12 tiles of cobblestone street.', reward: { stone: 40 }, prog: S => { let n = 0; for (let c = 0; c < N * N; c++) if (S.road[c] === 3) n++; return n / 12; } },
   { id: 'rows', title: 'Room for everyone', desc: 'Build row houses. They unlock at 35 settlers.', reward: { wood: 50 }, prog: S => count(S, 'rowhouse', b => b.conn) },
@@ -1725,6 +1807,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
+    rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1784,6 +1867,12 @@ function deserialize(o) {
     S.nextId = Math.max(S.nextId, b.id + 1);
   }
   S.startRoads = +o.startRoads || 6; S.pierWarn = o.pierWarn === undefined ? -1 : +o.pierWarn;
+  // stone fields and worn footpaths: islands saved before these existed get their stone fields from the seed
+  if (o.rock) S.rock = unb64(o.rock, Uint8Array, N * N); else genRock(S);
+  S.wear = o.wear ? unb64(o.wear, Uint8Array, N * N) : new Uint8Array(N * N);
+  const okFront = f => f && WX[f.k] && isFinite(f.from) && isFinite(f.to) && f.to > f.from && isFinite(f.wind);
+  if (o.wx && okFront(o.wx.now) && Array.isArray(o.wx.q) && o.wx.q.every(okFront)) { S.wx = { now: o.wx.now, q: o.wx.q.slice(0, 3) }; wxFill(S); }
+  else wxInit(S, S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'fair');
   recompute(S);
   if (!S.b.some(b => b.type === 'pier')) placePier(S); // islands saved before piers existed
   if (!S.week) S.week = weekSnap(S);
@@ -1797,7 +1886,7 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   canPlace, place, demolish, placePier, pierOk, roadPath, roadQuote, buildRoad, removeRoad, brush, plantTrees, clearTrees,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
-  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings };
+  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -2020,7 +2109,11 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
+uniform sampler2D uWear; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
+float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hsh(i), hsh(i + vec2(1, 0)), f.x), mix(hsh(i + vec2(0, 1)), hsh(i + vec2(1, 1)), f.x), f.y); }
 float shadow() {
   vec3 p = vLight.xyz / vLight.w * 0.5 + 0.5;
   if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0 || p.z > 1.0) return 1.0;
@@ -2030,11 +2123,25 @@ float shadow() {
 }
 void main() {
   vec3 n = normalize(vNor);
+  vec3 alb = vCol;
+  if (uTerrain > 0.5) {
+    // desire paths: soft worn earth where settlers keep walking
+    float w = texture(uWear, (vWorld.xz + 48.0) / 96.0).r;
+    vec3 trod = mix(vec3(0.69, 0.59, 0.42), alb, 0.3);
+    alb = mix(alb, trod, smoothstep(0.14, 0.72, w) * 0.85 * smoothstep(0.55, 0.85, n.y));
+  }
+  // rain darkens everything that faces the sky
+  alb *= 1.0 - uWet * 0.16 * smoothstep(0.5, 0.95, n.y);
   float ndl = max(dot(n, uSunDir), 0.0);
   float sh = ndl > 0.0 ? mix(1.0, shadow(), uShadowOn) : 0.0;
+  // cloud shadows drifting over the island
+  if (uCloud > 0.01) {
+    float cn = vnoise(vWorld.xz * 0.045 + uCloudOff) * 0.65 + vnoise(vWorld.xz * 0.11 + uCloudOff * 1.7) * 0.35;
+    sh *= 1.0 - smoothstep(0.66 - uCloud * 0.5, 0.84 - uCloud * 0.45, cn) * 0.6 * min(1.0, uCloud * 1.6);
+  }
   vec3 hemi = mix(uGround, uSky, n.y * 0.5 + 0.5);
-  vec3 c = vCol * (hemi + uSunCol * ndl * sh);
-  c += vCol * vEmis + uFlat * step(0.5, vEmis);
+  vec3 c = alb * (hemi + uSunCol * ndl * sh);
+  c += alb * vEmis + uFlat * step(0.5, vEmis);
   float f = smoothstep(uFogR.x, uFogR.y, length(vWorld - uEye));
   o = vec4(mix(c, uFog, f), uAlpha);
 }`;
@@ -2222,6 +2329,18 @@ class Renderer {
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, m.inst, 0, m.n * 20);
   }
   draw(m) { if (!m.n || !m.count) return; const gl = this.gl; gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.count, m.n); }
+  // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
+  setWear(w, n) {
+    const gl = this.gl;
+    if (!this.wTex) this.wTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.wTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, n, n, 0, gl.RED, gl.UNSIGNED_BYTE, w);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
   setHeights(h, V) {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.hTex);
@@ -3165,6 +3284,9 @@ function tuftModel() {
   return B;
 }
 function upNormals(B, keep) { for (let i = 0; i < B.n.length / 3 - (keep ? 0 : 0); i++) { if (keep && i >= B.n.length / 3 - (B.n.length / 3 - keep * 3) && i >= keep * 3) continue; B.n[i * 3] = 0; B.n[i * 3 + 1] = 1; B.n[i * 3 + 2] = 0; } return B; }
+// stone field rocks: a lumpy boulder with a smaller one leaning on it, and a cracked flat slab
+function boulderModel() { const B = new Builder(); B.blob(0, 0.12, 0, 0.2, 0.16, 0.17, '#a39c90', 0.42, 7); B.blob(0.14, 0.06, 0.09, 0.09, 0.07, 0.08, '#968f84', 0.4, 11); B.blob(-0.09, 0.03, -0.1, 0.05, 0.035, 0.05, '#b2ab9f', 0.3, 13); return B; }
+function slabModel() { const B = new Builder(); B.at(0, 0, 0, 0.3); B.box(0, 0, 0, 0.34, 0.07, 0.24, '#aaa397'); B.at(0.04, 0.07, -0.02, 0.9); B.box(0, 0, 0, 0.2, 0.05, 0.14, '#9d968a'); B.at(0, 0, 0, 0); B.blob(-0.16, 0.03, 0.1, 0.06, 0.04, 0.05, '#8f897e', 0.35, 5); return B; }
 function puffModel() { const B = new Builder(); B.blob(0, 0, 0, 0.5, 0.45, 0.5, '#ffffff', 0.25, 9); return B; }
 function flowerModel() {
   const B = new Builder();
@@ -3261,6 +3383,8 @@ function cloudModel(seed) {
 }
 
 /* ---------------- Environment by time of day ---------------- */
+// how each kind of weather looks: cloud cover, rain strength, fog and storm
+const WXLOOK = { clear: { cloud: 0.04 }, fair: { cloud: 0.3 }, cloudy: { cloud: 0.85 }, drizzle: { cloud: 0.8, rain: 0.32 }, rain: { cloud: 0.95, rain: 1 }, storm: { cloud: 1, rain: 1.45, storm: 1 }, fog: { cloud: 0.45, fog: 1 } };
 const ENV_KEYS = [
   { h: 0, top: '#0a1430', hor: '#1a2746', sun: '#8aa0dc', sunI: 0.42, sky: '#4a5f96', skyI: 0.62, gr: '#2a3044', grI: 0.4, sh: '#1b5266', dp: '#0a2036', night: 1 },
   { h: 4.8, top: '#0a1430', hor: '#1a2746', sun: '#8aa0dc', sunI: 0.42, sky: '#4a5f96', skyI: 0.62, gr: '#2a3044', grI: 0.4, sh: '#1b5266', dp: '#0a2036', night: 1 },
@@ -3295,7 +3419,7 @@ class World {
     this.hairs = [0, 1, 2].map(k => R.mesh(hairModel(k))); this.leg = R.mesh(legModel()); this.arm = R.mesh(armModel());
     this.hleg = R.mesh(horseLegModel()); this.saddle = R.mesh(saddleModel()); this.wheel = R.mesh(wheelModel());
     this.cargo = { wood: R.mesh(cargoModel('wood')), stone: R.mesh(cargoModel('stone')), food: R.mesh(cargoModel('food')) };
-    this.bird = R.mesh(birdModel()); this.wing = R.mesh(wingModel()); this.tuft = R.mesh(upNormals(tuftModel())); this.flower = R.mesh(upNormals(flowerModel(), 6));
+    this.bird = R.mesh(birdModel()); this.wing = R.mesh(wingModel()); this.tuft = R.mesh(upNormals(tuftModel())); this.flower = R.mesh(upNormals(flowerModel(), 6)); this.boulder = R.mesh(boulderModel()); this.slab = R.mesh(slabModel());
     this.bollard = R.mesh(bollardModel()); this.qlamp = R.mesh(qlampModel()); this.qglass = R.mesh(new Builder().box(0, 0.5, 0, 0.08, 0.1, 0.08, WIN)); this.qcrate = R.mesh(qcrateModel());
     this.saw = R.mesh(sawModel()); this.minecart = R.mesh(mineCartModel()); this.fire = R.mesh(fireModel());
     this.blades = R.mesh(bladesModel()); this.puff = R.mesh(puffModel()); this.sign = R.mesh(signModel()); this.jib = R.mesh(jibModel());
@@ -3338,6 +3462,7 @@ class World {
     let o = 0;
     const byId = {}; for (const b of S.b) byId[b.id] = b;
     const put = (x, y, z, nx, ny, nz, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = nx; data[o++] = ny; data[o++] = nz; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
+    const STONE = [hex('#b3ac9e'), hex('#a7a093'), hex('#98918a'), hex('#8c867e')];
     const GR = [hex('#80b25a'), hex('#92bd5d'), hex('#75a753')], SAND = hex('#ecd9a3'), WET = hex('#cdb98a'), DEEP = hex('#8c9a86'), ROCK = [hex('#a39d93'), hex('#8e887f')], SNOW = hex('#f2f2ee'), DIRT = hex('#9b7653');
     const YARD = [hex('#8cbb60'), hex('#96c063')], QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -3356,6 +3481,7 @@ class World {
       else if (avg < 0.5) c = avg < 0.05 ? WET : SAND;
       else if (avg > 8.5) c = SNOW;
       else if (avg > 5.5 || slope > 1.7) c = ROCK[r < 0.5 ? 0 : 1];
+      else if (S.rock && S.rock[j * N + i]) c = S.rock[j * N + i] === 2 ? STONE[2 + (r < 0.5 ? 0 : 1)] : STONE[r < 0.5 ? 0 : 1];
       else { c = GR[Math.floor(r * 3)]; if (avg > 3.5) c = mix3(c, hex('#6f9a52'), (avg - 3.5) / 2); }
       const sh = 0.96 + r * 0.08;
       const cc = [c[0] * sh, c[1] * sh, c[2] * sh];
@@ -3469,12 +3595,23 @@ class World {
   }
   // grass tufts and wildflowers are placed once and only rebuilt when the land changes
   buildGrass() {
-    const S = this.S, R = this.R, tm = this.tuft, fm = this.flower;
-    R.begin(tm); R.begin(fm);
+    const S = this.S, R = this.R, tm = this.tuft, fm = this.flower, bm = this.boulder, sm = this.slab;
+    R.begin(tm); R.begin(fm); R.begin(bm); R.begin(sm);
+    // stone fields: boulders and slabs of rock, bigger in the middle of each field
+    if (S.rock) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      const c = j * N + i, k = S.rock[c]; if (!k || S.occ[c] || S.road[c]) continue;
+      const n = k === 2 ? 2 + Math.floor(hash(c * 3) * 2) : hash(c * 3) < 0.55 ? 1 : 0;
+      for (let q = 0; q < n; q++) {
+        const x = i - N / 2 + 0.15 + hash(c * 7 + q) * 0.7, z = j - N / 2 + 0.15 + hash(c * 13 + q) * 0.7;
+        const big = k === 2 && q === 0, sc = big ? 0.9 + hash(c + 5) * 0.8 : 0.35 + hash(c * 17 + q) * 0.45, sh = 0.85 + hash(c * 19 + q) * 0.25;
+        const warm = hash(c * 23 + q) * 0.06;
+        R.push(hash(c * 29 + q) < 0.3 ? sm : bm, x, Sim.heightAt(S, x, z) - 0.04 * sc, z, hash(c * 31 + q) * 6.28, sc, sc * (0.6 + hash(c * 37 + q) * 0.5), sc * (0.8 + hash(c * 41 + q) * 0.4), sh + warm, sh + warm * 0.6, sh);
+      }
+    }
     const FL = [[0.95, 0.45, 0.35], [0.98, 0.85, 0.35], [0.95, 0.95, 0.95], [0.8, 0.5, 0.9], [0.95, 0.5, 0.7]];
     for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
       const c = j * N + i;
-      if (S.occ[c] || S.road[c]) continue;
+      if (S.occ[c] || S.road[c] || (S.wear && S.wear[c] > 130)) continue;
       const k = Sim.cellKind(S, i, j); if (k !== 2) continue;
       const h0 = Sim.cellH(S, i, j); if (h0 > 5) continue;
       const r = hash(c * 3 + 7), n = r < 0.35 ? 1 : r < 0.75 ? 2 : 3;
@@ -3488,7 +3625,7 @@ class World {
         for (let q = 0; q < 3; q++) { const x = i - N / 2 + 0.2 + hash(c * 31 + q) * 0.6, z = j - N / 2 + 0.2 + hash(c * 37 + q) * 0.6; R.push(fm, x, Sim.heightAt(S, x, z), z, q, 0.9, 0.8 + q * 0.15, 0.9, col[0], col[1], col[2]); }
       }
     }
-    R.upload(tm); R.upload(fm);
+    R.upload(tm); R.upload(fm); R.upload(bm); R.upload(sm);
     this.grassDirty = false;
   }
   // seagulls circle the coast; butterflies and fireflies stay near where you're looking
@@ -3676,6 +3813,7 @@ class World {
 
   /* --- events --- */
   handle(evs) {
+    if (evs.length) this.navDirty = true;
     const S = this.S, t = this.now;
     for (const e of evs) {
       if (e.type === 'build') {
@@ -3916,8 +4054,96 @@ class World {
     }
     return best;
   }
-  // walk from a point to a point, along the roads where they connect
+  /* --- getting around: A* over the whole island ---
+     Roads are fast, open ground is fine, forest and rock are slow, steep slopes are slower still; water, cliffs, walls and
+     most buildings are in the way. Worn ground (desire paths) gets cheaper the more it's walked, so shortcuts reinforce themselves. */
+  navGrid() {
+    const S = this.S, base = new Float32Array(N * N), byId = {};
+    for (const b of S.b) byId[b.id] = b;
+    const open = { plaza: 1, garden: 1, market: 1.1, pier: 1, farm: 1.4, orchard: 1.3, dock: 1, quarry: 1.5 };
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const c = j * N + i, road = S.road[c], occ = S.occ[c];
+      if (occ) { const b = byId[occ]; base[c] = b && open[b.type] ? open[b.type] : 0; continue; }
+      if (S.wall && S.wall[c] && !road) { base[c] = 0; continue; }
+      if (road) { base[c] = 0.5 / Sim.ROADS[road].speed; continue; }
+      const h = Sim.cellH(S, i, j); if (h < 0.08) { base[c] = 0; continue; }
+      const sl = Sim.cellSlope(S, i, j); if (sl > 2.4) { base[c] = 0; continue; }
+      let k = 1 + sl * 0.6;
+      if (S.tree[c] && S.treeG[c] > 120) k += 0.7;
+      if (S.rock && S.rock[c]) k += S.rock[c] === 2 ? 0.7 : 0.25;
+      if (h < 0.5) k += 0.15;
+      base[c] = k;
+    }
+    this.nav = base; this.navDirty = false;
+    if (!this.navG) { this.navG = new Float32Array(N * N); this.navFrom = new Int32Array(N * N); this.navSeen = new Int32Array(N * N); this.navShut = new Int32Array(N * N); this.navGen = 0; this.heapI = new Int32Array(N * N * 4); this.heapF = new Float32Array(N * N * 4); }
+  }
+  astar(start, goal) {
+    if (!this.nav || this.navDirty) this.navGrid();
+    const S = this.S, base = this.nav, wear = S.wear, g = this.navG, from = this.navFrom, seen = this.navSeen, shut = this.navShut, gen = ++this.navGen;
+    const occS = S.occ[start], occG = S.occ[goal];
+    const cost = c => { let k = base[c]; if (!k) { if (c === goal || c === start || (occS && S.occ[c] === occS) || (occG && S.occ[c] === occG)) k = 1.2; else return 0; }
+      if (wear && wear[c] && !S.road[c]) k *= 1 - 0.4 * Math.min(1, wear[c] / 200); return k; };
+    const gi = goal % N, gj = (goal / N) | 0, H = c => { const dx = Math.abs(c % N - gi), dz = Math.abs(((c / N) | 0) - gj); return (Math.max(dx, dz) + 0.414 * Math.min(dx, dz)) * 0.3; };
+    const hi = this.heapI, hf = this.heapF; let n = 0;
+    const push = (c, f) => { let k = n++; while (k > 0) { const p = (k - 1) >> 1; if (hf[p] <= f) break; hi[k] = hi[p]; hf[k] = hf[p]; k = p; } hi[k] = c; hf[k] = f; };
+    const pop = () => { const top = hi[0], lc = hi[--n], lf = hf[n]; let k = 0; for (;;) { let m = 2 * k + 1; if (m >= n) break; if (m + 1 < n && hf[m + 1] < hf[m]) m++; if (hf[m] >= lf) break; hi[k] = hi[m]; hf[k] = hf[m]; k = m; } hi[k] = lc; hf[k] = lf; return top; };
+    g[start] = 0; seen[start] = gen; from[start] = start; push(start, H(start));
+    let found = false, it = 0;
+    while (n > 0 && it++ < 20000) {
+      if (n > hi.length - 9) break;
+      const c = pop(); if (shut[c] === gen) continue; shut[c] = gen;
+      if (c === goal) { found = true; break; }
+      const i = c % N, j = (c / N) | 0;
+      for (let d = 0; d < 8; d++) {
+        const di = d < 4 ? Sim.DIRS[d][0] : (d & 1 ? 1 : -1), dj = d < 4 ? Sim.DIRS[d][1] : (d < 6 ? 1 : -1);
+        const x = i + di, y = j + dj; if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        const k = y * N + x; if (shut[k] === gen) continue;
+        const ck = cost(k); if (!ck) continue;
+        const diag = di && dj;
+        if (diag && (!cost(j * N + x) || !cost(y * N + i))) continue;
+        const ng = g[c] + (ck + cost(c)) * (diag ? 0.707 : 0.5);
+        if (seen[k] !== gen || ng < g[k]) { seen[k] = gen; g[k] = ng; from[k] = c; push(k, ng + H(k)); }
+      }
+    }
+    if (!found) return null;
+    const cells = []; for (let c = goal; ; c = from[c]) { cells.push(c); if (c === start || cells.length > 4000) break; }
+    return cells.reverse();
+  }
+  // can you walk straight from a to b (world xz) without crossing anything blocked?
+  clearLine(a, b) {
+    const base = this.nav, S = this.S, L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / 0.3);
+    for (let k = 1; k < n; k++) {
+      const u = k / n, i = Math.floor(a[0] + (b[0] - a[0]) * u + N / 2), j = Math.floor(a[1] + (b[1] - a[1]) * u + N / 2);
+      if (!Sim.inB(i, j)) return false; const c = j * N + i; if (!base[c] || S.road[c] || base[c] > 1.9) return false;
+    }
+    return true;
+  }
+  // walk from a point to a point. Settlers path over the whole island; carts stay on roads.
   routeXZ(from, fromRoad, to, toRoad, carts) {
+    if (!carts && (this.navMs || 0) < 6) {
+      const t0 = performance.now(), cellOf = p => { const i = clamp(Math.floor(p[0] + N / 2), 0, N - 1), j = clamp(Math.floor(p[1] + N / 2), 0, N - 1); return j * N + i; };
+      const cells = this.astar(cellOf(from), cellOf(to));
+      this.navMs = (this.navMs || 0) + performance.now() - t0;
+      if (cells) {
+        const S = this.S, off = (Math.random() - 0.5) * 0.3, pts = [[from[0], from[1]]];
+        const P = c => { const r = !!S.road[c], w = r ? off : (hash(c * 7 + this.navGen) - 0.5) * 0.45; return [c % N - N / 2 + 0.5 + w, ((c / N) | 0) - N / 2 + 0.5 + (r ? off : (hash(c * 11 + this.navGen) - 0.5) * 0.45)]; };
+        // keep every road cell (people follow the street) and string-pull the open-ground stretches
+        let k = 1;
+        while (k < cells.length - 1) {
+          const c = cells[k];
+          if (S.road[c]) { pts.push(P(c)); k++; continue; }
+          let far = k; const a = pts[pts.length - 1];
+          for (let m = k + 1; m < cells.length - 1 && !S.road[cells[m]]; m++) { if (this.clearLine(a, P(cells[m]))) far = m; else if (m - far > 3) break; }
+          pts.push(P(cells[far])); k = far + 1;
+        }
+        pts.push([to[0], to[1]]);
+        return pts;
+      }
+    }
+    return this.roadRoute(from, fromRoad, to, toRoad, carts);
+  }
+  // the old way: straight to the nearest road, along the roads, straight to the target
+  roadRoute(from, fromRoad, to, toRoad, carts) {
     const S = this.S, pts = [[from[0], from[1]]];
     const start = fromRoad >= 0 && fromRoad !== null && fromRoad !== undefined && S.road[fromRoad] ? fromRoad : this.roadNear(from[0], from[1]);
     const end = toRoad >= 0 && toRoad !== null && toRoad !== undefined && S.road[toRoad] ? toRoad : this.roadNear(to[0], to[1]);
@@ -4047,8 +4273,27 @@ class World {
     const pt = [tx + Math.cos(a) * 0.42, tz + Math.sin(a) * 0.42]; pt.tree = [tx, tz];
     return pt;
   }
+  // somewhere worth walking to: a beach, a hilltop, the edge of a wood or a stone field, not too close and not across the world
+  wanderPoint(a, home) {
+    if (!this.nav || this.navDirty) this.navGrid();
+    const S = this.S, from = a.hidden && home ? Sim.center(home) : [a.x, a.z];
+    let best = null, bs = -1;
+    for (let k = 0; k < 28; k++) {
+      const i = 2 + Math.floor(Math.random() * (N - 4)), j = 2 + Math.floor(Math.random() * (N - 4)), c = j * N + i;
+      if (!this.nav[c] || S.occ[c]) continue;
+      const x = i - N / 2 + 0.2 + Math.random() * 0.6, z = j - N / 2 + 0.2 + Math.random() * 0.6, d = Math.hypot(x - from[0], z - from[1]);
+      if (d < 7 || d > (a.kid ? 22 : 42)) continue;
+      const h = Sim.cellH(S, i, j), kind = Sim.cellKind(S, i, j);
+      let sc = 1 + Math.random();
+      if (kind === 1) sc += 1.4; if (h > 3) sc += 1; if (S.rock && S.rock[c]) sc += 0.6;
+      if (!S.tree[c] && (S.tree[c + 1] || S.tree[c - 1] || S.tree[c + N] || S.tree[c - N])) sc += 1;
+      if (S.wear && S.wear[c] > 60) sc += 0.8;
+      if (sc > bs) { bs = sc; best = [x, z]; }
+    }
+    return best;
+  }
   leisure(a, ctx) {
-    const h = ctx.hour, opts = [], pick = l => l[Math.floor(Math.random() * l.length)], home = ctx.byId[a.home];
+    const S2 = this.S, h = ctx.hour, opts = [], pick = l => l[Math.floor(Math.random() * l.length)], home = ctx.byId[a.home];
     const add = (w, p) => { if (p && w > 0) opts.push([w, p]); };
     if (!a.kid && ctx.taverns.length && h >= 16.5) { const t = pick(ctx.taverns); add(2 + a.social * 5, { kind: 'visit', b: t, pt: this.local(t, (Math.random() - 0.5) * 1.3, 0.55 + Math.random() * 0.3), anim: 'idle' }); }
     if (ctx.markets.length && h >= 8.5 && h < 18.5) { const m = pick(ctx.markets); add(a.kid ? 0.6 : 2.2, { kind: 'visit', b: m, pt: this.inside(m, 0.45), anim: 'idle' }); }
@@ -4064,6 +4309,9 @@ class World {
     if (ctx.wells.length) { const w = pick(ctx.wells); add(0.5, { kind: 'visit', b: w, pt: this.local(w, 0.3, 0.3), anim: 'idle' }); }
     if (ctx.houses.length) { const hb = pick(ctx.houses); if (hb.id !== a.home) add(1.2, { kind: 'visit', b: hb, pt: this.doorstep(hb, 0.32), anim: 'idle' }); }
     add(a.kid ? 1 : 1.6, { kind: 'stroll', pt: this.doorstep(home, 0.3), anim: a.kid ? 'play' : 'idle' });
+    // wander off across the island just to see it; some settlers are far more curious than others
+    const curious = hash(a.id * 7 + 3), wp = this.wanderPoint(a, home);
+    if (wp) add((a.kid ? 0.7 : 1) * (1.6 + curious * 4.5) * (h > 20.5 || h < 6 ? 0.15 : S2.weather === 'rain' ? 0.35 : 1), { kind: 'stroll', pt: wp, anim: 'idle', wander: true });
     add(0.8, { kind: 'home', b: home, hidden: true });
     let tot = 0; for (const o of opts) tot += o[0];
     let r = Math.random() * tot;
@@ -4114,6 +4362,9 @@ class World {
     }
     const moved = step0 - Math.max(0, step);
     a.phase += moved * (a.riding ? 7 : a.kid ? 30 : 24);
+    // feet wear the grass down where people keep walking
+    const ci1 = Math.floor(a.x + N / 2), cj1 = Math.floor(a.z + N / 2);
+    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c]) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
     const S = this.S, ctx = this.ctx();
@@ -4291,14 +4542,35 @@ class World {
     }
   }
   /* --- rain --- */
-  updateRain(dt) {
-    const S = this.S, on = S.weather === 'rain';
-    if (!on) { this.rain.length = 0; return; }
+  /* --- weather you can see: eases toward the current front and blends into the next one as it arrives --- */
+  updateWeather(dt) {
+    const S = this.S, now = S.wx ? S.wx.now : { k: Sim.wxKind(S), to: S.t + 10, wind: 0.3 }, nx = S.wx && S.wx.q[0];
+    const tg = Object.assign({ cloud: 0, rain: 0, fog: 0, storm: 0 }, WXLOOK[now.k] || {}, { wind: now.wind });
+    if (nx && now.to - S.t < 0.75) { const u = 1 - (now.to - S.t) / 0.75, L = Object.assign({ cloud: 0, rain: 0, fog: 0, storm: 0 }, WXLOOK[nx.k] || {}, { wind: nx.wind }); for (const k in tg) tg[k] += (L[k] - tg[k]) * u; }
+    const v = this.wxv || (this.wxv = Object.assign({ wet: tg.rain > 0.3 ? 0.8 : 0 }, tg));
+    const e = Math.min(1, dt * 0.35);
+    for (const k of ['cloud', 'rain', 'fog', 'storm', 'wind']) v[k] += (tg[k] - v[k]) * e;
+    // ground soaks up rain quickly and dries off slowly
+    v.wet = clamp(v.wet + (v.rain > 0.15 ? (Math.min(1, v.rain) - v.wet) * dt * 0.25 : -dt * 0.012), 0, 1);
+    this.cloudOff = this.cloudOff || [0, 0];
+    const wa = (this.windA = (this.windA || 0.6) + Math.sin(this.now * 0.01) * dt * 0.01);
+    this.cloudOff[0] += Math.cos(wa) * dt * (0.012 + v.wind * 0.05); this.cloudOff[1] += Math.sin(wa) * dt * (0.012 + v.wind * 0.05);
+    // lightning in storms, with thunder a moment later
+    this.flash = (this.flash || 0) * Math.pow(0.02, dt);
+    if (v.storm > 0.4 && Math.random() < dt * 0.09 * v.storm) { this.flash = 1; this.onThunder && this.onThunder(0.4 + Math.random() * 2.2, 0.5 + Math.random() * 0.5); }
+    // rain falls around wherever you're looking; more of it, and slanted, the harder it blows
+    const want = Math.round(Math.min(900, 620 * v.rain));
     const [fx, fz] = this.focus;
-    while (this.rain.length < 520) this.rain.push({ x: fx + (Math.random() - 0.5) * 40, z: fz + (Math.random() - 0.5) * 40, y: Math.random() * 14 });
+    if (this.rain.length > want) this.rain.length = want;
+    while (this.rain.length < want) this.rain.push({ x: fx + (Math.random() - 0.5) * 40, z: fz + (Math.random() - 0.5) * 40, y: Math.random() * 14 });
+    const sx = Math.cos(wa) * v.wind * 7, sz = Math.sin(wa) * v.wind * 7;
+    this.rainSlant = [sx, sz];
     for (const d of this.rain) {
-      d.y -= dt * 16;
-      if (d.y < Math.max(0, Sim.groundAt(S, d.x, d.z))) { d.y = 12 + Math.random() * 3; d.x = fx + (Math.random() - 0.5) * 40; d.z = fz + (Math.random() - 0.5) * 40; }
+      d.y -= dt * 16; d.x += sx * dt; d.z += sz * dt;
+      if (d.y < Math.max(0, Sim.groundAt(S, d.x, d.z))) {
+        if (Math.random() < 0.08 && d.y > 0.02) this.addPart({ x: d.x, y: d.y + 0.02, z: d.z, vx: 0, vy: 0.5, vz: 0, life: 0, max: 0.18, size: 0.03, col: [0.8, 0.86, 0.95], g: 6, drag: 0 });
+        d.y = 12 + Math.random() * 3; d.x = fx + (Math.random() - 0.5) * 40 - sx * 0.8; d.z = fz + (Math.random() - 0.5) * 40 - sz * 0.8;
+      }
     }
   }
 
@@ -4373,17 +4645,34 @@ class World {
     }
   }
 
+  /* --- desire paths: wear fades slowly each hour; the ground is repainted every few seconds when it has changed --- */
+  wearTick(dtH) {
+    const S = this.S; if (!S.wear) return;
+    const hr = Math.floor(S.t);
+    if (this.wearHr === undefined) this.wearHr = hr;
+    if (hr !== this.wearHr) {
+      const n = Math.min(48, Math.max(0, hr - this.wearHr)); this.wearHr = hr;
+      if (n) { const k = Math.pow(0.975, n), w = S.wear; for (let c = 0; c < N * N; c++) if (w[c]) { const v = Math.floor(w[c] * k); if ((v < 130) !== (w[c] < 130)) this.wearGrass = true; w[c] = v; } this.wearTex = true; }
+    }
+    // the worn-ground texture is tiny, so it can refresh often; the grass tufts only when a path crosses the threshold
+    if ((this.wearTex || !this.wearUp) && this.now - (this.wearAt || 0) > 1.5) { this.wearTex = false; this.wearUp = true; this.wearAt = this.now; if (this.R.setWear) this.R.setWear(S.wear, N); }
+    if (this.wearGrass && this.now - (this.wearGrassAt || 0) > 20) { this.wearGrass = false; this.wearGrassAt = this.now; this.grassDirty = true; }
+  }
+
   /* --- per-frame update --- */
   update(dtReal, dtH) {
     const S = this.S;
     this.now += dtReal;
+    this.navMs = 0;
+    if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
     if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
     if (S._dirty.walls) { this.buildFort(); S._dirty.walls = false; }
+    this.wearTick(dtH);
     if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); }
     else if (!this.lastCtx) this.lastCtx = this.ctx();
     this.updateBubbles(dtReal);
-    this.updateRain(dtReal);
+    this.updateWeather(dtReal);
     this.updateBoats();
     this.burnFx(dtReal);
     // particles
@@ -4450,14 +4739,20 @@ class World {
   render(R, cam, extras) {
     const gl = R.gl, S = this.S, hour = S.t % 24, env = envAt(hour);
     if (this.grassDirty) this.buildGrass();
-    const wet = S.weather === 'rain' ? 1 : S.weather === 'cloud' ? 0.45 : 0;
-    this.wet = (this.wet === undefined ? wet : this.wet + (wet - this.wet) * 0.02);
-    if (this.wet > 0.01) {
-      const k = this.wet, grey = [0.62, 0.66, 0.7];
+    const WV = this.wxv || { cloud: 0, rain: 0, fog: 0, storm: 0, wind: 0.3, wet: 0 };
+    this.wet = Math.min(1, WV.cloud * 0.6 + WV.rain * 0.5);
+    const k = Math.min(1, WV.cloud * 0.9 + WV.storm * 0.3);
+    if (k > 0.01) {
+      const grey = scale3([0.62, 0.66, 0.7], 1 - WV.storm * 0.35);
       env.top = mix3(env.top, scale3(grey, 0.8 + (1 - env.night) * 0.2 - env.night * 0.6), k * 0.6); env.hor = mix3(env.hor, scale3(grey, 1 - env.night * 0.7), k * 0.5);
-      env.sunCol = scale3(env.sunCol, 1 - k * 0.45); env.sky = scale3(env.sky, 1 - k * 0.1);
+      env.sunCol = scale3(env.sunCol, 1 - k * 0.5 - WV.storm * 0.2); env.sky = scale3(env.sky, 1 - k * 0.1 - WV.storm * 0.2);
       env.shallow = mix3(env.shallow, [0.35, 0.55, 0.58], k * 0.4); env.deep = mix3(env.deep, [0.12, 0.3, 0.4], k * 0.4);
     }
+    if (WV.fog > 0.01) { const fg = scale3([0.84, 0.86, 0.87], 1 - env.night * 0.75); env.hor = mix3(env.hor, fg, WV.fog * 0.85); env.top = mix3(env.top, fg, WV.fog * 0.6); env.sunCol = scale3(env.sunCol, 1 - WV.fog * 0.35); }
+    if (this.flash > 0.02) { const f = this.flash; env.sky = mix3(env.sky, [1.2, 1.25, 1.4], f * 0.7); env.top = mix3(env.top, [0.85, 0.88, 1], f * 0.6); env.hor = mix3(env.hor, [0.9, 0.92, 1], f * 0.5); }
+    // fog pulls the far edge of the world in close
+    const fogN = cam => lerp(cam.dist * 1.6 + 30, 3, WV.fog), fogF = cam => lerp(cam.dist * 3.2 + 120, cam.dist * 0.9 + 24, WV.fog);
+    this.fogR = [fogN(cam), fogF(cam)];
     this.env = env;
     const night = env.night;
     const winTint = night > 0.05 ? mix3([0.3, 0.38, 0.5], [1, 0.82, 0.52], night) : [0.3, 0.38, 0.5];
@@ -4489,7 +4784,7 @@ class World {
       this.lit[b.id] = L;
       R.push(wt, x, b.y, z, ry, sx, sy, sz, winTint[0], winTint[1], winTint[2], winE * L);
     };
-    const wind = 1 + (this.wet || 0);
+    const wind = 1 + (this.wxv ? this.wxv.wind * 1.6 : 0);
     for (const b of S.b) {
       let sx = 1, sy = 1, sz = 1;
       const an = this.anim[b.id];
@@ -4728,7 +5023,8 @@ class World {
     if (this.rain.length) {
       // thin slanted streaks that stay fine up close and still read from far away
       const rw = 0.006 + cam.dist * 0.00035, rl = 0.22 + cam.dist * 0.004;
-      for (const d of this.rain) R.push(PC0, d.x, d.y, d.z, 0.5, rw, rl, rw, 0.72, 0.8, 0.9, 0.35, 0, 0.18);
+      const sl = this.rainSlant || [0, 0], tx = clamp(-sl[1] * 0.06, -0.5, 0.5), tz = clamp(sl[0] * 0.06, -0.5, 0.5);
+      for (const d of this.rain) R.push(PC0, d.x, d.y, d.z, 0, rw, rl, rw, 0.72, 0.8, 0.9, 0.35, tx, tz);
     }
     // boats
     const bob = (x, z) => Math.sin(t * 1.6 + x * 0.5 + z * 0.3) * 0.04;
@@ -4746,8 +5042,8 @@ class World {
     }
     // clouds
     const CL = this.clouds.map(m => B(m));
-    const cg = 1 - (this.wet || 0) * 0.35;
-    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - (this.wet || 0) * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - (this.wet || 0) * 0.4), cl.a, cl.s * 1.6 * (1 + (this.wet || 0) * 0.5), cl.s, cl.s * 1.4 * (1 + (this.wet || 0) * 0.5), cg, cg, cg * 1.02, 0.35 - night * 0.28);
+    const cov = this.wxv ? this.wxv.cloud : 0, cg = 1 - cov * 0.3 - (this.wxv ? this.wxv.storm * 0.35 : 0);
+    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - cov * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - cov * 0.4), cl.a, cl.s * 1.6 * (1 + cov * 0.6), cl.s * (1 + cov * 0.3), cl.s * 1.4 * (1 + cov * 0.6), cg, cg, cg * 1.02, 0.35 - night * 0.28);
     this.cloudSet = new Set(CL);
     const opaque = [...batches];
     for (const m of opaque) R.upload(m);
@@ -4766,9 +5062,9 @@ class World {
     gl.useProgram(R.depth.p);
     gl.uniformMatrix4fv(R.depth.u.uVP, false, lightVP);
     gl.uniform1f(R.depth.u.uTime, t);
-    gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wet || 0);
+    gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0);
     for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
-    gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain);
+    gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain); R.draw(this.boulder); R.draw(this.slab);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     // --- main pass
@@ -4793,18 +5089,24 @@ class World {
     gl.uniform1f(P.u.uTime, t);
     gl.uniform3fv(P.u.uSunDir, env.sunDir); gl.uniform3fv(P.u.uSunCol, env.sunCol);
     gl.uniform3fv(P.u.uSky, env.sky); gl.uniform3fv(P.u.uGround, env.ground);
-    gl.uniform3fv(P.u.uFog, env.hor); gl.uniform2f(P.u.uFogR, cam.dist * 1.6 + 30, cam.dist * 3.2 + 120);
+    gl.uniform3fv(P.u.uFog, env.hor); gl.uniform2f(P.u.uFogR, this.fogR[0], this.fogR[1]);
     gl.uniform3fv(P.u.uEye, cam.eye);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, R.shadowTex); gl.uniform1i(P.u.uShadow, 0);
     gl.uniform1f(P.u.uShadowOn, 1 - night * 0.6);
     gl.uniform1f(P.u.uTexel, 1 / R.SH); gl.uniform3f(P.u.uFlat, 0, 0, 0);
     gl.uniform1f(P.u.uAlpha, 1);
-    gl.uniform1f(P.u.uWind, this.wet || 0); gl.uniform1f(P.u.uSwayY, 0.2);
-    for (const m of opaque) { gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    gl.uniform1f(P.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0); gl.uniform1f(P.u.uSwayY, 0.2);
+    if (!R.wTex) R.setWear(S.wear || new Uint8Array(N * N), N);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2); gl.activeTexture(gl.TEXTURE0);
+    const WX = this.wxv || {};
+    gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
+    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    gl.uniform1f(P.u.uTerrain, 0);
     // swaying meadow
     gl.uniform1f(P.u.uSwayY, 0.0);
     gl.uniform1f(P.u.uSway, 3.2); R.draw(this.tuft);
     gl.uniform1f(P.u.uSway, 2.2); R.draw(this.flower);
+    gl.uniform1f(P.u.uSway, 0); R.draw(this.boulder); R.draw(this.slab);
     gl.uniform1f(P.u.uSway, 0); gl.uniform1f(P.u.uSwayY, 0.2);
     // water
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -4813,7 +5115,7 @@ class World {
     gl.uniformMatrix4fv(Wp.u.uVP, false, cam.vp); gl.uniform1f(Wp.u.uTime, t); gl.uniform1f(Wp.u.uHalf, N / 2);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, R.hTex); gl.uniform1i(Wp.u.uH, 1);
     gl.uniform3fv(Wp.u.uSunDir, env.sunDir); gl.uniform3fv(Wp.u.uSunCol, env.sunCol); gl.uniform3fv(Wp.u.uSky, mix3(env.top, env.hor, 0.5));
-    gl.uniform3fv(Wp.u.uFog, env.hor); gl.uniform2f(Wp.u.uFogR, cam.dist * 1.6 + 30, cam.dist * 3.2 + 120); gl.uniform3fv(Wp.u.uEye, cam.eye);
+    gl.uniform3fv(Wp.u.uFog, env.hor); gl.uniform2f(Wp.u.uFogR, this.fogR[0], this.fogR[1]); gl.uniform3fv(Wp.u.uEye, cam.eye);
     gl.uniform3fv(Wp.u.uShallow, env.shallow); gl.uniform3fv(Wp.u.uDeep, env.deep); gl.uniform1f(Wp.u.uNight, night);
     gl.bindVertexArray(this.water.vao); gl.drawArrays(gl.TRIANGLES, 0, this.water.count);
     // transparent overlays
@@ -5433,6 +5735,10 @@ const I = {
   sun: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#f4c95d"/><g stroke="#f4a261" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></g></svg>',
   cloud: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="9" cy="9" r="4" fill="#f4c95d"/><path d="M6 19h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 19z" fill="#e8eef4" stroke="#9fb0c2" stroke-width="1.4"/></svg>',
   rain: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 15h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 15z" fill="#d5dee8" stroke="#8597aa" stroke-width="1.4"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3" stroke="#3d7cc9" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  overcast: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M5.5 18h12a4.2 4.2 0 000-8.4 5.4 5.4 0 00-10.3 1.6A3.4 3.4 0 005.5 18z" fill="#dde4ea" stroke="#8b99a8" stroke-width="1.4"/><path d="M14 8.2a4 4 0 017.2 2.6" fill="none" stroke="#a9b5c1" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  drizzle: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 14h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 14z" fill="#e2e8ee" stroke="#8b99a8" stroke-width="1.4"/><g stroke="#5f8fc4" stroke-width="1.6" stroke-linecap="round"><path d="M9 17.5v1.2M13 18.5v1.2M16.5 17v1.2"/></g></svg>',
+  storm: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 14h11a4 4 0 000-8 5 5 0 00-9.6 1.5A3.3 3.3 0 006 14z" fill="#b8c2cc" stroke="#6b7785" stroke-width="1.4"/><path d="M12.5 13l-2.5 4.5h3l-2 4.5" fill="none" stroke="#f2b33d" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+  fog: '<svg width="26" height="26" viewBox="0 0 24 24"><g stroke="#9aa7b4" stroke-width="2" stroke-linecap="round"><path d="M4 9h12M7 13h13M3 17h10M15 17h4"/></g></svg>',
   moon: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M15 3a8 8 0 100 18 9 9 0 010-18z" fill="#c9d4f2" stroke="#7f8fbf" stroke-width="1.4"/></svg>',
   pause: '<svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="1" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="8.5" y="1" width="3.5" height="12" rx="1" fill="currentColor"/></svg>',
   play: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 1l10 6-10 6z" fill="currentColor"/></svg>',
@@ -5581,13 +5887,14 @@ const Amb = {
       wind: this.layer(white, 'bandpass', 520, 0.9), rain: this.layer(white, 'highpass', 2600, 0.5),
       hum: this.layer(white, 'bandpass', 620, 1.4),
     };
-    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12 };
+    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 };
   },
   set(l, v, k) { l.g.gain.setTargetAtTime(Math.max(0, v), Sfx.ctx.currentTime, k || 0.6); },
   update(dt) {
     if (!this.L || !Sfx.ctx || UI.world <= 0 || Sfx.hidden) return;
     this.t += dt;
-    const h = S.t % 24, night = h < 5.8 || h >= 19.8, dawn = h >= 5.5 && h < 10, rain = S.weather === 'rain', cloud = S.weather === 'cloud';
+    const WV = world.wxv || { rain: 0, wind: 0.3, storm: 0, fog: 0, cloud: 0 };
+    const h = S.t % 24, night = h < 5.8 || h >= 19.8, dawn = h >= 5.5 && h < 10, rain = WV.rain > 0.2, cloud = WV.cloud > 0.6;
     const far = clamp((cam.dist - 14) / 70, 0, 1), near = 1 - far, pop = Sim.pop(S), town = clamp(pop / 50, 0, 1);
     // surf: a slow swell with the odd bigger wave, louder when you pull back to see the sea
     this.swellV += (Math.random() - 0.5) * dt * 0.9 - this.swell * dt * 0.35; this.swellV *= 1 - dt * 0.4; this.swell = clamp(this.swell + this.swellV * dt, -1, 1);
@@ -5596,9 +5903,9 @@ const Amb = {
     this.set(this.L.wash, (0.012 + 0.012 * far) * Math.max(0, wave - 0.45) * 2.2, 0.15);
     // wind: picks up when zoomed out, in cloud and rain, and a little at night
     const gust = 0.6 + 0.4 * Math.sin(this.t * 0.21) * Math.sin(this.t * 0.083 + 1);
-    this.set(this.L.wind, (0.012 + 0.05 * far + (rain ? 0.035 : cloud ? 0.015 : 0) + (night ? 0.01 : 0)) * gust, 0.8);
-    this.L.wind.f.frequency.setTargetAtTime(380 + 420 * gust, Sfx.ctx.currentTime, 1.2);
-    this.set(this.L.rain, rain ? 0.05 + 0.02 * near : 0, 1.5);
+    this.set(this.L.wind, (0.008 + 0.045 * far + WV.wind * 0.07 + WV.storm * 0.04 + (night ? 0.01 : 0)) * gust, 0.8);
+    this.L.wind.f.frequency.setTargetAtTime(360 + 380 * gust + WV.wind * 250, Sfx.ctx.currentTime, 1.2);
+    this.set(this.L.rain, Math.min(1.4, WV.rain) * (0.045 + 0.02 * near), 1.5);
     // the colony's hum: footsteps, voices and work, from the settlers when you're close in
     this.hum += ((Math.random() - 0.5) * 3 - this.hum) * Math.min(1, dt * 2);
     const busy = night ? 0.25 : 1;
@@ -5612,11 +5919,19 @@ const Amb = {
       this.next.hammer = 1.2 + Math.random() * 2.2;
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
+    if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
     if (due('cart')) { this.next.cart = 10 + Math.random() * 18; if (!night && town > 0.2 && near > 0.3) for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W); }
   },
   gull(v) {
     const W = Sfx.world, p = 0.9 + Math.random() * 0.25, n = 2 + Math.floor(Math.random() * 3);
     for (let i = 0; i < n; i++) { const d = i * (0.32 + Math.random() * 0.1); Sfx.tone(1500 * p, 950 * p, 0.28, 'triangle', v, d, W); Sfx.tone(3000 * p, 1900 * p, 0.22, 'sine', v * 0.25, d + 0.01, W); }
+  },
+  // a crack for close strikes, then a long low roll
+  thunder(delay, strength) {
+    if (!Sfx.ctx || UI.world <= 0) return;
+    const W = Sfx.world, s = strength || 0.7;
+    if (s > 0.8) Sfx.noise(0.25, 1400, 0.12 * s, delay, W);
+    Sfx.noise(2.8, 80, 0.55 * s, delay + 0.05, W); Sfx.noise(2.2, 160, 0.25 * s, delay + 0.25, W); Sfx.tone(55, 32, 2.4, 'sine', 0.2 * s, delay + 0.1, W);
   },
   songbird(v) {
     const W = Sfx.world, base = 2600 + Math.random() * 1400, n = 3 + Math.floor(Math.random() * 4);
@@ -5944,9 +6259,9 @@ function renderStock() {
 }
 function renderClock() {
   const h = S.t % 24, day = Math.floor(S.t / 24) + 1, night = h < 6 || h >= 19.5, wd = Sim.WEEKDAYS[(day - 1) % 7];
-  const wIcon = S.weather === 'rain' ? I.rain : S.weather === 'cloud' ? (night ? I.moon : I.cloud) : night ? I.moon : I.sun;
+  const wk = Sim.wxKind(S), wIcon = { clear: night ? I.moon : I.sun, fair: night ? I.moon : I.cloud, cloudy: I.overcast, drizzle: I.drizzle, rain: I.rain, storm: I.storm, fog: I.fog }[wk] || I.sun;
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60 / 10) * 10;
-  const html = `<div class="time" title="${S.weather === 'rain' ? 'Rain' : S.weather === 'cloud' ? 'Cloudy' : 'Clear'}">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
+  const html = `<div class="time" data-act="forecast" role="button" tabindex="0" title="${esc(Sim.WX[wk].name)} · tap for the forecast">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
     <div class="speeds" role="group" aria-label="Speed">${[I.pause, I.play, I.fast, I.faster].map((ic, k) => `<button data-speed="${k}" class="${UI.speed === k ? 'on' : ''}" title="${['Pause (Space)', 'Normal (1)', 'Fast (2)', 'Fastest (3)'][k]}" aria-label="${['Pause', 'Normal speed', 'Fast', 'Fastest'][k]}">${ic}</button>`).join('')}</div>
     ${Online.mode ? '' : `<button class="round" data-act="army" title="Your army" aria-label="Your army">${I.army.replace(/26/g, '20')}</button>`}${Online.mode ? '' : `<button class="round sea" data-act="online" title="Other islands: visit and raid" aria-label="Other islands">${I.ship}</button>`}<button class="round" data-act="menu" title="Menu" aria-label="Menu">${I.menu}</button>`;
   const el = $('#clock'); if (el._h !== html) { el.innerHTML = html; el._h = html; }
@@ -6188,6 +6503,7 @@ function openCat(id) {
 function act(a, el) {
   const b = UI.sel ? S.b.find(x => x.id === UI.sel) : null;
   if (a === 'menu') { showMenu(); return; }
+  if (a === 'forecast') { showForecast(); return; }
   if (a === 'online') { Sfx.play('click'); openOnline(); return; }
   if (a === 'goalsMin') { UI.goalsMin = !UI.goalsMin; savePrefs(); renderGoals(); return; }
   if (a === 'closeInsp') { UI.sel = null; UI.selAgent = null; UI.follow = null; renderInsp(); return; }
@@ -6511,6 +6827,19 @@ function showHelp() {
     <p class="lead">Coastal buildings turn to face the water by themselves. Ground under a new building is levelled for free.</p>
     <button class="btn" data-m="close">Back to the island</button>`);
 }
+const WX_EFFECT = { clear: 'Settlers are a little happier in the sun.', fair: 'A good day for everything.', cloudy: 'Nothing special.', drizzle: 'Farms +10%, fishing −15%.',
+  rain: 'Farms +15%, fishing −30%, building is slower.', storm: 'Fishing −65%, building at half speed, and settlers are miserable. Expect lightning.', fog: 'Fishing −20%. The world goes quiet and grey.' };
+const windWord = w => w < 0.12 ? 'calm' : w < 0.35 ? 'a light breeze' : w < 0.6 ? 'breezy' : w < 0.85 ? 'windy' : 'a gale';
+const clockStr = t => { const h = Math.floor(t % 24); return String(h).padStart(2, '0') + ':00'; };
+function showForecast() {
+  if (!S.wx) return;
+  const ico = k => ({ clear: I.sun, fair: I.cloud, cloudy: I.overcast, drizzle: I.drizzle, rain: I.rain, storm: I.storm, fog: I.fog }[k]);
+  const dayOff = t => { const d = Math.floor(t / 24) - Math.floor(S.t / 24); return d <= 0 ? '' : d === 1 ? 'tomorrow ' : 'in ' + d + ' days '; };
+  const rows = [S.wx.now, ...S.wx.q].map((f, n) => `<div class="fc ${n ? '' : 'now'}">${ico(f.k)}<div><b>${n ? 'From ' + dayOff(f.from) + clockStr(f.from) : 'Now, until ' + dayOff(f.to) + clockStr(f.to)}: ${esc(Sim.WX[f.k].name)}</b>
+    <span>${esc(WX_EFFECT[f.k])} Wind: ${windWord(f.wind)}.</span></div></div>`).join('');
+  openModal(`<div class="ol-head"><h2>Weather</h2><button class="x" data-m="close" aria-label="Close">×</button></div><p class="lead">The harbourmaster’s forecast for the next few fronts.</p>${rows}
+    <div class="row2"><button class="btn primary" data-m="close">Back to the island</button></div>`);
+}
 function showMenu() {
   const arm = UI.confirm === 'new';
   openModal(`<h2>${esc(islandName())}</h2><p class="lead">Day ${Math.floor(S.t / 24) + 1} · ${Sim.pop(S)} settlers. Your island saves itself in this browser.</p>
@@ -6596,6 +6925,7 @@ function start(data) {
   world = new World(R);
   // settlers felling trees is part of the world; everything else the world reports is a game effect
   world.sfx = (k, ev) => k === 'chop' && ev === 'work' ? Sfx.play(k, Sfx.world) : Sfx.play(k);
+  world.onThunder = (delay, strength) => Amb.thunder(delay, strength);
   let loaded = false;
   const src = data.save || readSave();
   if (src) { try { S = Sim.deserialize(src); loaded = true; } catch (e) { console.warn(e); S = null; } }

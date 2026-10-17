@@ -217,7 +217,11 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
+uniform sampler2D uWear; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
+float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hsh(i), hsh(i + vec2(1, 0)), f.x), mix(hsh(i + vec2(0, 1)), hsh(i + vec2(1, 1)), f.x), f.y); }
 float shadow() {
   vec3 p = vLight.xyz / vLight.w * 0.5 + 0.5;
   if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0 || p.z > 1.0) return 1.0;
@@ -227,11 +231,25 @@ float shadow() {
 }
 void main() {
   vec3 n = normalize(vNor);
+  vec3 alb = vCol;
+  if (uTerrain > 0.5) {
+    // desire paths: soft worn earth where settlers keep walking
+    float w = texture(uWear, (vWorld.xz + 48.0) / 96.0).r;
+    vec3 trod = mix(vec3(0.69, 0.59, 0.42), alb, 0.3);
+    alb = mix(alb, trod, smoothstep(0.14, 0.72, w) * 0.85 * smoothstep(0.55, 0.85, n.y));
+  }
+  // rain darkens everything that faces the sky
+  alb *= 1.0 - uWet * 0.16 * smoothstep(0.5, 0.95, n.y);
   float ndl = max(dot(n, uSunDir), 0.0);
   float sh = ndl > 0.0 ? mix(1.0, shadow(), uShadowOn) : 0.0;
+  // cloud shadows drifting over the island
+  if (uCloud > 0.01) {
+    float cn = vnoise(vWorld.xz * 0.045 + uCloudOff) * 0.65 + vnoise(vWorld.xz * 0.11 + uCloudOff * 1.7) * 0.35;
+    sh *= 1.0 - smoothstep(0.66 - uCloud * 0.5, 0.84 - uCloud * 0.45, cn) * 0.6 * min(1.0, uCloud * 1.6);
+  }
   vec3 hemi = mix(uGround, uSky, n.y * 0.5 + 0.5);
-  vec3 c = vCol * (hemi + uSunCol * ndl * sh);
-  c += vCol * vEmis + uFlat * step(0.5, vEmis);
+  vec3 c = alb * (hemi + uSunCol * ndl * sh);
+  c += alb * vEmis + uFlat * step(0.5, vEmis);
   float f = smoothstep(uFogR.x, uFogR.y, length(vWorld - uEye));
   o = vec4(mix(c, uFog, f), uAlpha);
 }`;
@@ -419,6 +437,18 @@ class Renderer {
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, m.inst, 0, m.n * 20);
   }
   draw(m) { if (!m.n || !m.count) return; const gl = this.gl; gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.count, m.n); }
+  // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
+  setWear(w, n) {
+    const gl = this.gl;
+    if (!this.wTex) this.wTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.wTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, n, n, 0, gl.RED, gl.UNSIGNED_BYTE, w);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
   setHeights(h, V) {
     const gl = this.gl;
     gl.bindTexture(gl.TEXTURE_2D, this.hTex);

@@ -19,8 +19,8 @@ const TYPES = {
   dock:       { name: 'Fishing Dock', size: 1, jobs: 2, coastal: true, cost: { wood: 15 }, prod: { food: 1.3 }, desc: 'A boat goes out each morning. Feeds about 30 settlers.' },
   bakery:     { name: 'Bakery', size: 1, jobs: 3, cost: { wood: 20, stone: 10, gold: 30 }, prod: { food: 2.2 }, unlock: 30, build: 1.2, desc: 'Bakes bread from your farms’ wheat. Needs a working farm somewhere on the island.' },
   sawmill:    { name: 'Sawmill', size: 2, jobs: 3, radius: 8, cost: { wood: 30, stone: 20, gold: 60 }, prod: { wood: 3.5 }, unlock: 45, build: 2, desc: 'Saws logs into planks. Needs a lumber camp within 8 tiles.' },
-  quarry:     { name: 'Quarry', size: 2, jobs: 4, radius: 3, cost: { wood: 20, gold: 30 }, prod: { stone: 2.2 }, unlock: 25, build: 2, desc: 'Cuts stone. Must sit beside rocky ground. Noisy neighbour.' },
-  mine:       { name: 'Mine', size: 2, jobs: 4, radius: 3, cost: { wood: 40, stone: 20, gold: 80 }, prod: { gold: 3.5 }, unlock: 60, build: 2.5, desc: 'Digs ore out of the hills and sells it. Must sit beside rocky ground.' },
+  quarry:     { name: 'Quarry', size: 2, jobs: 4, radius: 3, cost: { wood: 20, gold: 30 }, prod: { stone: 2.2 }, unlock: 25, build: 2, desc: 'Cuts stone. Build it beside a stone field (grey, broken ground with boulders) or rocky hills. Noisy neighbour.' },
+  mine:       { name: 'Mine', size: 2, jobs: 4, radius: 3, cost: { wood: 40, stone: 20, gold: 80 }, prod: { gold: 3.5 }, unlock: 60, build: 2.5, desc: 'Digs ore out of the rock and sells it. Build it beside a stone field or rocky hills.' },
   blacksmith: { name: 'Blacksmith', size: 1, jobs: 2, cost: { wood: 15, stone: 25, gold: 40 }, prod: { gold: 2.2 }, unlock: 35, build: 1.2, desc: 'Forges tools and horseshoes to sell. Noisy, but pays well.' },
   shipyard:   { name: 'Shipyard', size: 2, jobs: 4, coastal: true, cost: { wood: 80, stone: 20, gold: 120 }, prod: { gold: 5 }, unlock: 110, build: 3, desc: 'Builds boats and sells them. Must face open water.' },
   stable:     { name: 'Stable', size: 2, jobs: 2, cost: { wood: 40, gold: 60 }, unlock: 30, build: 2, desc: 'Horses and carts. Carts haul goods to the hall, adding 15% to all production. Settlers ride on long trips.' },
@@ -77,6 +77,38 @@ const ROADS = {
 const QUAY_Y = 0.42;
 const HARBOUR = { wood: 40, stone: 60, gold: 150 };
 const DAY = 24;
+/* Weather comes in fronts that last a few hours each. The island always knows the next three, which is the forecast.
+   base maps each kind onto the old sun / cloud / rain that the rest of the game checks. */
+const WX = {
+  clear:   { name: 'Clear skies', base: 'sun', h: [6, 14], wind: [0.1, 0.3], next: { fair: 5, cloudy: 2 } },
+  fair:    { name: 'Fair', base: 'sun', h: [5, 12], wind: [0.2, 0.4], next: { clear: 4, cloudy: 4, drizzle: 1 } },
+  cloudy:  { name: 'Overcast', base: 'cloud', h: [3, 8], wind: [0.3, 0.5], next: { fair: 4, drizzle: 2, rain: 2, clear: 2 } },
+  drizzle: { name: 'Drizzle', base: 'rain', h: [2, 5], wind: [0.25, 0.45], next: { cloudy: 3, rain: 2, fair: 1 } },
+  rain:    { name: 'Rain', base: 'rain', h: [3, 8], wind: [0.4, 0.65], next: { cloudy: 3, drizzle: 2, storm: 1.4 } },
+  storm:   { name: 'Storm', base: 'rain', h: [2, 4], wind: [0.8, 1], next: { rain: 3, cloudy: 1 } },
+  fog:     { name: 'Fog', base: 'cloud', h: [2, 5], wind: [0, 0.08], next: { fair: 3, clear: 2, cloudy: 1 } },
+};
+function wxFront(S, k, from) {
+  const W = WX[k], len = W.h[0] + Math.floor(rnd(S) * (W.h[1] - W.h[0] + 1));
+  return { k, from, to: from + len, wind: Math.round((W.wind[0] + rnd(S) * (W.wind[1] - W.wind[0])) * 100) / 100 };
+}
+function wxNext(S, prev) {
+  const hr = prev.to % DAY;
+  // mist rolls in on calm nights and burns off in the morning
+  if (hr >= 2 && hr <= 6 && (prev.k === 'clear' || prev.k === 'fair' || prev.k === 'cloudy') && rnd(S) < 0.3) return wxFront(S, 'fog', prev.to);
+  const opts = WX[prev.k].next; let tot = 0; for (const k in opts) tot += opts[k];
+  let r = rnd(S) * tot;
+  for (const k in opts) { r -= opts[k]; if (r <= 0) return wxFront(S, k, prev.to); }
+  return wxFront(S, 'fair', prev.to);
+}
+function wxFill(S) {
+  const W = S.wx;
+  while (W.now.to <= S.t) { W.now = W.q.shift() || wxNext(S, W.now); }
+  while (W.q.length < 3) W.q.push(wxNext(S, W.q.length ? W.q[W.q.length - 1] : W.now));
+  S.weather = WX[W.now.k].base;
+}
+function wxInit(S, k) { S.wx = { now: wxFront(S, k || 'fair', Math.floor(S.t)), q: [] }; wxFill(S); }
+const wxKind = S => (S.wx ? S.wx.now.k : S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'clear');
 
 /* ---------------- Random & noise ---------------- */
 function rnd(o) {
@@ -110,10 +142,11 @@ function cellSlope(S, i, j) {
   const h = S.h, a = h[vi(i, j)], b = h[vi(i + 1, j)], c = h[vi(i, j + 1)], d = h[vi(i + 1, j + 1)];
   return Math.max(a, b, c, d) - Math.min(a, b, c, d);
 }
-function cellKind(S, i, j) { // 0 water, 1 sand, 2 grass, 3 rock
+function cellKind(S, i, j) { // 0 water, 1 sand, 2 grass, 3 rock (hills, cliffs and stone fields)
   const h = cellH(S, i, j);
   if (h < 0) return 0;
   if (h < 0.5) return 1;
+  if (S.rock && S.rock[ci(i, j)]) return 3;
   if (h > 5.5 || cellSlope(S, i, j) > 1.7) return 3;
   return 2;
 }
@@ -164,6 +197,39 @@ function genIsland(S) {
     }
   }
   placeHall(S, r);
+  genRock(S);
+}
+
+/* Stone fields: patches of broken rock, gravel and boulders on ordinary ground, so quarries don't have to climb mountains.
+   They come from the island's seed with their own random stream, so islands saved before stone fields existed get the same ones. */
+function genRock(S) {
+  const rs = { rng: (S.seed ^ 0x51ed2701) | 0 }, r = () => rnd(rs), nz = makeNoise(r);
+  S.rock = new Uint8Array(N * N);
+  const hall = S.b.find(b => b.type === 'hall'), hc = hall ? [hall.i + 1, hall.j + 1] : [N / 2, N / 2];
+  const ok = (i, j) => inB(i, j) && i > 2 && j > 2 && i < N - 3 && j < N - 3 && !S.occ[ci(i, j)] && !S.road[ci(i, j)] && cellH(S, i, j) >= 0.6 && cellH(S, i, j) <= 4.8 && cellSlope(S, i, j) < 1.3;
+  const cand = [];
+  for (let j = 3; j < N - 3; j++) for (let i = 3; i < N - 3; i++) if (ok(i, j) && Math.hypot(i - hc[0], j - hc[1]) >= 9) cand.push([i, j]);
+  if (!cand.length) return;
+  const centres = [];
+  // the first field sits a short walk from the hall, so an early quarry is always possible
+  const nearHall = cand.filter(([i, j]) => { const d = Math.hypot(i - hc[0], j - hc[1]); return d >= 11 && d <= 22; });
+  const pick = list => list[Math.floor(r() * list.length)];
+  if (nearHall.length) centres.push(pick(nearHall));
+  const want = 3 + Math.floor(r() * 3);
+  for (let a = 0; a < 400 && centres.length < want; a++) { const c = pick(cand); if (centres.every(p => Math.hypot(p[0] - c[0], p[1] - c[1]) >= 15)) centres.push(c); }
+  for (const [ci0, cj0] of centres) {
+    const R = 2.8 + r() * 2.6, sx = 0.75 + r() * 0.6, sz = 0.75 + r() * 0.6, rotA = r() * 3.14, ca = Math.cos(rotA), sa = Math.sin(rotA);
+    const ext = Math.ceil(R * 1.9);
+    for (let dj = -ext; dj <= ext; dj++) for (let di = -ext; di <= ext; di++) {
+      const i = ci0 + di, j = cj0 + dj; if (!ok(i, j)) continue;
+      const u = (di * ca + dj * sa) / sx, v = (-di * sa + dj * ca) / sz;
+      const d = Math.hypot(u, v) / R + (fbm(nz, i * 0.23 + 40, j * 0.23 + 40) - 0.5) * 0.9;
+      if (d >= 1) continue;
+      const c = ci(i, j);
+      S.rock[c] = d < 0.5 ? 2 : 1;
+      S.tree[c] = 0; S.treeG[c] = 0;
+    }
+  }
 }
 
 function distToWater(S, i, j, max) {
@@ -222,12 +288,13 @@ function newGame(seed) {
     tree: new Uint8Array(N * N), treeG: new Uint8Array(N * N),
     b: [], nextId: 1, goals: {}, pending: null, starving: false, happy: 60, news: [],
     stats: { wood: 0, stone: 0, food: 0, gold: 0, trades: 0, days: [], arrivals: 0, meetings: 0 }, landing: null,
-    weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N),
+    weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N), wear: new Uint8Array(N * N),
   };
   attach(S);
   genIsland(S);
   recompute(S);
   placePier(S);
+  wxInit(S, 'fair');
   S.week = weekSnap(S);
   rates(S);
   S._ev.length = 0;
@@ -418,7 +485,7 @@ function coverage(S) {
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
   S.foodMood = foodMood;
-  const weather = S.weather === 'rain' ? -2 : S.weather === 'sun' ? 1 : 0;
+  const weather = { clear: 2, fair: 1, cloudy: 0, fog: 0, drizzle: -1, rain: -2, storm: -5 }[wxKind(S)] || 0;
   const fxh = fxHappy(S);
   let tot = 0, wsum = 0;
   for (const b of S.b) {
@@ -465,7 +532,10 @@ function prodMult(S, b) {
   let m = 1;
   const has = (t, f) => S.b.some(x => x.type === t && x.conn && done(x) && (!f || f(x)));
   if (has('stable', x => x.staff > 0)) m *= 1.15;
-  if (S.weather === 'rain') { if (b.type === 'farm' || b.type === 'orchard') m *= 1.15; if (b.type === 'dock') m *= 0.7; }
+  const wk = wxKind(S);
+  if (b.type === 'farm' || b.type === 'orchard') m *= wk === 'rain' ? 1.15 : wk === 'drizzle' ? 1.1 : wk === 'storm' ? 0.9 : 1;
+  if (b.type === 'dock' || b.type === 'fishhut') m *= wk === 'storm' ? 0.35 : wk === 'rain' ? 0.7 : wk === 'drizzle' ? 0.85 : wk === 'fog' ? 0.8 : 1;
+  if (wk === 'storm' && (b.type === 'lumber' || b.type === 'quarry' || b.type === 'shipyard')) m *= 0.75;
   if (b.type === 'lumber' && b.status === 'notrees') m *= 0.35;
   if (b.type === 'bakery' && !has('farm', x => x.staff > 0)) m = 0;
   if (b.type === 'sawmill' && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) m = 0;
@@ -539,7 +609,7 @@ function canPlace(S, type, i, j, rot) {
     if (r2 === undefined) return { ok: false, reason: 'Must face open water along the shore.', rot };
     rot = r2;
   }
-  if ((type === 'quarry' || type === 'mine') && rockNear(S, { type, i, j }, T.radius) < 4) return { ok: false, reason: 'Must be next to rocky ground.', rot };
+  if ((type === 'quarry' || type === 'mine') && rockNear(S, { type, i, j }, T.radius) < 4) return { ok: false, reason: 'Must be next to a stone field or rocky hills.', rot };
   if (T.nearWater && distToWater(S, i, j, T.nearWater) > T.nearWater) return { ok: false, reason: `Must be within ${T.nearWater} tiles of the water.`, rot };
   if (type === 'academy' && !S.b.some(b => b.type === 'school' && done(b))) return { ok: false, reason: 'Build a school first.', rot };
   if (!affordable(S, T.cost)) return { ok: false, reason: 'Needs ' + costText(T.cost) + '.', rot, cost: true };
@@ -867,7 +937,7 @@ function plantTrees(S, x, z, r, n) {
     const i = Math.floor(gx + Math.cos(ang) * d), j = Math.floor(gz + Math.sin(ang) * d);
     if (!inB(i, j)) continue;
     const c = ci(i, j), k = cellKind(S, i, j);
-    if (S.tree[c] || S.occ[c] || S.road[c] || k === 0 || (k === 3 && cellH(S, i, j) > 8)) continue;
+    if (S.tree[c] || S.occ[c] || S.road[c] || k === 0 || (S.rock && S.rock[c]) || (k === 3 && cellH(S, i, j) > 8)) continue;
     if (S.gold < COST.tree) break;
     S.gold -= COST.tree;
     S.tree[c] = cellH(S, i, j) > 2.2 || k === 1 ? (k === 1 ? 2 : 1) : (rnd(S) < 0.5 ? 1 : 2);
@@ -908,7 +978,7 @@ function sproutNear(S, b, r) {
     const x = b.i + Math.floor((rnd(S) * 2 - 1) * r), y = b.j + Math.floor((rnd(S) * 2 - 1) * r);
     if (!inB(x, y)) continue;
     const c = ci(x, y), k = cellKind(S, x, y);
-    if (S.tree[c] || S.occ[c] || S.road[c] || (k !== 2 && k !== 3)) continue;
+    if (S.tree[c] || S.occ[c] || S.road[c] || (S.rock && S.rock[c]) || (k !== 2 && k !== 3)) continue;
     S.tree[c] = cellH(S, x, y) > 2.2 ? 1 : (rnd(S) < 0.5 ? 1 : 2); S.treeG[c] = 20;
     ev(S, { type: 'sprout', c }); S._dirty.trees = true;
     return true;
@@ -921,7 +991,7 @@ function tick(S, dt) {
   let rebuilt = false;
   for (const b of S.b) {
     if (!done(b)) {
-      b.build = Math.min(1, b.build + dt / (TYPES[b.type].build || 1));
+      b.build = Math.min(1, b.build + dt / (TYPES[b.type].build || 1) * (wxKind(S) === 'storm' ? 0.5 : wxKind(S) === 'rain' ? 0.8 : 1));
       b.status = 'building';
       if (b.build >= 1) { b.status = ''; rebuilt = true; ev(S, { type: 'built', id: b.id }); }
       continue;
@@ -989,6 +1059,16 @@ const DAILY = [
 
 function hourly(S) {
   const hr = Math.floor(S.t % DAY + 1e-6);
+  // weather fronts roll in and out
+  if (!S.wx) wxInit(S, S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'fair');
+  const wasK = S.wx.now.k; wxFill(S);
+  const nowK = S.wx.now.k;
+  if (nowK !== wasK && hr >= 6 && hr <= 21) {
+    const line = { storm: 'A storm is rolling in. Fishing stops and building slows until it passes.', rain: 'Rain’s setting in. Good for the crops, bad for fishing.',
+      fog: 'Fog has settled over the island.', drizzle: 'A light drizzle. The farms won’t complain.' }[nowK];
+    if (line) say(S, line, nowK === 'storm' ? 'bad' : 'info');
+    if ((nowK === 'clear' || nowK === 'fair') && (wasK === 'storm' || wasK === 'rain')) say(S, 'The rain has cleared.', 'info');
+  }
   // tree growth & spread
   let grew = false;
   for (let c = 0; c < N * N; c++) {
@@ -1010,9 +1090,6 @@ function hourly(S) {
   const p = pop(S), R = rates(S);
   // morning: weather and the odd surprise
   if (hr === 5) {
-    const r = rnd(S);
-    S.weather = r < 0.62 ? 'sun' : r < 0.85 ? 'cloud' : 'rain';
-    if (S.weather === 'rain') say(S, 'Rain today. Good for the crops, bad for fishing.', 'info');
     if (dayOf(S) > 0 && rnd(S) < 0.35) {
       const pool = DAILY.filter(e => !e.need || e.need(S));
       const e = pool[Math.floor(rnd(S) * pool.length)];
@@ -1187,7 +1264,7 @@ const GOALS = [
   { id: 'market', title: 'Market day', desc: 'Build a market. It unlocks at 20 settlers.', reward: { gold: 150 }, prog: S => count(S, 'market', b => b.conn) },
   { id: 'lvl2', title: 'Moving up', desc: 'Let a cottage grow into a townhouse. It needs a market nearby.', reward: { stone: 30 }, prog: S => count(S, 'house', b => b.level >= 1) },
   { id: 'meeting', title: 'Have your say', desc: 'Hold your first Sunday town meeting at the Colony Hall.', reward: { gold: 100 }, prog: S => S.stats.meetings || 0 },
-  { id: 'quarry', title: 'Solid ground', desc: 'Build a quarry beside rocky hills. Unlocks at 25 settlers.', reward: { gold: 120 }, prog: S => count(S, 'quarry', b => b.conn) },
+  { id: 'quarry', title: 'Solid ground', desc: 'Build a quarry beside one of the grey stone fields. Unlocks at 25 settlers.', reward: { gold: 120 }, prog: S => count(S, 'quarry', b => b.conn) },
   { id: 'bread', title: 'Fresh bread', desc: 'Build a bakery. It turns your farms’ wheat into bread.', reward: { gold: 80 }, prog: S => count(S, 'bakery', b => b.conn) },
   { id: 'paved', title: 'Paved with stone', desc: 'Lay 12 tiles of cobblestone street.', reward: { stone: 40 }, prog: S => { let n = 0; for (let c = 0; c < N * N; c++) if (S.road[c] === 3) n++; return n / 12; } },
   { id: 'rows', title: 'Room for everyone', desc: 'Build row houses. They unlock at 35 settlers.', reward: { wood: 50 }, prog: S => count(S, 'rowhouse', b => b.conn) },
@@ -1240,6 +1317,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
+    rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1299,6 +1377,12 @@ function deserialize(o) {
     S.nextId = Math.max(S.nextId, b.id + 1);
   }
   S.startRoads = +o.startRoads || 6; S.pierWarn = o.pierWarn === undefined ? -1 : +o.pierWarn;
+  // stone fields and worn footpaths: islands saved before these existed get their stone fields from the seed
+  if (o.rock) S.rock = unb64(o.rock, Uint8Array, N * N); else genRock(S);
+  S.wear = o.wear ? unb64(o.wear, Uint8Array, N * N) : new Uint8Array(N * N);
+  const okFront = f => f && WX[f.k] && isFinite(f.from) && isFinite(f.to) && f.to > f.from && isFinite(f.wind);
+  if (o.wx && okFront(o.wx.now) && Array.isArray(o.wx.q) && o.wx.q.every(okFront)) { S.wx = { now: o.wx.now, q: o.wx.q.slice(0, 3) }; wxFill(S); }
+  else wxInit(S, S.weather === 'rain' ? 'rain' : S.weather === 'cloud' ? 'cloudy' : 'fair');
   recompute(S);
   if (!S.b.some(b => b.type === 'pier')) placePier(S); // islands saved before piers existed
   if (!S.week) S.week = weekSnap(S);
@@ -1312,6 +1396,6 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   canPlace, place, demolish, placePier, pierOk, roadPath, roadQuote, buildRoad, removeRoad, brush, plantTrees, clearTrees,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
-  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings };
+  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);

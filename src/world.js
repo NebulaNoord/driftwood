@@ -902,6 +902,9 @@ function tuftModel() {
   return B;
 }
 function upNormals(B, keep) { for (let i = 0; i < B.n.length / 3 - (keep ? 0 : 0); i++) { if (keep && i >= B.n.length / 3 - (B.n.length / 3 - keep * 3) && i >= keep * 3) continue; B.n[i * 3] = 0; B.n[i * 3 + 1] = 1; B.n[i * 3 + 2] = 0; } return B; }
+// stone field rocks: a lumpy boulder with a smaller one leaning on it, and a cracked flat slab
+function boulderModel() { const B = new Builder(); B.blob(0, 0.12, 0, 0.2, 0.16, 0.17, '#a39c90', 0.42, 7); B.blob(0.14, 0.06, 0.09, 0.09, 0.07, 0.08, '#968f84', 0.4, 11); B.blob(-0.09, 0.03, -0.1, 0.05, 0.035, 0.05, '#b2ab9f', 0.3, 13); return B; }
+function slabModel() { const B = new Builder(); B.at(0, 0, 0, 0.3); B.box(0, 0, 0, 0.34, 0.07, 0.24, '#aaa397'); B.at(0.04, 0.07, -0.02, 0.9); B.box(0, 0, 0, 0.2, 0.05, 0.14, '#9d968a'); B.at(0, 0, 0, 0); B.blob(-0.16, 0.03, 0.1, 0.06, 0.04, 0.05, '#8f897e', 0.35, 5); return B; }
 function puffModel() { const B = new Builder(); B.blob(0, 0, 0, 0.5, 0.45, 0.5, '#ffffff', 0.25, 9); return B; }
 function flowerModel() {
   const B = new Builder();
@@ -998,6 +1001,8 @@ function cloudModel(seed) {
 }
 
 /* ---------------- Environment by time of day ---------------- */
+// how each kind of weather looks: cloud cover, rain strength, fog and storm
+const WXLOOK = { clear: { cloud: 0.04 }, fair: { cloud: 0.3 }, cloudy: { cloud: 0.85 }, drizzle: { cloud: 0.8, rain: 0.32 }, rain: { cloud: 0.95, rain: 1 }, storm: { cloud: 1, rain: 1.45, storm: 1 }, fog: { cloud: 0.45, fog: 1 } };
 const ENV_KEYS = [
   { h: 0, top: '#0a1430', hor: '#1a2746', sun: '#8aa0dc', sunI: 0.42, sky: '#4a5f96', skyI: 0.62, gr: '#2a3044', grI: 0.4, sh: '#1b5266', dp: '#0a2036', night: 1 },
   { h: 4.8, top: '#0a1430', hor: '#1a2746', sun: '#8aa0dc', sunI: 0.42, sky: '#4a5f96', skyI: 0.62, gr: '#2a3044', grI: 0.4, sh: '#1b5266', dp: '#0a2036', night: 1 },
@@ -1032,7 +1037,7 @@ class World {
     this.hairs = [0, 1, 2].map(k => R.mesh(hairModel(k))); this.leg = R.mesh(legModel()); this.arm = R.mesh(armModel());
     this.hleg = R.mesh(horseLegModel()); this.saddle = R.mesh(saddleModel()); this.wheel = R.mesh(wheelModel());
     this.cargo = { wood: R.mesh(cargoModel('wood')), stone: R.mesh(cargoModel('stone')), food: R.mesh(cargoModel('food')) };
-    this.bird = R.mesh(birdModel()); this.wing = R.mesh(wingModel()); this.tuft = R.mesh(upNormals(tuftModel())); this.flower = R.mesh(upNormals(flowerModel(), 6));
+    this.bird = R.mesh(birdModel()); this.wing = R.mesh(wingModel()); this.tuft = R.mesh(upNormals(tuftModel())); this.flower = R.mesh(upNormals(flowerModel(), 6)); this.boulder = R.mesh(boulderModel()); this.slab = R.mesh(slabModel());
     this.bollard = R.mesh(bollardModel()); this.qlamp = R.mesh(qlampModel()); this.qglass = R.mesh(new Builder().box(0, 0.5, 0, 0.08, 0.1, 0.08, WIN)); this.qcrate = R.mesh(qcrateModel());
     this.saw = R.mesh(sawModel()); this.minecart = R.mesh(mineCartModel()); this.fire = R.mesh(fireModel());
     this.blades = R.mesh(bladesModel()); this.puff = R.mesh(puffModel()); this.sign = R.mesh(signModel()); this.jib = R.mesh(jibModel());
@@ -1075,6 +1080,7 @@ class World {
     let o = 0;
     const byId = {}; for (const b of S.b) byId[b.id] = b;
     const put = (x, y, z, nx, ny, nz, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = nx; data[o++] = ny; data[o++] = nz; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
+    const STONE = [hex('#b3ac9e'), hex('#a7a093'), hex('#98918a'), hex('#8c867e')];
     const GR = [hex('#80b25a'), hex('#92bd5d'), hex('#75a753')], SAND = hex('#ecd9a3'), WET = hex('#cdb98a'), DEEP = hex('#8c9a86'), ROCK = [hex('#a39d93'), hex('#8e887f')], SNOW = hex('#f2f2ee'), DIRT = hex('#9b7653');
     const YARD = [hex('#8cbb60'), hex('#96c063')], QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -1093,6 +1099,7 @@ class World {
       else if (avg < 0.5) c = avg < 0.05 ? WET : SAND;
       else if (avg > 8.5) c = SNOW;
       else if (avg > 5.5 || slope > 1.7) c = ROCK[r < 0.5 ? 0 : 1];
+      else if (S.rock && S.rock[j * N + i]) c = S.rock[j * N + i] === 2 ? STONE[2 + (r < 0.5 ? 0 : 1)] : STONE[r < 0.5 ? 0 : 1];
       else { c = GR[Math.floor(r * 3)]; if (avg > 3.5) c = mix3(c, hex('#6f9a52'), (avg - 3.5) / 2); }
       const sh = 0.96 + r * 0.08;
       const cc = [c[0] * sh, c[1] * sh, c[2] * sh];
@@ -1206,12 +1213,23 @@ class World {
   }
   // grass tufts and wildflowers are placed once and only rebuilt when the land changes
   buildGrass() {
-    const S = this.S, R = this.R, tm = this.tuft, fm = this.flower;
-    R.begin(tm); R.begin(fm);
+    const S = this.S, R = this.R, tm = this.tuft, fm = this.flower, bm = this.boulder, sm = this.slab;
+    R.begin(tm); R.begin(fm); R.begin(bm); R.begin(sm);
+    // stone fields: boulders and slabs of rock, bigger in the middle of each field
+    if (S.rock) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      const c = j * N + i, k = S.rock[c]; if (!k || S.occ[c] || S.road[c]) continue;
+      const n = k === 2 ? 2 + Math.floor(hash(c * 3) * 2) : hash(c * 3) < 0.55 ? 1 : 0;
+      for (let q = 0; q < n; q++) {
+        const x = i - N / 2 + 0.15 + hash(c * 7 + q) * 0.7, z = j - N / 2 + 0.15 + hash(c * 13 + q) * 0.7;
+        const big = k === 2 && q === 0, sc = big ? 0.9 + hash(c + 5) * 0.8 : 0.35 + hash(c * 17 + q) * 0.45, sh = 0.85 + hash(c * 19 + q) * 0.25;
+        const warm = hash(c * 23 + q) * 0.06;
+        R.push(hash(c * 29 + q) < 0.3 ? sm : bm, x, Sim.heightAt(S, x, z) - 0.04 * sc, z, hash(c * 31 + q) * 6.28, sc, sc * (0.6 + hash(c * 37 + q) * 0.5), sc * (0.8 + hash(c * 41 + q) * 0.4), sh + warm, sh + warm * 0.6, sh);
+      }
+    }
     const FL = [[0.95, 0.45, 0.35], [0.98, 0.85, 0.35], [0.95, 0.95, 0.95], [0.8, 0.5, 0.9], [0.95, 0.5, 0.7]];
     for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
       const c = j * N + i;
-      if (S.occ[c] || S.road[c]) continue;
+      if (S.occ[c] || S.road[c] || (S.wear && S.wear[c] > 130)) continue;
       const k = Sim.cellKind(S, i, j); if (k !== 2) continue;
       const h0 = Sim.cellH(S, i, j); if (h0 > 5) continue;
       const r = hash(c * 3 + 7), n = r < 0.35 ? 1 : r < 0.75 ? 2 : 3;
@@ -1225,7 +1243,7 @@ class World {
         for (let q = 0; q < 3; q++) { const x = i - N / 2 + 0.2 + hash(c * 31 + q) * 0.6, z = j - N / 2 + 0.2 + hash(c * 37 + q) * 0.6; R.push(fm, x, Sim.heightAt(S, x, z), z, q, 0.9, 0.8 + q * 0.15, 0.9, col[0], col[1], col[2]); }
       }
     }
-    R.upload(tm); R.upload(fm);
+    R.upload(tm); R.upload(fm); R.upload(bm); R.upload(sm);
     this.grassDirty = false;
   }
   // seagulls circle the coast; butterflies and fireflies stay near where you're looking
@@ -1413,6 +1431,7 @@ class World {
 
   /* --- events --- */
   handle(evs) {
+    if (evs.length) this.navDirty = true;
     const S = this.S, t = this.now;
     for (const e of evs) {
       if (e.type === 'build') {
@@ -1653,8 +1672,96 @@ class World {
     }
     return best;
   }
-  // walk from a point to a point, along the roads where they connect
+  /* --- getting around: A* over the whole island ---
+     Roads are fast, open ground is fine, forest and rock are slow, steep slopes are slower still; water, cliffs, walls and
+     most buildings are in the way. Worn ground (desire paths) gets cheaper the more it's walked, so shortcuts reinforce themselves. */
+  navGrid() {
+    const S = this.S, base = new Float32Array(N * N), byId = {};
+    for (const b of S.b) byId[b.id] = b;
+    const open = { plaza: 1, garden: 1, market: 1.1, pier: 1, farm: 1.4, orchard: 1.3, dock: 1, quarry: 1.5 };
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const c = j * N + i, road = S.road[c], occ = S.occ[c];
+      if (occ) { const b = byId[occ]; base[c] = b && open[b.type] ? open[b.type] : 0; continue; }
+      if (S.wall && S.wall[c] && !road) { base[c] = 0; continue; }
+      if (road) { base[c] = 0.5 / Sim.ROADS[road].speed; continue; }
+      const h = Sim.cellH(S, i, j); if (h < 0.08) { base[c] = 0; continue; }
+      const sl = Sim.cellSlope(S, i, j); if (sl > 2.4) { base[c] = 0; continue; }
+      let k = 1 + sl * 0.6;
+      if (S.tree[c] && S.treeG[c] > 120) k += 0.7;
+      if (S.rock && S.rock[c]) k += S.rock[c] === 2 ? 0.7 : 0.25;
+      if (h < 0.5) k += 0.15;
+      base[c] = k;
+    }
+    this.nav = base; this.navDirty = false;
+    if (!this.navG) { this.navG = new Float32Array(N * N); this.navFrom = new Int32Array(N * N); this.navSeen = new Int32Array(N * N); this.navShut = new Int32Array(N * N); this.navGen = 0; this.heapI = new Int32Array(N * N * 4); this.heapF = new Float32Array(N * N * 4); }
+  }
+  astar(start, goal) {
+    if (!this.nav || this.navDirty) this.navGrid();
+    const S = this.S, base = this.nav, wear = S.wear, g = this.navG, from = this.navFrom, seen = this.navSeen, shut = this.navShut, gen = ++this.navGen;
+    const occS = S.occ[start], occG = S.occ[goal];
+    const cost = c => { let k = base[c]; if (!k) { if (c === goal || c === start || (occS && S.occ[c] === occS) || (occG && S.occ[c] === occG)) k = 1.2; else return 0; }
+      if (wear && wear[c] && !S.road[c]) k *= 1 - 0.4 * Math.min(1, wear[c] / 200); return k; };
+    const gi = goal % N, gj = (goal / N) | 0, H = c => { const dx = Math.abs(c % N - gi), dz = Math.abs(((c / N) | 0) - gj); return (Math.max(dx, dz) + 0.414 * Math.min(dx, dz)) * 0.3; };
+    const hi = this.heapI, hf = this.heapF; let n = 0;
+    const push = (c, f) => { let k = n++; while (k > 0) { const p = (k - 1) >> 1; if (hf[p] <= f) break; hi[k] = hi[p]; hf[k] = hf[p]; k = p; } hi[k] = c; hf[k] = f; };
+    const pop = () => { const top = hi[0], lc = hi[--n], lf = hf[n]; let k = 0; for (;;) { let m = 2 * k + 1; if (m >= n) break; if (m + 1 < n && hf[m + 1] < hf[m]) m++; if (hf[m] >= lf) break; hi[k] = hi[m]; hf[k] = hf[m]; k = m; } hi[k] = lc; hf[k] = lf; return top; };
+    g[start] = 0; seen[start] = gen; from[start] = start; push(start, H(start));
+    let found = false, it = 0;
+    while (n > 0 && it++ < 20000) {
+      if (n > hi.length - 9) break;
+      const c = pop(); if (shut[c] === gen) continue; shut[c] = gen;
+      if (c === goal) { found = true; break; }
+      const i = c % N, j = (c / N) | 0;
+      for (let d = 0; d < 8; d++) {
+        const di = d < 4 ? Sim.DIRS[d][0] : (d & 1 ? 1 : -1), dj = d < 4 ? Sim.DIRS[d][1] : (d < 6 ? 1 : -1);
+        const x = i + di, y = j + dj; if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        const k = y * N + x; if (shut[k] === gen) continue;
+        const ck = cost(k); if (!ck) continue;
+        const diag = di && dj;
+        if (diag && (!cost(j * N + x) || !cost(y * N + i))) continue;
+        const ng = g[c] + (ck + cost(c)) * (diag ? 0.707 : 0.5);
+        if (seen[k] !== gen || ng < g[k]) { seen[k] = gen; g[k] = ng; from[k] = c; push(k, ng + H(k)); }
+      }
+    }
+    if (!found) return null;
+    const cells = []; for (let c = goal; ; c = from[c]) { cells.push(c); if (c === start || cells.length > 4000) break; }
+    return cells.reverse();
+  }
+  // can you walk straight from a to b (world xz) without crossing anything blocked?
+  clearLine(a, b) {
+    const base = this.nav, S = this.S, L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / 0.3);
+    for (let k = 1; k < n; k++) {
+      const u = k / n, i = Math.floor(a[0] + (b[0] - a[0]) * u + N / 2), j = Math.floor(a[1] + (b[1] - a[1]) * u + N / 2);
+      if (!Sim.inB(i, j)) return false; const c = j * N + i; if (!base[c] || S.road[c] || base[c] > 1.9) return false;
+    }
+    return true;
+  }
+  // walk from a point to a point. Settlers path over the whole island; carts stay on roads.
   routeXZ(from, fromRoad, to, toRoad, carts) {
+    if (!carts && (this.navMs || 0) < 6) {
+      const t0 = performance.now(), cellOf = p => { const i = clamp(Math.floor(p[0] + N / 2), 0, N - 1), j = clamp(Math.floor(p[1] + N / 2), 0, N - 1); return j * N + i; };
+      const cells = this.astar(cellOf(from), cellOf(to));
+      this.navMs = (this.navMs || 0) + performance.now() - t0;
+      if (cells) {
+        const S = this.S, off = (Math.random() - 0.5) * 0.3, pts = [[from[0], from[1]]];
+        const P = c => { const r = !!S.road[c], w = r ? off : (hash(c * 7 + this.navGen) - 0.5) * 0.45; return [c % N - N / 2 + 0.5 + w, ((c / N) | 0) - N / 2 + 0.5 + (r ? off : (hash(c * 11 + this.navGen) - 0.5) * 0.45)]; };
+        // keep every road cell (people follow the street) and string-pull the open-ground stretches
+        let k = 1;
+        while (k < cells.length - 1) {
+          const c = cells[k];
+          if (S.road[c]) { pts.push(P(c)); k++; continue; }
+          let far = k; const a = pts[pts.length - 1];
+          for (let m = k + 1; m < cells.length - 1 && !S.road[cells[m]]; m++) { if (this.clearLine(a, P(cells[m]))) far = m; else if (m - far > 3) break; }
+          pts.push(P(cells[far])); k = far + 1;
+        }
+        pts.push([to[0], to[1]]);
+        return pts;
+      }
+    }
+    return this.roadRoute(from, fromRoad, to, toRoad, carts);
+  }
+  // the old way: straight to the nearest road, along the roads, straight to the target
+  roadRoute(from, fromRoad, to, toRoad, carts) {
     const S = this.S, pts = [[from[0], from[1]]];
     const start = fromRoad >= 0 && fromRoad !== null && fromRoad !== undefined && S.road[fromRoad] ? fromRoad : this.roadNear(from[0], from[1]);
     const end = toRoad >= 0 && toRoad !== null && toRoad !== undefined && S.road[toRoad] ? toRoad : this.roadNear(to[0], to[1]);
@@ -1784,8 +1891,27 @@ class World {
     const pt = [tx + Math.cos(a) * 0.42, tz + Math.sin(a) * 0.42]; pt.tree = [tx, tz];
     return pt;
   }
+  // somewhere worth walking to: a beach, a hilltop, the edge of a wood or a stone field, not too close and not across the world
+  wanderPoint(a, home) {
+    if (!this.nav || this.navDirty) this.navGrid();
+    const S = this.S, from = a.hidden && home ? Sim.center(home) : [a.x, a.z];
+    let best = null, bs = -1;
+    for (let k = 0; k < 28; k++) {
+      const i = 2 + Math.floor(Math.random() * (N - 4)), j = 2 + Math.floor(Math.random() * (N - 4)), c = j * N + i;
+      if (!this.nav[c] || S.occ[c]) continue;
+      const x = i - N / 2 + 0.2 + Math.random() * 0.6, z = j - N / 2 + 0.2 + Math.random() * 0.6, d = Math.hypot(x - from[0], z - from[1]);
+      if (d < 7 || d > (a.kid ? 22 : 42)) continue;
+      const h = Sim.cellH(S, i, j), kind = Sim.cellKind(S, i, j);
+      let sc = 1 + Math.random();
+      if (kind === 1) sc += 1.4; if (h > 3) sc += 1; if (S.rock && S.rock[c]) sc += 0.6;
+      if (!S.tree[c] && (S.tree[c + 1] || S.tree[c - 1] || S.tree[c + N] || S.tree[c - N])) sc += 1;
+      if (S.wear && S.wear[c] > 60) sc += 0.8;
+      if (sc > bs) { bs = sc; best = [x, z]; }
+    }
+    return best;
+  }
   leisure(a, ctx) {
-    const h = ctx.hour, opts = [], pick = l => l[Math.floor(Math.random() * l.length)], home = ctx.byId[a.home];
+    const S2 = this.S, h = ctx.hour, opts = [], pick = l => l[Math.floor(Math.random() * l.length)], home = ctx.byId[a.home];
     const add = (w, p) => { if (p && w > 0) opts.push([w, p]); };
     if (!a.kid && ctx.taverns.length && h >= 16.5) { const t = pick(ctx.taverns); add(2 + a.social * 5, { kind: 'visit', b: t, pt: this.local(t, (Math.random() - 0.5) * 1.3, 0.55 + Math.random() * 0.3), anim: 'idle' }); }
     if (ctx.markets.length && h >= 8.5 && h < 18.5) { const m = pick(ctx.markets); add(a.kid ? 0.6 : 2.2, { kind: 'visit', b: m, pt: this.inside(m, 0.45), anim: 'idle' }); }
@@ -1801,6 +1927,9 @@ class World {
     if (ctx.wells.length) { const w = pick(ctx.wells); add(0.5, { kind: 'visit', b: w, pt: this.local(w, 0.3, 0.3), anim: 'idle' }); }
     if (ctx.houses.length) { const hb = pick(ctx.houses); if (hb.id !== a.home) add(1.2, { kind: 'visit', b: hb, pt: this.doorstep(hb, 0.32), anim: 'idle' }); }
     add(a.kid ? 1 : 1.6, { kind: 'stroll', pt: this.doorstep(home, 0.3), anim: a.kid ? 'play' : 'idle' });
+    // wander off across the island just to see it; some settlers are far more curious than others
+    const curious = hash(a.id * 7 + 3), wp = this.wanderPoint(a, home);
+    if (wp) add((a.kid ? 0.7 : 1) * (1.6 + curious * 4.5) * (h > 20.5 || h < 6 ? 0.15 : S2.weather === 'rain' ? 0.35 : 1), { kind: 'stroll', pt: wp, anim: 'idle', wander: true });
     add(0.8, { kind: 'home', b: home, hidden: true });
     let tot = 0; for (const o of opts) tot += o[0];
     let r = Math.random() * tot;
@@ -1851,6 +1980,9 @@ class World {
     }
     const moved = step0 - Math.max(0, step);
     a.phase += moved * (a.riding ? 7 : a.kid ? 30 : 24);
+    // feet wear the grass down where people keep walking
+    const ci1 = Math.floor(a.x + N / 2), cj1 = Math.floor(a.z + N / 2);
+    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c]) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
     const S = this.S, ctx = this.ctx();
@@ -2028,14 +2160,35 @@ class World {
     }
   }
   /* --- rain --- */
-  updateRain(dt) {
-    const S = this.S, on = S.weather === 'rain';
-    if (!on) { this.rain.length = 0; return; }
+  /* --- weather you can see: eases toward the current front and blends into the next one as it arrives --- */
+  updateWeather(dt) {
+    const S = this.S, now = S.wx ? S.wx.now : { k: Sim.wxKind(S), to: S.t + 10, wind: 0.3 }, nx = S.wx && S.wx.q[0];
+    const tg = Object.assign({ cloud: 0, rain: 0, fog: 0, storm: 0 }, WXLOOK[now.k] || {}, { wind: now.wind });
+    if (nx && now.to - S.t < 0.75) { const u = 1 - (now.to - S.t) / 0.75, L = Object.assign({ cloud: 0, rain: 0, fog: 0, storm: 0 }, WXLOOK[nx.k] || {}, { wind: nx.wind }); for (const k in tg) tg[k] += (L[k] - tg[k]) * u; }
+    const v = this.wxv || (this.wxv = Object.assign({ wet: tg.rain > 0.3 ? 0.8 : 0 }, tg));
+    const e = Math.min(1, dt * 0.35);
+    for (const k of ['cloud', 'rain', 'fog', 'storm', 'wind']) v[k] += (tg[k] - v[k]) * e;
+    // ground soaks up rain quickly and dries off slowly
+    v.wet = clamp(v.wet + (v.rain > 0.15 ? (Math.min(1, v.rain) - v.wet) * dt * 0.25 : -dt * 0.012), 0, 1);
+    this.cloudOff = this.cloudOff || [0, 0];
+    const wa = (this.windA = (this.windA || 0.6) + Math.sin(this.now * 0.01) * dt * 0.01);
+    this.cloudOff[0] += Math.cos(wa) * dt * (0.012 + v.wind * 0.05); this.cloudOff[1] += Math.sin(wa) * dt * (0.012 + v.wind * 0.05);
+    // lightning in storms, with thunder a moment later
+    this.flash = (this.flash || 0) * Math.pow(0.02, dt);
+    if (v.storm > 0.4 && Math.random() < dt * 0.09 * v.storm) { this.flash = 1; this.onThunder && this.onThunder(0.4 + Math.random() * 2.2, 0.5 + Math.random() * 0.5); }
+    // rain falls around wherever you're looking; more of it, and slanted, the harder it blows
+    const want = Math.round(Math.min(900, 620 * v.rain));
     const [fx, fz] = this.focus;
-    while (this.rain.length < 520) this.rain.push({ x: fx + (Math.random() - 0.5) * 40, z: fz + (Math.random() - 0.5) * 40, y: Math.random() * 14 });
+    if (this.rain.length > want) this.rain.length = want;
+    while (this.rain.length < want) this.rain.push({ x: fx + (Math.random() - 0.5) * 40, z: fz + (Math.random() - 0.5) * 40, y: Math.random() * 14 });
+    const sx = Math.cos(wa) * v.wind * 7, sz = Math.sin(wa) * v.wind * 7;
+    this.rainSlant = [sx, sz];
     for (const d of this.rain) {
-      d.y -= dt * 16;
-      if (d.y < Math.max(0, Sim.groundAt(S, d.x, d.z))) { d.y = 12 + Math.random() * 3; d.x = fx + (Math.random() - 0.5) * 40; d.z = fz + (Math.random() - 0.5) * 40; }
+      d.y -= dt * 16; d.x += sx * dt; d.z += sz * dt;
+      if (d.y < Math.max(0, Sim.groundAt(S, d.x, d.z))) {
+        if (Math.random() < 0.08 && d.y > 0.02) this.addPart({ x: d.x, y: d.y + 0.02, z: d.z, vx: 0, vy: 0.5, vz: 0, life: 0, max: 0.18, size: 0.03, col: [0.8, 0.86, 0.95], g: 6, drag: 0 });
+        d.y = 12 + Math.random() * 3; d.x = fx + (Math.random() - 0.5) * 40 - sx * 0.8; d.z = fz + (Math.random() - 0.5) * 40 - sz * 0.8;
+      }
     }
   }
 
@@ -2110,17 +2263,34 @@ class World {
     }
   }
 
+  /* --- desire paths: wear fades slowly each hour; the ground is repainted every few seconds when it has changed --- */
+  wearTick(dtH) {
+    const S = this.S; if (!S.wear) return;
+    const hr = Math.floor(S.t);
+    if (this.wearHr === undefined) this.wearHr = hr;
+    if (hr !== this.wearHr) {
+      const n = Math.min(48, Math.max(0, hr - this.wearHr)); this.wearHr = hr;
+      if (n) { const k = Math.pow(0.975, n), w = S.wear; for (let c = 0; c < N * N; c++) if (w[c]) { const v = Math.floor(w[c] * k); if ((v < 130) !== (w[c] < 130)) this.wearGrass = true; w[c] = v; } this.wearTex = true; }
+    }
+    // the worn-ground texture is tiny, so it can refresh often; the grass tufts only when a path crosses the threshold
+    if ((this.wearTex || !this.wearUp) && this.now - (this.wearAt || 0) > 1.5) { this.wearTex = false; this.wearUp = true; this.wearAt = this.now; if (this.R.setWear) this.R.setWear(S.wear, N); }
+    if (this.wearGrass && this.now - (this.wearGrassAt || 0) > 20) { this.wearGrass = false; this.wearGrassAt = this.now; this.grassDirty = true; }
+  }
+
   /* --- per-frame update --- */
   update(dtReal, dtH) {
     const S = this.S;
     this.now += dtReal;
+    this.navMs = 0;
+    if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
     if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
     if (S._dirty.walls) { this.buildFort(); S._dirty.walls = false; }
+    this.wearTick(dtH);
     if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); }
     else if (!this.lastCtx) this.lastCtx = this.ctx();
     this.updateBubbles(dtReal);
-    this.updateRain(dtReal);
+    this.updateWeather(dtReal);
     this.updateBoats();
     this.burnFx(dtReal);
     // particles
@@ -2187,14 +2357,20 @@ class World {
   render(R, cam, extras) {
     const gl = R.gl, S = this.S, hour = S.t % 24, env = envAt(hour);
     if (this.grassDirty) this.buildGrass();
-    const wet = S.weather === 'rain' ? 1 : S.weather === 'cloud' ? 0.45 : 0;
-    this.wet = (this.wet === undefined ? wet : this.wet + (wet - this.wet) * 0.02);
-    if (this.wet > 0.01) {
-      const k = this.wet, grey = [0.62, 0.66, 0.7];
+    const WV = this.wxv || { cloud: 0, rain: 0, fog: 0, storm: 0, wind: 0.3, wet: 0 };
+    this.wet = Math.min(1, WV.cloud * 0.6 + WV.rain * 0.5);
+    const k = Math.min(1, WV.cloud * 0.9 + WV.storm * 0.3);
+    if (k > 0.01) {
+      const grey = scale3([0.62, 0.66, 0.7], 1 - WV.storm * 0.35);
       env.top = mix3(env.top, scale3(grey, 0.8 + (1 - env.night) * 0.2 - env.night * 0.6), k * 0.6); env.hor = mix3(env.hor, scale3(grey, 1 - env.night * 0.7), k * 0.5);
-      env.sunCol = scale3(env.sunCol, 1 - k * 0.45); env.sky = scale3(env.sky, 1 - k * 0.1);
+      env.sunCol = scale3(env.sunCol, 1 - k * 0.5 - WV.storm * 0.2); env.sky = scale3(env.sky, 1 - k * 0.1 - WV.storm * 0.2);
       env.shallow = mix3(env.shallow, [0.35, 0.55, 0.58], k * 0.4); env.deep = mix3(env.deep, [0.12, 0.3, 0.4], k * 0.4);
     }
+    if (WV.fog > 0.01) { const fg = scale3([0.84, 0.86, 0.87], 1 - env.night * 0.75); env.hor = mix3(env.hor, fg, WV.fog * 0.85); env.top = mix3(env.top, fg, WV.fog * 0.6); env.sunCol = scale3(env.sunCol, 1 - WV.fog * 0.35); }
+    if (this.flash > 0.02) { const f = this.flash; env.sky = mix3(env.sky, [1.2, 1.25, 1.4], f * 0.7); env.top = mix3(env.top, [0.85, 0.88, 1], f * 0.6); env.hor = mix3(env.hor, [0.9, 0.92, 1], f * 0.5); }
+    // fog pulls the far edge of the world in close
+    const fogN = cam => lerp(cam.dist * 1.6 + 30, 3, WV.fog), fogF = cam => lerp(cam.dist * 3.2 + 120, cam.dist * 0.9 + 24, WV.fog);
+    this.fogR = [fogN(cam), fogF(cam)];
     this.env = env;
     const night = env.night;
     const winTint = night > 0.05 ? mix3([0.3, 0.38, 0.5], [1, 0.82, 0.52], night) : [0.3, 0.38, 0.5];
@@ -2226,7 +2402,7 @@ class World {
       this.lit[b.id] = L;
       R.push(wt, x, b.y, z, ry, sx, sy, sz, winTint[0], winTint[1], winTint[2], winE * L);
     };
-    const wind = 1 + (this.wet || 0);
+    const wind = 1 + (this.wxv ? this.wxv.wind * 1.6 : 0);
     for (const b of S.b) {
       let sx = 1, sy = 1, sz = 1;
       const an = this.anim[b.id];
@@ -2465,7 +2641,8 @@ class World {
     if (this.rain.length) {
       // thin slanted streaks that stay fine up close and still read from far away
       const rw = 0.006 + cam.dist * 0.00035, rl = 0.22 + cam.dist * 0.004;
-      for (const d of this.rain) R.push(PC0, d.x, d.y, d.z, 0.5, rw, rl, rw, 0.72, 0.8, 0.9, 0.35, 0, 0.18);
+      const sl = this.rainSlant || [0, 0], tx = clamp(-sl[1] * 0.06, -0.5, 0.5), tz = clamp(sl[0] * 0.06, -0.5, 0.5);
+      for (const d of this.rain) R.push(PC0, d.x, d.y, d.z, 0, rw, rl, rw, 0.72, 0.8, 0.9, 0.35, tx, tz);
     }
     // boats
     const bob = (x, z) => Math.sin(t * 1.6 + x * 0.5 + z * 0.3) * 0.04;
@@ -2483,8 +2660,8 @@ class World {
     }
     // clouds
     const CL = this.clouds.map(m => B(m));
-    const cg = 1 - (this.wet || 0) * 0.35;
-    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - (this.wet || 0) * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - (this.wet || 0) * 0.4), cl.a, cl.s * 1.6 * (1 + (this.wet || 0) * 0.5), cl.s, cl.s * 1.4 * (1 + (this.wet || 0) * 0.5), cg, cg, cg * 1.02, 0.35 - night * 0.28);
+    const cov = this.wxv ? this.wxv.cloud : 0, cg = 1 - cov * 0.3 - (this.wxv ? this.wxv.storm * 0.35 : 0);
+    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - cov * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - cov * 0.4), cl.a, cl.s * 1.6 * (1 + cov * 0.6), cl.s * (1 + cov * 0.3), cl.s * 1.4 * (1 + cov * 0.6), cg, cg, cg * 1.02, 0.35 - night * 0.28);
     this.cloudSet = new Set(CL);
     const opaque = [...batches];
     for (const m of opaque) R.upload(m);
@@ -2503,9 +2680,9 @@ class World {
     gl.useProgram(R.depth.p);
     gl.uniformMatrix4fv(R.depth.u.uVP, false, lightVP);
     gl.uniform1f(R.depth.u.uTime, t);
-    gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wet || 0);
+    gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0);
     for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
-    gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain);
+    gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain); R.draw(this.boulder); R.draw(this.slab);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     // --- main pass
@@ -2530,18 +2707,24 @@ class World {
     gl.uniform1f(P.u.uTime, t);
     gl.uniform3fv(P.u.uSunDir, env.sunDir); gl.uniform3fv(P.u.uSunCol, env.sunCol);
     gl.uniform3fv(P.u.uSky, env.sky); gl.uniform3fv(P.u.uGround, env.ground);
-    gl.uniform3fv(P.u.uFog, env.hor); gl.uniform2f(P.u.uFogR, cam.dist * 1.6 + 30, cam.dist * 3.2 + 120);
+    gl.uniform3fv(P.u.uFog, env.hor); gl.uniform2f(P.u.uFogR, this.fogR[0], this.fogR[1]);
     gl.uniform3fv(P.u.uEye, cam.eye);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, R.shadowTex); gl.uniform1i(P.u.uShadow, 0);
     gl.uniform1f(P.u.uShadowOn, 1 - night * 0.6);
     gl.uniform1f(P.u.uTexel, 1 / R.SH); gl.uniform3f(P.u.uFlat, 0, 0, 0);
     gl.uniform1f(P.u.uAlpha, 1);
-    gl.uniform1f(P.u.uWind, this.wet || 0); gl.uniform1f(P.u.uSwayY, 0.2);
-    for (const m of opaque) { gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    gl.uniform1f(P.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0); gl.uniform1f(P.u.uSwayY, 0.2);
+    if (!R.wTex) R.setWear(S.wear || new Uint8Array(N * N), N);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2); gl.activeTexture(gl.TEXTURE0);
+    const WX = this.wxv || {};
+    gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
+    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    gl.uniform1f(P.u.uTerrain, 0);
     // swaying meadow
     gl.uniform1f(P.u.uSwayY, 0.0);
     gl.uniform1f(P.u.uSway, 3.2); R.draw(this.tuft);
     gl.uniform1f(P.u.uSway, 2.2); R.draw(this.flower);
+    gl.uniform1f(P.u.uSway, 0); R.draw(this.boulder); R.draw(this.slab);
     gl.uniform1f(P.u.uSway, 0); gl.uniform1f(P.u.uSwayY, 0.2);
     // water
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
@@ -2550,7 +2733,7 @@ class World {
     gl.uniformMatrix4fv(Wp.u.uVP, false, cam.vp); gl.uniform1f(Wp.u.uTime, t); gl.uniform1f(Wp.u.uHalf, N / 2);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, R.hTex); gl.uniform1i(Wp.u.uH, 1);
     gl.uniform3fv(Wp.u.uSunDir, env.sunDir); gl.uniform3fv(Wp.u.uSunCol, env.sunCol); gl.uniform3fv(Wp.u.uSky, mix3(env.top, env.hor, 0.5));
-    gl.uniform3fv(Wp.u.uFog, env.hor); gl.uniform2f(Wp.u.uFogR, cam.dist * 1.6 + 30, cam.dist * 3.2 + 120); gl.uniform3fv(Wp.u.uEye, cam.eye);
+    gl.uniform3fv(Wp.u.uFog, env.hor); gl.uniform2f(Wp.u.uFogR, this.fogR[0], this.fogR[1]); gl.uniform3fv(Wp.u.uEye, cam.eye);
     gl.uniform3fv(Wp.u.uShallow, env.shallow); gl.uniform3fv(Wp.u.uDeep, env.deep); gl.uniform1f(Wp.u.uNight, night);
     gl.bindVertexArray(this.water.vao); gl.drawArrays(gl.TRIANGLES, 0, this.water.count);
     // transparent overlays
