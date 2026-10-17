@@ -78,11 +78,71 @@ const HOUSE_NAMES = ['Cottage', 'Townhouse', 'Manor'];
 /* ---------- State ---------- */
 let S = null, R = null, world = null;
 const cam = { tx: 0, tz: 0, ty: 1, yaw: 0.7, pitch: 0.82, dist: 40, gyaw: 0.7, gpitch: 0.82, gdist: 40, vp: M4.ident(), eye: [0, 30, 30], fly: null };
-const UI = { tool: 'select', cat: null, brush: 3, rot: 0, sel: null, speed: 1, hover: null, sound: true, confirm: null, flattenH: 0,
+const UI = { tool: 'select', cat: null, brush: 3, rot: 0, sel: null, speed: 1, hover: null, sound: true, music: 0.5, confirm: null, flattenH: 0,
   introOpen: false, goalsMin: false, painting: false, paintAcc: 0, road: null, lastRes: {} };
 let lastTs = 0, uiTick = 0, saveTick = 0, thumbs = {}, cssW = 1, cssH = 1;
 
 /* ---------- Sound ---------- */
+/* ---------- Background music ----------
+   "Cozy Music Sampler" by Spaceyyy (aquumgifts.itch.io), CC BY 4.0. Each file is an exact number of bars, so it loops on the beat.
+   Daytime rotates three tracks, nights and rainy days have their own, and everything fades under raids and town meetings. */
+const Music = {
+  TRACKS: { spring: 55.384615, tavern: 51.428571, brew: 55.384615, night: 53.333333, rain: 55.384615 },
+  DAY: ['spring', 'tavern', 'brew'],
+  bus: null, cur: null, buffers: {}, fmt: 0, want: null, mood: null, moodAt: -1e9, day: 0, level: -1, hidden: false,
+  ok() { return !!(window.DW_MUSIC && Sfx.ctx); },
+  async load(name) {
+    if (this.buffers[name]) return this.buffers[name];
+    // each track can come in more than one format (AAC first, Opus as a fallback); remember which one this browser decodes
+    const list = [].concat(window.DW_MUSIC[name] || []);
+    for (let i = this.fmt || 0; i < list.length; i++) {
+      try {
+        const src = list[i]; let bytes;
+        if (src.startsWith('data:')) { const b = atob(src.slice(src.indexOf(',') + 1)); bytes = new Uint8Array(b.length); for (let k = 0; k < b.length; k++) bytes[k] = b.charCodeAt(k); bytes = bytes.buffer; }
+        else { const r = await fetch(src); if (!r.ok) throw new Error('missing'); bytes = await r.arrayBuffer(); }
+        const buf = await new Promise((res, rej) => { const p = Sfx.ctx.decodeAudioData(bytes, res, rej); if (p && p.catch) p.catch(rej); });
+        this.fmt = i; this.buffers[name] = buf; return buf;
+      } catch (e) {}
+    }
+    throw new Error('can’t play this track here');
+  },
+  pick(mood) { return mood === 'night' ? 'night' : mood === 'rain' ? 'rain' : this.DAY[this.day % this.DAY.length]; },
+  async go(name, fade) {
+    if (this.want === name) return;
+    this.want = name;
+    let buf; try { buf = await this.load(name); } catch (e) { if (this.want === name) this.want = null; return; }
+    if (this.want !== name || !UI.music) return;
+    const c = Sfx.ctx, now = c.currentTime, len = this.TRACKS[name];
+    const src = c.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = 0; src.loopEnd = Math.min(buf.duration, len);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(1, now + fade);
+    src.connect(g); g.connect(this.bus); src.start(now);
+    const old = this.cur;
+    if (old) { old.g.gain.cancelScheduledValues(now); old.g.gain.setValueAtTime(old.g.gain.value, now); old.g.gain.linearRampToValueAtTime(0, now + fade); try { old.src.stop(now + fade + 0.2); } catch (e) {} }
+    this.cur = { name, src, g, start: now, len };
+    // keep only the playing track decoded, phones don't have memory to spare
+    for (const k in this.buffers) if (k !== name) delete this.buffers[k];
+  },
+  stop() { if (!this.cur) return; const c = Sfx.ctx, now = c.currentTime; this.cur.g.gain.setTargetAtTime(0, now, 0.4); try { this.cur.src.stop(now + 2); } catch (e) {} this.cur = null; this.want = null; this.mood = null; this.buffers = {}; },
+  update() {
+    if (!this.ok()) return;
+    const c = Sfx.ctx;
+    if (!this.bus) { this.bus = c.createGain(); this.bus.gain.value = 0; this.bus.connect(c.destination); }
+    const duck = Online.raid ? 0.3 : Online.mode ? 0.7 : UI.meetingOpen ? 0.55 : 1;
+    const level = this.hidden ? 0 : UI.music * 0.7 * duck;
+    if (Math.abs(level - this.level) > 0.001) { this.bus.gain.setTargetAtTime(level, c.currentTime, 0.5); this.level = level; }
+    if (!UI.music) { this.stop(); return; }
+    if (c.state !== 'running') return;
+    const h = S.t % 24, mood = Online.mode ? 'day' : h < 6 || h >= 19.5 ? 'night' : S.weather === 'rain' ? 'rain' : 'day', now = c.currentTime;
+    if (!this.cur && !this.want) { this.mood = mood; this.moodAt = now; this.go(this.pick(mood), 3); return; }
+    if (!this.cur) return;
+    // change mood at most every 30 s, so a quick game night doesn't flip the music back and forth
+    if (mood !== this.mood && now - this.moodAt > 30) { this.mood = mood; this.moodAt = now; if (mood === 'day') this.day++; this.go(this.pick(mood), 5); return; }
+    // daytime: after two times through, drift into the next track right on the loop
+    if (this.mood === 'day' && this.cur.name === this.pick('day') && now - this.cur.start >= this.cur.len * 2 - 4) { this.day++; this.go(this.pick('day'), 4); }
+  },
+};
+document.addEventListener('visibilitychange', () => { Music.hidden = document.hidden; Music.update(); });
+
 const Sfx = {
   ctx: null, master: null, ocean: null,
   init() {
@@ -968,8 +1028,10 @@ function showMenu() {
   const arm = UI.confirm === 'new';
   openModal(`<h2>${esc(islandName())}</h2><p class="lead">Day ${Math.floor(S.t / 24) + 1} · ${Sim.pop(S)} settlers. Your island saves itself in this browser.</p>
     <div class="menu"><button class="btn primary" data-m="close">Back to the island</button><button class="btn" data-m="saves">Your islands · save &amp; load</button>
-    <button class="btn" data-m="help">Controls</button><button class="btn" data-m="sound">Sound: ${UI.sound ? 'on' : 'off'}</button>
-    <button class="btn danger ${arm ? 'arm' : ''}" data-m="new">${arm ? 'Tap again to start over on a new island' : 'New island'}</button></div>`);
+    <button class="btn" data-m="help">Controls</button><button class="btn" data-m="sound">Sound effects: ${UI.sound ? 'on' : 'off'}</button>
+    <label class="vol"><span>Music</span><input type="range" id="musicVol" min="0" max="100" step="5" value="${Math.round(UI.music * 100)}" aria-label="Music volume"><b id="musicPct">${UI.music ? Math.round(UI.music * 100) + '%' : 'Off'}</b></label>
+    <button class="btn danger ${arm ? 'arm' : ''}" data-m="new">${arm ? 'Tap again to start over on a new island' : 'New island'}</button></div>
+    <p class="credit">Music: “Cozy Music Sampler” by Spaceyyy (aquumgifts.itch.io), CC BY 4.0</p>`);
 }
 
 /* ---------- Persistence ---------- */
@@ -979,8 +1041,8 @@ function save(announce) {
   catch (e) { if (announce) toast('Saving isn’t available in this browser window.', 'bad'); }
 }
 function readSave() { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
-function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify({ sound: UI.sound, goalsMin: UI.goalsMin, chatOpen: UI.chatOpen })); } catch (e) {} }
-function loadPrefs() { try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); if (typeof p.sound === 'boolean') UI.sound = p.sound; if (typeof p.goalsMin === 'boolean') UI.goalsMin = p.goalsMin; if (typeof p.chatOpen === 'boolean') UI.chatOpen = p.chatOpen; } catch (e) {} }
+function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify({ sound: UI.sound, music: UI.music, goalsMin: UI.goalsMin, chatOpen: UI.chatOpen })); } catch (e) {} }
+function loadPrefs() { try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}'); if (typeof p.sound === 'boolean') UI.sound = p.sound; if (typeof p.music === 'number' && p.music >= 0 && p.music <= 1) UI.music = p.music; if (typeof p.goalsMin === 'boolean') UI.goalsMin = p.goalsMin; if (typeof p.chatOpen === 'boolean') UI.chatOpen = p.chatOpen; } catch (e) {} }
 function frameHall() {
   const hall = S.b.find(b => b.type === 'hall'); if (!hall) return;
   const [x, z] = Sim.center(hall);
@@ -1002,6 +1064,7 @@ function frame(ts) {
   const simH = UI.introOpen || UI.savesOpen || !$('#modal').hidden ? 0 : SPEEDS[UI.speed] * dt * nightBoost;
   if (simH > 0) { const dayBefore = Math.floor(S.t / 24); Sim.step(S, simH); if (Math.floor(S.t / 24) !== dayBefore) save(); }
   if (UI.painting) applyBrush(dt);
+  Music.update();
   processEvents();
   keyPan(dt);
   if (UI.follow) { if (world.agents.includes(UI.follow) && !UI.follow.hidden) cam.fly = [UI.follow.x, UI.follow.z]; else if (!world.agents.includes(UI.follow)) UI.follow = null; }
@@ -1049,11 +1112,17 @@ function start(data) {
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) {
     window.claude.hot.snapshot(() => ({ save: Sim.serialize(Online.home || S), cam: { tx: cam.tx, tz: cam.tz, yaw: cam.yaw, gyaw: cam.gyaw, pitch: cam.pitch, gpitch: cam.gpitch, dist: cam.dist, gdist: cam.gdist }, speed: UI.speed }));
   }
-  window.__dw = { get S() { return S; }, UI, cam, world, setTool, setSpeed, pick, project, act, Online, onlineAct, raidTap, publishIsland };
+  window.__dw = { get S() { return S; }, UI, cam, world, setTool, setSpeed, pick, project, act, Online, onlineAct, raidTap, publishIsland, Music, Sfx };
   requestAnimationFrame(frame);
   $('#isles').addEventListener('click', e => { const b = e.target.closest('[data-ol]'); if (b && !b.disabled) { Sfx.init(); Sfx.play('click'); onlineAct(b.dataset.ol); } });
   $('#isles').addEventListener('change', e => { if (e.target.id === 'olFile') importFile(e.target.files && e.target.files[0]); });
   $('#away').addEventListener('click', e => { const b = e.target.closest('[data-ol]'); if (b && !b.disabled) { Sfx.init(); Sfx.play('click'); onlineAct(b.dataset.ol); } });
+  $('#modal').addEventListener('input', e => {
+    if (e.target.id !== 'musicVol') return;
+    UI.music = clamp(+e.target.value / 100, 0, 1); Sfx.init(); Music.update();
+    const pct = $('#musicPct'); if (pct) pct.textContent = UI.music ? Math.round(UI.music * 100) + '%' : 'Off';
+  });
+  $('#modal').addEventListener('change', e => { if (e.target.id === 'musicVol') savePrefs(); });
   $('#modal').addEventListener('change', e => { if (e.target.id === 'olName') renameIsland(e.target.value); if (e.target.id === 'olFile') importFile(e.target.files && e.target.files[0]); });
   onlineInit();
 }

@@ -29,5 +29,5 @@ http.createServer(async (req, res) => {
   if (req.url === '/__stats') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ stats, keys: [...kv.keys()].filter(k => !k.startsWith('rl:')), z: Object.fromEntries([...zs].map(([k, z]) => [k, z.size])) })); }
   if (req.url.startsWith('/api/db')) { stats.calls++; const end = res.end.bind(res); res.end = b => { stats.bytes += b ? b.length : 0; return end(b); }; return handler(req, res); }
   const f = path.join(__dirname, '../public', req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0]));
-  fs.readFile(f, (e, d) => { if (e) { res.statusCode = 404; return res.end('not found'); } res.setHeader('content-type', f.endsWith('.html') ? 'text/html; charset=utf-8' : 'application/octet-stream'); res.end(d); });
+  fs.readFile(f, (e, d) => { if (e) { res.statusCode = 404; return res.end('not found'); } res.setHeader('content-type', f.endsWith('.html') ? 'text/html; charset=utf-8' : f.endsWith('.m4a') ? 'audio/mp4' : f.endsWith('.webm') ? 'audio/webm' : 'application/octet-stream'); res.end(d); });
 }).listen(PORT, () => console.log('listening', PORT));

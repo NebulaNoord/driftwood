@@ -215,6 +215,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13.5px; align-items: center; }
 .keys kbd { font-family: var(--f-body); font-weight: 900; font-size: 12px; background: var(--paper-2); border-radius: 7px; padding: 3px 8px; text-align: center; border-bottom: 2px solid var(--line); }
 .menu { display: flex; flex-direction: column; gap: 8px; }
+.vol { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 14px; background: var(--paper-2); font-weight: 800; }
+.vol input { flex: 1; min-width: 0; accent-color: var(--sea); height: 28px; }
+.vol b { min-width: 42px; text-align: right; font-size: 14px; color: var(--ink-soft); }
+.credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
 @media (max-width: 860px) {
@@ -383,6 +387,7 @@ body.raiding #res, body.raiding .speeds, body.raiding #chat { display: none !imp
   <div id="modal" hidden></div>
   <div id="isles" hidden></div>
 </div>
+<script>window.DW_MUSIC = /*MUSIC*/null;</script>
 <script>/*SIM*/</script>
 <script>/*GL*/</script>
 <script>/*WORLD*/</script>

@@ -18,6 +18,10 @@ Store rules (enforced in `api/db.js`):
 
 Writes are rate-limited per player, and raid loot is capped on the server.
 
+## Music
+
+Background music is from [“Cozy Music Sampler” by Spaceyyy](https://aquumgifts.itch.io/cozy-music-complete), licensed CC BY 4.0 (see `music/LICENSE.txt`). Five tracks are used: Spring Morning, Cozy Tavern and Morning Brew rotate through the day, Late-Night Study plays at night, and Snowy Village plays on rainy days. The files in `music/` are volume-matched AAC copies, with Opus copies as a fallback for browsers that can't play AAC.
+
 ## Deploy on Vercel
 
 1. In Vercel, choose **Add New → Project**, import this repository, and deploy it with the default settings. There's no build step: Vercel serves `public/` and turns `api/db.js` into a function.
