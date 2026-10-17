@@ -1433,7 +1433,7 @@ class World {
         S._dirty.terrain = true;
       } else if (e.type === 'cut') {
         this.falling.push({ c: e.c, kind: e.t, g: e.g / 255, t0: t, dir: hash(e.c + Math.floor(t)) * 6.283, drown: e.drown });
-        if (e.by) this.sfx && this.sfx('chop');
+        if (e.by) this.sfx && this.sfx('chop', 'work');
       } else if (e.type === 'sprout') {
         this.sprout[e.c] = t;
       } else if (e.type === 'boat') {

@@ -218,6 +218,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .vol { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 14px; background: var(--paper-2); font-weight: 800; }
 .vol input { flex: 1; min-width: 0; accent-color: var(--sea); height: 28px; }
 .vol b { min-width: 42px; text-align: right; font-size: 14px; color: var(--ink-soft); }
+.vols { display: flex; flex-direction: column; gap: 10px; }
+.vol2 { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--paper-2); }
+.vol2 .vt { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.vol2 .vt b { font-weight: 900; font-size: 15px; } .vol2 .vt em { font-style: normal; font-weight: 800; font-size: 14px; color: var(--ink-soft); }
+.vol2 small { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
+.vol2 input { width: 100%; accent-color: var(--sea); height: 30px; margin: 2px 0 0; }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
