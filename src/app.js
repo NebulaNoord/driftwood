@@ -107,8 +107,8 @@ let lastTs = 0, uiTick = 0, saveTick = 0, thumbs = {}, cssW = 1, cssH = 1;
    "Cozy Music Sampler" by Spaceyyy (aquumgifts.itch.io), CC BY 4.0. Each file is an exact number of bars, so it loops on the beat.
    Daytime rotates three tracks, nights and rainy days have their own, and everything fades under raids and town meetings. */
 const Music = {
-  TRACKS: { spring: 55.384615, tavern: 51.428571, brew: 55.384615, night: 53.333333, rain: 55.384615 },
-  DAY: ['spring', 'tavern', 'brew'],
+  TRACKS: { spring: 55.384615, tavern: 51.428571, brew: 55.384615, night: 53.333333, rain: 55.384615, lounge: 48 },
+  DAY: ['spring', 'tavern', 'brew'], DAY_MODERN: ['brew', 'lounge', 'spring'],
   bus: null, cur: null, buffers: {}, fmt: 0, want: null, mood: null, moodAt: -1e9, day: 0, level: -1, hidden: false,
   ok() { return !!(window.DW_MUSIC && Sfx.ctx); },
   async load(name) {
@@ -126,7 +126,7 @@ const Music = {
     }
     throw new Error('can’t play this track here');
   },
-  pick(mood) { return mood === 'night' ? 'night' : mood === 'rain' ? 'rain' : this.DAY[this.day % this.DAY.length]; },
+  pick(mood) { const D = Sim.eraOf(S) === 'modern' ? this.DAY_MODERN : this.DAY; return mood === 'night' ? 'night' : mood === 'rain' ? 'rain' : D[this.day % D.length]; },
   async go(name, fade) {
     if (this.want === name) return;
     this.want = name;
@@ -222,7 +222,17 @@ const Amb = {
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
     if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
-    if (due('cart')) { this.next.cart = 10 + Math.random() * 18; if (!night && town > 0.2 && near > 0.3) for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W); }
+    if (due('cart')) {
+      const modern = Sim.eraOf(S) === 'modern';
+      this.next.cart = (modern ? 5 : 10) + Math.random() * (modern ? 9 : 18);
+      if (town > 0.2 && near > 0.3 && (!night || modern)) {
+        if (modern) {
+          // a car going by, and now and then someone leans on the horn
+          Sfx.noise(1.1, 220 + Math.random() * 120, 0.045 * near * town, 0, W); Sfx.noise(0.7, 900, 0.012 * near * town, 0.2, W);
+          if (Math.random() < 0.12) { const d = 0.4 + Math.random(); Sfx.tone(392, 390, 0.22, 'square', 0.008 * near, d, W); Sfx.tone(494, 492, 0.22, 'square', 0.006 * near, d, W); }
+        } else for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W);
+      }
+    }
   },
   gull(v) {
     const W = Sfx.world, p = 0.9 + Math.random() * 0.25, n = 2 + Math.floor(Math.random() * 3);
@@ -292,6 +302,7 @@ const Sfx = {
     else if (k === 'horn') { this.tone(110, 108, 1.4, 'sawtooth', 0.08); this.tone(165, 160, 1.4, 'triangle', 0.1, 0.05); }
     else if (k === 'clash') { this.noise(0.07, 3200 + Math.random() * 1500, 0.16); this.tone(1400 + Math.random() * 600, 900, 0.08, 'square', 0.025); }
     else if (k === 'arrow') this.noise(0.18, 1800, 0.06);
+    else if (k === 'shot') { this.noise(0.05, 2600 + Math.random() * 900, 0.13); this.noise(0.16, 380, 0.06, 0.01); }
     else if (k === 'down') this.tone(260, 90, 0.35, 'triangle', 0.12);
     else if (k === 'coins') { [1320, 1760, 1568].forEach((f, i) => this.tone(f, f, 0.09, 'triangle', 0.07, i * 0.05)); }
     else if (k === 'alarm') { for (let i = 0; i < 4; i++) this.tone(880, 860, 0.35, 'sine', 0.12, i * 0.3); }
@@ -310,12 +321,14 @@ const Sfx = {
 };
 
 /* ---------- Toasts & hint ---------- */
+// on a modern island, every word the player reads goes through the era's word list (text only, never tags or attributes)
+const eraH = h => Sim.eraOf(S) !== 'modern' || typeof h !== 'string' ? h : h.replace(/(^|>)([^<]+)/g, (m, a, t) => a + Sim.eraText(S, t));
 function toast(text, kind) {
-  const el = document.createElement('div'); el.className = 'toast ' + (kind || ''); el.textContent = text;
+  const el = document.createElement('div'); el.className = 'toast ' + (kind || ''); el.textContent = Sim.eraText(S, text);
   const box = $('#toasts'); box.appendChild(el); while (box.children.length > 3) box.firstChild.remove();
   setTimeout(() => { el.style.transition = 'opacity .3s, transform .3s'; el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 320); }, kind === 'goal' ? 4800 : 3200);
 }
-function hint(html) { const h = $('#hint'); if (!html) { h.hidden = true; return; } h.hidden = false; if (h._h !== html) { h.innerHTML = html; h._h = html; } h.classList.toggle('up', !$('#tray').hidden); }
+function hint(html) { const h = $('#hint'); if (!html) { h.hidden = true; return; } h.hidden = false; if (h._h !== html) { h.innerHTML = eraH(html); h._h = html; } h.classList.toggle('up', !$('#tray').hidden); }
 
 /* ---------- Camera ---------- */
 function updateCamera(dt) {
@@ -520,11 +533,11 @@ function renderRes() {
     const net = Rt[k].net, cls = net > 0.05 ? 'up' : net < -0.05 ? 'down' : '';
     h += `<div class="r ${low[k] ? 'low' : ''}" data-r="${k}" title="${names[k]}: ${fmtRate(net)} per hour">${RES_ICON[k]}<div><b>${vals[k]}</b><small class="rate ${cls}">${Math.abs(net) < 0.05 ? '±0' : fmtRate(net)}/h</small></div></div>`;
   }
-  h += `<div class="sep"></div><div class="r" data-r="pop" title="Settlers / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">settlers</small></div></div>`;
+  h += `<div class="sep"></div><div class="r" data-r="pop" title="${Sim.eraText(S, 'Settlers')} / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">${Sim.eraText(S, 'settlers')}</small></div></div>`;
   h += `<div class="r" title="Happiness">${I.face(S.happy)}<div><b>${S.happy}</b><small class="rate">happy</small></div></div>`;
   const el = $('#res');
   if (el._h !== h) {
-    el.innerHTML = h; el._h = h;
+    el.innerHTML = eraH(h); el._h = h;
     for (const k in vals) {
       if (UI.lastRes[k] !== undefined && vals[k] > UI.lastRes[k]) { const r = el.querySelector(`[data-r="${k}"]`); if (r) { r.classList.add('bump'); } }
       UI.lastRes[k] = vals[k];
@@ -557,7 +570,7 @@ function renderStock() {
     <p class="desc">Homes near a market: ${pct('market')}% · well: ${pct('well')}% · tavern: ${pct('tavern')}% · chapel: ${pct('chapel')}%</p>
     <p class="desc">One hour on the clock is 10 seconds at normal speed.</p>`;
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderClock() {
   const h = S.t % 24, day = Math.floor(S.t / 24) + 1, night = h < 6 || h >= 19.5, wd = Sim.WEEKDAYS[(day - 1) % 7];
@@ -566,7 +579,7 @@ function renderClock() {
   const html = `<div class="time" data-act="forecast" role="button" tabindex="0" title="${esc(Sim.WX[wk].name)} · tap for the forecast">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
     <div class="speeds" role="group" aria-label="Speed">${[I.pause, I.play, I.fast, I.faster].map((ic, k) => `<button data-speed="${k}" class="${UI.speed === k ? 'on' : ''}" title="${['Pause (Space)', 'Normal (1)', 'Fast (2)', 'Fastest (3)'][k]}" aria-label="${['Pause', 'Normal speed', 'Fast', 'Fastest'][k]}">${ic}</button>`).join('')}</div>
     ${Online.mode ? '' : `<button class="round" data-act="army" title="Your army" aria-label="Your army">${I.army.replace(/26/g, '20')}</button>`}${Online.mode ? '' : `<button class="round sea" data-act="online" title="Other islands: visit and raid" aria-label="Other islands">${I.ship}</button>`}<button class="round" data-act="menu" title="Menu" aria-label="Menu">${I.menu}</button>`;
-  const el = $('#clock'); if (el._h !== html) { el.innerHTML = html; el._h = html; }
+  const el = $('#clock'); if (el._h !== html) { el.innerHTML = eraH(html); el._h = html; }
 }
 function renderGoals() {
   const open = Sim.GOALS.filter(g => !S.goals[g.id]);
@@ -578,7 +591,7 @@ function renderGoals() {
   }
   if (open.length > 2) h += `<div class="more">${open.length - 2} more after these</div>`;
   const el = $('#goals'); el.classList.toggle('min', UI.goalsMin);
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderDock() {
   const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish };
@@ -601,7 +614,7 @@ function renderTray() {
     } else if (typeof it === 'string') {
       const T = TYPES[it], locked = T.unlock && p < T.unlock && !S.goals['unlock_' + it];
       const on = UI.tool === 'build:' + it;
-      h += `<button class="item ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-build="${it}" title="${esc(T.desc)}">${locked ? `<span class="lock">${T.unlock} settlers</span>` : ''}${thumbs[it] ? `<img src="${thumbs[it]}" alt="">` : '<span class="ico"></span>'}<b>${esc(T.name)}</b><span class="costs">${costChips(T.cost, true)}</span></button>`;
+      h += `<button class="item ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-build="${it}" title="${esc(T.desc)}">${locked ? `<span class="lock">${T.unlock} ${Sim.eraText(S, 'settlers')}</span>` : ''}${thumbs[it] ? `<img src="${thumbs[it]}" alt="">` : '<span class="ico"></span>'}<b>${esc(T.name)}</b><span class="costs">${costChips(T.cost, true)}</span></button>`;
     } else {
       const on = UI.tool === it.id;
       h += `<button class="item ${on ? 'on' : ''}" data-tool="${it.id}"><span class="ico">${I[it.id]}</span><b>${it.name}</b><span class="cost" style="color:var(--ink-soft)">${it.note}</span></button>`;
@@ -610,7 +623,7 @@ function renderTray() {
   h += '</div>';
   if (UI.tool.startsWith('build:') && !TYPES[UI.tool.slice(6)].coastal && TYPES[UI.tool.slice(6)].size >= 1) h += `<div class="size"><button class="btn" data-act="rotate" style="padding:6px 12px">↻ Rotate</button><span>Coastal buildings face the water by themselves.</span></div>`;
   if (cat.size) h += `<label class="size">Brush size <input type="range" id="brush" min="1" max="8" step="0.5" value="${UI.brush}" aria-label="Brush size"><output id="brushOut">${UI.brush}</output></label>`;
-  if (tray._h !== h) { tray.innerHTML = h; tray._h = h; }
+  if (tray._h !== h) { tray.innerHTML = eraH(h); tray._h = h; }
 }
 function statusOf(b) {
   const T = TYPES[b.type];
@@ -648,7 +661,7 @@ function renderAgent(el, a) {
     <div class="happy">${I.face(hh)}<div class="bar"><i style="width:${hh}%"></i></div></div>
     <div class="row2"><button class="btn" data-act="follow">${UI.follow === a ? 'Stop following' : 'Follow'}</button>${home && !a.temp ? '<button class="btn" data-act="showHome">Show home</button>' : ''}</div>`;
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderInsp() {
   const el = $('#insp');
@@ -689,7 +702,7 @@ function renderInsp() {
     h += `<button class="btn danger ${arm ? 'arm' : ''}" data-act="demolish">${arm ? 'Tap again to remove' + (refund ? ` (refund ${refund})` : '') : 'Remove building'}</button>`;
   }
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderHint() {
   const tool = UI.tool;
@@ -740,8 +753,8 @@ function renderChat() {
   const newest = last ? last.id : 0, fresh = el._last !== newest; el._last = newest;
   const line = c => `<button class="ln ${UI.selAgent === c.a ? 'sel' : ''} ${fresh && c.id === newest ? 'new' : ''}" data-chat="${c.id}" title="Find ${esc(c.name)}"><i style="background:rgb(${c.col.map(v => Math.round(v * 255)).join(',')})"></i><span><b>${esc(c.name.split(' ')[0])}</b><em>${esc(c.job)}</em> ${esc(c.text)}</span></button>`;
   const shown = mini ? (last ? [last] : []) : list.slice(-8);
-  el.innerHTML = `<div class="ch-head"><b>Island chatter</b><button data-act="chatToggle" aria-label="${mini ? 'Expand chat' : 'Collapse chat'}">${mini ? '▴' : '▾'}</button></div>
-    <div class="ch-list">${shown.length ? shown.map(line).join('') : '<p class="ch-empty">Settlers will chat here as they go about their day.</p>'}</div>`;
+  el.innerHTML = eraH(`<div class="ch-head"><b>Island chatter</b><button data-act="chatToggle" aria-label="${mini ? 'Expand chat' : 'Collapse chat'}">${mini ? '▴' : '▾'}</button></div>
+    <div class="ch-list">${shown.length ? shown.map(line).join('') : '<p class="ch-empty">Settlers will chat here as they go about their day.</p>'}</div>`);
   const box = el.querySelector('.ch-list'); box.scrollTop = box.scrollHeight;
 }
 function renderBubbles() {
@@ -758,7 +771,7 @@ function renderLabels() {
     if (!l.el) {
       const el = document.createElement('div'); el.className = 'fl';
       const icon = RES_ICON[l.kind];
-      el.innerHTML = (icon ? icon.replace(/width="22" height="22"/, 'width="18" height="18"') : '') + esc(l.text);
+      el.innerHTML = (icon ? icon.replace(/width="22" height="22"/, 'width="18" height="18"') : '') + esc(Sim.eraText(S, l.text));
       box.appendChild(el); l.el = el;
     }
     const p = project(l.x, l.y, l.z);
@@ -1028,6 +1041,8 @@ function bindInput() {
   $('#modal').addEventListener('click', e => {
     const mb = e.target.closest('[data-meet]');
     if (mb) { Sfx.init(); chooseMeeting(mb.dataset.meet); return; }
+    const eb = e.target.closest('[data-era]');
+    if (eb) { Sfx.init(); Sfx.play('click'); UI.eraPick = eb.dataset.era; showIntro(); const c2 = $('#modal .card'); if (c2) c2.style.animation = 'none'; return; }
     if (UI.meetingOpen) return;
     const ob = e.target.closest('[data-ol]');
     if (ob && !ob.disabled) { Sfx.init(); Sfx.play('click'); onlineAct(ob.dataset.ol); return; }
@@ -1035,7 +1050,8 @@ function bindInput() {
     if (!b) { if (e.target.id === 'modal' && !UI.introOpen && !Online.result) closeModal(); return; }
     Sfx.init(); Sfx.play('click');
     const m = b.dataset.m;
-    if (m === 'start' || m === 'close') closeModal();
+    if (m === 'start') { const intro = UI.introOpen; closeModal(); if (intro) startEra(); }
+    else if (m === 'close') closeModal();
     else if (m === 'save') { save(true); closeModal(); }
     else if (m === 'saves') { UI.fromIntro = UI.introOpen; UI.introOpen = false; openSaves(); }
     else if (m === 'sound') showSound();
@@ -1081,7 +1097,8 @@ function setSpeed(i) { if (i) UI.lastSpeed = i; UI.speed = i; renderClock(); }
 function resize() { cssW = $('#gl').clientWidth; cssH = $('#gl').clientHeight; R.resize(window.innerWidth < 700 ? 1.5 : 2); }
 
 /* ---------- Modals ---------- */
-function openModal(html) { const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
+function openModal(html) {
+  html = eraH(html); const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
 function closeModal() { $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
 function islandName() { const a = ['Gull', 'Saltmoss', 'Cinder', 'Bramble', 'Pebble', 'Hollow', 'Kelp', 'Juniper', 'Larkspur', 'Tidewell'], b = [' Isle', ' Cay', ' Island', ' Key']; return a[S.seed % a.length] + b[(S.seed >> 4) % b.length]; }
 function startMeeting() {
@@ -1097,7 +1114,7 @@ function showMeeting() {
   const stat = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
   openModal(`<div class="mt-head"><h2>Town meeting</h2><span class="sub">${Sim.WEEKDAYS[6]} · Day ${m.day + 1}</span></div>
     <p class="lead">The settlers have gathered at the Colony Hall. Here’s how the week went.</p>
-    <div class="week">${stat((r.newSettlers >= 0 ? '+' : '') + r.newSettlers, 'settlers')}${stat(r.food, 'food made')}${stat(r.wood, 'wood')}${stat(r.stone, 'stone')}${stat(r.gold, 'gold')}${stat((dh >= 0 ? '+' : '') + dh, 'happiness')}</div>
+    <div class="week">${stat((r.newSettlers >= 0 ? '+' : '') + r.newSettlers, Sim.eraText(S, 'settlers'))}${stat(r.food, 'food made')}${stat(r.wood, 'wood')}${stat(r.stone, 'stone')}${stat(r.gold, 'gold')}${stat((dh >= 0 ? '+' : '') + dh, 'happiness')}</div>
     <p class="lead"><b style="color:var(--ink)">What should the town do this week?</b></p>
     <div class="opts">${m.opts.map(o => `<button class="opt ${o.wish ? 'wish' : ''}" data-meet="${esc(o.id)}"><b>${esc(o.title)}</b><span>${esc(o.desc)}</span>${o.cost || o.gain ? `<span class="tr">${o.cost ? `<em class="down">${esc(o.cost)}</em>` : ''}${o.gain ? `<em class="up">${esc(o.gain)}</em>` : ''}</span>` : ''}</button>`).join('')}</div>`);
   $('#modal').classList.add('meet');
@@ -1107,18 +1124,33 @@ function chooseMeeting(id) {
   UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true;
   setSpeed(UI.preMeetSpeed || 1); Sfx.play('goal'); processEvents(); renderAll();
 }
+const ERA_CARDS = [
+  ['medieval', 'Medieval', 'Cottages, markets, taverns and lumber camps. Archers, cavalry and cannons.', '<path d="M5 21V9l2-2 2 2v3h2V7l1-3 1 3v5h2V9l2-2 2 2v12z" fill="#c9b99a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M10.5 21v-4a1.5 1.5 0 013 0v4" fill="#6b4a33"/>'],
+  ['modern', 'Modern', 'Family homes, apartments, offices, factories, fast food and cars. Riflemen and tanks.', '<path d="M3 21V11h5v10M8 21V4h7v17M15 21V9h6v12" fill="#9fb3c2" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7h3M10 10h3M10 13h3M17 12h2M17 15h2" stroke="#3a2e26" stroke-width="1.1"/>'],
+];
 function showIntro() {
   UI.introOpen = true;
+  if (!UI.eraPick) UI.eraPick = S.era || 'medieval';
+  const fresh = S.b.length <= 2 && S.t < 9 && !S.goals.road;
+  const mod = UI.eraPick === 'modern';
   openModal(`<h1>Drift<span>wood</span></h1>
-    <p class="lead">Your ship has docked at ${esc(islandName())} with four settlers. You have a Colony Hall and a Landing Pier where new settlers will arrive. Shape the land, lay roads and grow a town.</p>
+    ${fresh ? `<div class="eras" role="radiogroup" aria-label="Choose an era">${ERA_CARDS.map(([k, n, d, ic]) => `<button class="era ${UI.eraPick === k ? 'on' : ''}" data-era="${k}" role="radio" aria-checked="${UI.eraPick === k}"><svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${n}</b><span>${d}</span></button>`).join('')}</div>` : ''}
+    <p class="lead">${mod ? `Your ferry has docked at ${esc(islandName())} with four residents. You have a Town Hall and a Ferry Landing where new residents will arrive. Shape the land, lay roads and grow a town.` : `Your ship has docked at ${esc(islandName())} with four settlers. You have a Colony Hall and a Landing Pier where new settlers will arrive. Shape the land, lay roads and grow a town.`}</p>
     <ul>
       <li><i>${I.road.replace(/26/g, '22')}</i><span><b>Roads first.</b> Everything must connect back to the Colony Hall by road.</span></li>
-      <li><i>${I.homes.replace(/26/g, '22')}</i><span><b>Build cottages</b> along your roads. Boats bring new settlers to fill them.</span></li>
-      <li><i>${I.work.replace(/26/g, '22')}</i><span><b>Give them work.</b> A lumber camp by the forest, and a farm, orchard or fishing dock for food. Tap the resource bar to see what you make each hour.</span></li>
+      <li><i>${I.homes.replace(/26/g, '22')}</i><span>${mod ? '<b>Build family homes</b> along your roads. Ferries bring new residents to fill them.' : '<b>Build cottages</b> along your roads. Boats bring new settlers to fill them.'}</span></li>
+      <li><i>${I.work.replace(/26/g, '22')}</i><span><b>Give them work.</b> ${mod ? 'A lumber yard by the forest, a farm or fishing pier for food, and later offices and factories.' : 'A lumber camp by the forest, and a farm, orchard or fishing dock for food.'} Tap the resource bar to see what you make each hour.</span></li>
       <li><i>${I.land.replace(/26/g, '22')}</i><span><b>Shape the island.</b> Raise hills, dig coves, plant forests. It’s your island.</span></li>
       <li><i>${I.town.replace(/26/g, '22')}</i><span><b>Every Sunday</b> the town meets at the hall and you decide what happens next.</span></li>
     </ul>
-    <div class="row2"><button class="btn primary" data-m="start">Start the colony</button><button class="btn" data-m="saves">Your islands</button></div>`);
+    <div class="row2"><button class="btn primary" data-m="start">${mod ? 'Start the town' : 'Start the colony'}</button><button class="btn" data-m="saves">Your islands</button></div>`);
+}
+// picking an era on a brand-new island regrows the same island in that era
+function startEra() {
+  const era = UI.eraPick || 'medieval'; UI.eraPick = null;
+  if (era === S.era || !(S.b.length <= 2 && S.t < 9)) return;
+  const old = S; S = Sim.newGame(old.seed, era); carryMp(old, S); if (old.mp && old.mp.name) S.mp.name = old.mp.name;
+  world.setState(S); Sim.applyEra(S); frameHall(); save(); renderAll(); publishIsland(true);
 }
 function showHelp() {
   openModal(`<h2>Controls</h2><div class="keys">
@@ -1189,7 +1221,11 @@ async function newIsland() {
 }
 
 /* ---------- Main loop ---------- */
+let uiEra = null;
 function frame(ts) {
+  Sim.applyEra(S);
+  // a different era (new island, a load, a visit): every panel redraws with the right words
+  if (Sim.eraOf(S) !== uiEra) { uiEra = Sim.eraOf(S); document.querySelectorAll('*').forEach(e => { if (e._h !== undefined) e._h = null; }); if (world.era !== uiEra) world.setEra(uiEra); try { renderThumbs(); } catch (e) {} renderAll(); }
   const dt = Math.min(0.1, (ts - (lastTs || ts)) / 1000); lastTs = ts;
   const hNow = S.t % 24, nightBoost = hNow >= 21 || hNow < 5.5 ? 2.5 : 1;
   const simH = UI.introOpen || UI.savesOpen || !$('#modal').hidden ? 0 : SPEEDS[UI.speed] * dt * nightBoost;
@@ -1237,7 +1273,7 @@ function start(data) {
   resize();
   if (data.cam) Object.assign(cam, data.cam); else frameHall();
   if (typeof data.speed === 'number') UI.speed = data.speed;
-  renderThumbs();
+  renderThumbs(); uiEra = Sim.eraOf(S);
   bindInput();
   setTool('select');
   if (!loaded) showIntro();

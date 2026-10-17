@@ -285,12 +285,15 @@ class Raid {
   shoot(u, tx, tz, what, yo) {
     const W = this.W, y0 = yo !== undefined ? yo : Sim.groundAt(this.S, u.x, u.z) + (u.kind === 'can' ? 0.3 : 0.5), d = Math.hypot(tx - u.x, tz - u.z);
     const ty = Math.max(0, Sim.groundAt(this.S, tx, tz)) + 0.35, ball = u.kind === 'can' || u.kind === 'ship';
-    const dur = ball ? 0.5 + d * 0.06 : 0.25 + d * 0.05, g = ball ? 9 : 7;
+    // modern rifles fire fast, flat tracer rounds; bows loft arrows
+    const gun = !ball && Sim.eraOf(this.S) === 'modern';
+    const dur = ball ? 0.5 + d * 0.06 : gun ? 0.06 + d * 0.012 : 0.25 + d * 0.05, g = ball ? 9 : gun ? 0.4 : 7;
     const s = { x: u.x, y: y0, z: u.z, tx, ty, tz, t0: this.t, dur, g, vy: (ty - y0 + 0.5 * g * dur * dur) / dur, ball, what, side: u.side, dmg: u.dmg, kind: u.kind, from: u };
     this.shots.push(s);
-    if (!ball) W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.03, col: u.side === 'r' && what && what.b ? [1, 0.6, 0.2] : [0.35, 0.25, 0.15], e: what && what.b ? 1 : 0, g, drag: 0 });
+    if (gun) { W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.022, col: [1, 0.86, 0.45], e: 1, g, drag: 0 }); W.addPart({ x: u.x + (tx - u.x) / d * 0.25, y: y0, z: u.z + (tz - u.z) / d * 0.25, vx: 0, vy: 0.2, vz: 0, life: 0, max: 0.08, size: 0.07, col: [1, 0.8, 0.4], e: 1.5, g: 0, drag: 0 }); }
+    else if (!ball) W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.03, col: u.side === 'r' && what && what.b ? [1, 0.6, 0.2] : [0.35, 0.25, 0.15], e: what && what.b ? 1 : 0, g, drag: 0 });
     else { u.recoil = 1; this.sfx('cannon'); for (let k = 0; k < 6; k++) W.addPart({ x: u.x + Math.sin(u.a.ry) * 0.3, y: y0 + 0.05, z: u.z + Math.cos(u.a.ry) * 0.3, vx: Math.sin(u.a.ry) * (1 + Math.random()) + (Math.random() - 0.5), vy: 0.5 + Math.random() * 0.5, vz: Math.cos(u.a.ry) * (1 + Math.random()) + (Math.random() - 0.5), life: 0, max: 1.2, size: 0.14, col: [0.85, 0.85, 0.82], g: -0.2, drag: 1.5, smoke: true }); }
-    if (!ball) this.sfx('arrow');
+    if (!ball) this.sfx(gun ? 'shot' : 'arrow');
   }
   land2(s) {
     const W = this.W;

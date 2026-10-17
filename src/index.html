@@ -234,6 +234,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #clock .time { cursor: pointer; }
 .gl { display: inline-block; vertical-align: -3px; flex: none; }
 .stars .gl { vertical-align: -2px; margin-right: 1px; }
+.eras { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0 4px; }
+.era { text-align: left; border: 1px solid rgba(58, 46, 38, 0.2); border-radius: 12px; background: var(--paper-2); padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: transform .15s ease, background .15s ease; }
+.era b { font-family: var(--f-display); font-weight: 700; font-size: 16px; line-height: 1.1; } .era span { font-size: 12px; font-weight: 600; color: var(--ink-soft); line-height: 1.3; }
+.era:hover { transform: translateY(-1px); background: #e6d6b8; }
+.era.on { background: #fffaf0; border-color: var(--coral); box-shadow: 0 0 0 2px var(--coral); }
+@media (max-width: 560px) { .eras { grid-template-columns: 1fr; } .era { flex-direction: row; flex-wrap: wrap; align-items: center; } .era span { flex-basis: 100%; } }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 

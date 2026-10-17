@@ -16,8 +16,10 @@ function backOut(t) { const c = 2.2; t = clamp(t, 0, 1) - 1; return 1 + (c + 1) 
 const WALLS = ['#eee2c8', '#e6c88a', '#cdd6b8', '#e8c6b2', '#d2dde0', '#efe7d6', '#ddd2dc'];
 const ROOFS = ['#b65a40', '#4e6576', '#7d4f3c', '#68804f', '#923f35', '#3f4652'];
 // homespun dyes: madder, woad, weld, moss, undyed linen, walnut, rust, slate, sloe, verdigris
+const MSHIRTS = ['#d0473a', '#2f6fa8', '#e8c14a', '#4a8a5a', '#f2f0ea', '#3a3d42', '#e07b39', '#7a5aa0', '#d9748a', '#3fa3a0'];
 const SHIRTS = ['#a8513f', '#4f6d8a', '#c9a54a', '#6d7f48', '#d9cdb4', '#7b5a42', '#b06a3f', '#55606b', '#7a5468', '#4c7c74'];
 const WIN = '#fff1c4';
+const MCARS = ['#b8412f', '#2f5f8a', '#e8e4dc', '#3a3d42', '#6f8f5a', '#c9a23c', '#8a8f96', '#7a3b4f'];
 const HAIR = [[0.17, 0.11, 0.08], [0.29, 0.18, 0.1], [0.48, 0.29, 0.15], [0.72, 0.53, 0.24], [0.85, 0.75, 0.54], [0.55, 0.55, 0.55], [0.1, 0.1, 0.1], [0.63, 0.26, 0.16]];
 const PANTS = [[0.23, 0.23, 0.28], [0.35, 0.27, 0.2], [0.18, 0.28, 0.35], [0.42, 0.36, 0.27], [0.27, 0.27, 0.27], [0.46, 0.3, 0.3]];
 const SKIN = [[0.98, 0.84, 0.7], [0.93, 0.74, 0.58], [0.8, 0.6, 0.45], [0.62, 0.44, 0.32], [0.47, 0.33, 0.24]];
@@ -28,6 +30,7 @@ const FIRST_M = ['Arlo', 'Bram', 'Cal', 'Dov', 'Emil', 'Finn', 'Gus', 'Hal', 'Ik
 const SURN = ['Fletcher', 'Marsh', 'Tanner', 'Crabb', 'Hollis', 'Pike', 'Rowe', 'Saltmarsh', 'Thatcher', 'Wick', 'Brindle', 'Cole', 'Dunmore', 'Fenn', 'Gale', 'Harbour', 'Kettle', 'Lark', 'Mossop', 'Nettle', 'Oakes', 'Penrose', 'Quill', 'Reed', 'Shore', 'Tidewell', 'Underhill', 'Vane', 'Weller', 'Yarrow'];
 const JOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Lumberjack', quarry: 'Stonecutter', dock: 'Fisher', market: 'Market trader', stable: 'Stablehand', tavern: 'Innkeeper', school: 'Teacher', chapel: 'Priest', port: 'Dockhand', bakery: 'Baker', sawmill: 'Sawyer', mine: 'Miner', blacksmith: 'Blacksmith', shipyard: 'Shipwright', clinic: 'Doctor', library: 'Librarian', academy: 'Scholar', watchtower: 'Lookout', guardhouse: 'Guard', barracks: 'Drill sergeant', archery: 'Bowyer', cavyard: 'Horse master', foundry: 'Gunsmith', warschool: 'Officer' };
 const SMOKE = { rowhouse: [[-0.42, -0.45, 1.42], [0.2, -0.45, 1.56], [0.82, -0.45, 1.48]], apartment: [[0.45, -0.3, 1.88]], bakery: [[-0.22, -0.42, 0.84]], blacksmith: [[-0.18, -0.22, 0.9]], foundry: [[0.5, -0.65, 1.62]] };
+const SMOKE_M = { factory: [[0.75, -0.6, 1.72], [0.45, -0.75, 1.38]], foundry: [[0.65, -0.6, 1.42]], bakery: [[0.2, -0.2, 0.6]] };
 const isHome = b => !!TYPES[b.type].home;
 
 /* ---------------- Models ---------------- */
@@ -54,6 +57,7 @@ function logX(B, x, y, z, len, r, col) {
 }
 function plinth(B, w, d) { B.box(0, -0.04, 0, w * 0.97, 0.07, d * 0.97, '#9b8f7e'); B.box(0, 0.025, 0, w * 0.97 + 0.02, 0.012, d * 0.97 + 0.02, '#a99c89'); }
 
+/*MODERN_MODELS*/
 function model(type, level, variant) {
   const B = new Builder(), W = new Builder();
   const wall = WALLS[variant % WALLS.length], roof = ROOFS[(variant >> 2) % ROOFS.length];
@@ -1098,7 +1102,22 @@ class World {
     this.pscale = 1.4; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.cloudPos = []; this.carts = []; this.bubbles = []; this.replies = []; this.rain = []; this.chat = []; this.chatSeq = 0; this.agentSeq = 0; this.bubbleTimer = 1; this.pois = null; this.focus = [0, 0];
     for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283 + hash(k) * 0.5, r = 58 + hash(k + 50) * 34; this.cloudPos.push({ a, r, y: 17 + hash(k + 9) * 9, s: 1.1 + hash(k + 3) * 1.1, m: k % 3, v: 0.008 + hash(k + 7) * 0.008 }); }
   }
+  // medieval or modern: drop the cached buildings and swap vehicles, boats, weapons and helmets
+  setEra(era) {
+    const R = this.R, M = era === 'modern' && typeof modernModel === 'function';
+    this.era = era; this.models = {};
+    if (!this.med) this.med = { cannon: this.cannon, helms: this.helms, ships: this.ships, boats: this.boats, longboat: this.longboat, tools: Object.assign({}, this.tools) };
+    if (M && !this.mod) this.mod = { cannon: R.mesh(tankModel()), helms: { horn: R.mesh(modernHelmModel('horn')), guard: R.mesh(modernHelmModel('guard')) },
+      ships: [null, R.mesh(warshipModel(1)), R.mesh(warshipModel(2)), R.mesh(warshipModel(3)), R.mesh(warshipModel(4))],
+      boats: { fish: R.mesh(trawlerModel()), settle: R.mesh(ferryModel()), trade: R.mesh(cargoShipModel()) }, rifle: R.mesh(rifleModel()),
+      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()) };
+    const src = M ? this.mod : this.med;
+    this.cannon = src.cannon; this.helms = src.helms; this.ships = src.ships; this.boats = src.boats; this.longboat = src.ships[1];
+    for (const k of ['spear', 'sword', 'bow']) this.tools[k] = M ? this.mod.rifle : this.med.tools[k];
+    if (this.S) { this.S._dirty.roads = true; this.grassDirty = true; }
+  }
   setState(S) {
+    if (Sim.eraOf(S) !== this.era) { this.S = S; this.setEra(Sim.eraOf(S)); }
     this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
     S._dirty.terrain = S._dirty.roads = S._dirty.trees = true;
     this.waterGrid = null;
@@ -1107,7 +1126,7 @@ class World {
   getModel(type, level, variant) {
     const vkey = type === 'house' ? variant : ['fishhut', 'rowhouse', 'villa', 'apartment'].includes(type) ? variant % 12 : 0;
     const key = type + ':' + level + ':' + vkey;
-    if (!this.models[key]) { const m = model(type, level, vkey); this.models[key] = { body: this.R.mesh(m.B), win: this.R.mesh(m.W), key }; }
+    if (!this.models[key]) { const m = (this.era === 'modern' && typeof modernModel === 'function' && modernModel(type, level, vkey)) || model(type, level, vkey); this.models[key] = { body: this.R.mesh(m.B), win: this.R.mesh(m.W), key }; }
     return this.models[key];
   }
 
@@ -1700,11 +1719,11 @@ class World {
     const first = (female ? FIRST_F : FIRST_M)[Math.floor(r(3) * 30)];
     return { id: ++this.agentSeq, home: home.id, slot, x, z, ry: r(4) * 6.28, path: null, pi: 0, hidden: true, at: home.id, act: null, key: '', until: 0,
       name: first + ' ' + SURN[Math.floor(hash(home.id * 7 + 3) * SURN.length)], kid, female,
-      color: hex(SHIRTS[Math.floor(r(5) * SHIRTS.length)]), skin: SKIN[Math.floor(r(6) * SKIN.length)],
-      hat: !kid && r(7) < 0.22 ? HATS[Math.floor(r(8) * HATS.length)] : null,
+      color: hex((this.era === 'modern' ? MSHIRTS : SHIRTS)[Math.floor(r(5) * SHIRTS.length)]), skin: SKIN[Math.floor(r(6) * SKIN.length)],
+      hat: this.era !== 'modern' && !kid && r(7) < 0.22 ? HATS[Math.floor(r(8) * HATS.length)] : null,
       wake: kid ? 7 + r(9) * 0.6 : 5.8 + r(9) * 1.7, off: 15.6 + r(10) * 1.6, bed: kid ? 19 + r(11) * 1.2 : 20.2 + r(11) * 2.4,
       social: r(12), phase: r(13) * 6.28, work: null, speed: kid ? 9.5 + r(14) * 3 : 7.5 + r(14) * 2.5, pop: this.now,
-      horseCol: HORSES[Math.floor(r(15) * HORSES.length)], pants: PANTS[Math.floor(r(16) * PANTS.length)], hairStyle: female ? (r(17) < 0.5 ? 1 : 2) : 0, hairCol: HAIR[Math.floor(r(18) * HAIR.length)], tool: null, anim: 'idle', riding: false, sayAt: 0, thought: '' };
+      horseCol: HORSES[Math.floor(r(15) * HORSES.length)], pants: this.era === 'modern' && r(16) < 0.6 ? [0.24, 0.33, 0.48] : PANTS[Math.floor(r(16) * PANTS.length)], hairStyle: female ? (r(17) < 0.5 ? 1 : 2) : 0, hairCol: HAIR[Math.floor(r(18) * HAIR.length)], tool: null, anim: 'idle', riding: false, sayAt: 0, thought: '' };
   }
   syncAgents(initial) {
     const S = this.S;
@@ -2026,7 +2045,11 @@ class World {
     if (a.hidden) { a.x = from[0]; a.z = from[1]; a.hidden = false; a.pop = this.now; }
     // long trips on horseback when there is a stable
     let L = 0; for (let k = 1; k < a.path.length; k++) L += Math.abs(a.path[k][0] - a.path[k - 1][0]) + Math.abs(a.path[k][1] - a.path[k - 1][1]);
-    a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
+    if (this.era === 'modern') {
+      // modern residents drive anywhere more than a few streets away, as long as the route is mostly road
+      let onRoad = 0; for (const p of a.path) { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); if (Sim.inB(ci, cj) && S.road[cj * N + ci]) onRoad++; }
+      a.riding = !a.kid && L > 10 && onRoad >= a.path.length * 0.6 && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
+    } else a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
   }
   arriveAt(a) {
     const act = a.act || {};
@@ -2042,7 +2065,8 @@ class World {
   }
   walk(a, dtH) {
     const ci0 = Math.floor(a.x + N / 2), cj0 = Math.floor(a.z + N / 2), rt = Sim.inB(ci0, cj0) ? this.S.road[cj0 * N + ci0] : 0;
-    let step = a.speed * dtH * (a.riding ? 2.3 : 1) * (rt ? Sim.ROADS[rt].speed : 1);
+    const car = a.riding && this.era === 'modern';
+    let step = a.speed * dtH * (car ? (rt ? 3.2 : 1.2) : a.riding ? 2.3 : 1) * (rt && !car ? Sim.ROADS[rt].speed : 1);
     const step0 = step;
     while (step > 0 && a.path) {
       const p = a.path[a.pi + 1];
@@ -2056,7 +2080,7 @@ class World {
     a.phase += moved * (a.riding ? 7 : a.kid ? 30 : 24);
     // feet wear the grass down where people keep walking
     const ci1 = Math.floor(a.x + N / 2), cj1 = Math.floor(a.z + N / 2);
-    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c]) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
+    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c] && !car) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
     const S = this.S, ctx = this.ctx();
@@ -2153,7 +2177,7 @@ class World {
     if (a.temp === 'builder') return a.leaving ? 'Heading back to the hall' : a.path ? 'Walking to a building site' : 'Building';
     if (a.temp === 'porter') return 'Carrying goods to the hall';
     const act = a.act || {}, w = act.b && TYPES[act.b.type] ? TYPES[act.b.type].name.toLowerCase() : '';
-    const going = a.path ? (a.riding ? 'Riding to ' : 'Walking to ') : '';
+    const going = a.path ? (a.riding ? (this.era === 'modern' ? 'Driving to ' : 'Riding to ') : 'Walking to ') : '';
     if (act.kind === 'home') return a.path ? 'Heading home' : (this.S.t % 24 >= a.bed || this.S.t % 24 < a.wake ? 'Asleep at home' : 'Relaxing at home');
     if (act.kind === 'school') return going ? going + 'school' : 'In class';
     if (act.kind === 'chapel') return going ? going + 'the chapel' : 'At the Sunday service';
@@ -2356,6 +2380,7 @@ class World {
     const S = this.S;
     this.now += dtReal;
     this.navMs = 0;
+    if (Sim.eraOf(S) !== this.era) this.setEra(Sim.eraOf(S));
     if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
     if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
@@ -2393,10 +2418,11 @@ class World {
     // chimney smoke
     const hour = S.t % 24, smoky = (hour > 5 && hour < 10) || hour > 17 || hour < 1;
     if (dtH > 0 && Math.random() < dtReal * (smoky ? 3 : 0.8)) {
-      const hs = S.b.filter(b => Sim.done(b) && ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0))));
+      const SM = this.era === 'modern' ? SMOKE_M : SMOKE;
+      const hs = S.b.filter(b => Sim.done(b) && (this.era === 'modern' ? (SM[b.type] && b.staff > 0) : ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0)))));
       if (hs.length) {
         const b = hs[Math.floor(Math.random() * hs.length)];
-        if (SMOKE[b.type]) { const L = SMOKE[b.type], o2 = L[Math.floor(Math.random() * L.length)], p = this.local(b, o2[0], o2[1]); this.addPart({ x: p[0], y: b.y + o2[2], z: p[1], vx: 0.15, vy: 0.45, vz: 0.05, life: 0, max: b.type === 'blacksmith' ? 1.6 : 2.2, size: 0.09, col: b.type === 'blacksmith' ? [0.7, 0.7, 0.72] : [0.92, 0.92, 0.92], g: -0.05, drag: 0.3, smoke: true }); }
+        if (SM[b.type]) { const L = SM[b.type], o2 = L[Math.floor(Math.random() * L.length)], p = this.local(b, o2[0], o2[1]); this.addPart({ x: p[0], y: b.y + o2[2], z: p[1], vx: 0.15, vy: 0.45, vz: 0.05, life: 0, max: b.type === 'blacksmith' ? 1.6 : 2.2, size: 0.09, col: b.type === 'blacksmith' ? [0.7, 0.7, 0.72] : [0.92, 0.92, 0.92], g: -0.05, drag: 0.3, smoke: true }); }
         else {
         const [x, z] = Sim.center(b), off = CHIMNEY[b.level][houseShape(b.variant)], r = b.rot * Math.PI / 2;
         const ox = off[0] * Math.cos(r) + off[1] * Math.sin(r), oz = -off[0] * Math.sin(r) + off[1] * Math.cos(r);
@@ -2500,7 +2526,7 @@ class World {
         const pop = an && an.k === 'site' ? elastic((t - an.t0) / 0.8) : 1;
         R.push(B(this.scaffold), x, b.y, z, b.rot * Math.PI / 2, s * 1.04 * pop, hgt * pop, s * 1.04 * pop);
       }
-      if (b.type === 'stable' && Sim.done(b)) {
+      if (this.era !== 'modern' && b.type === 'stable' && Sim.done(b)) {
         for (let k = 0; k < 2; k++) {
           const w = t * 0.12 + k * 2.6 + b.id, p = this.local(b, 0.52 + Math.sin(w) * 0.2, -0.3 + k * 0.62 + Math.cos(w * 0.7) * 0.18);
           R.push(B(this.horse), p[0], b.y + 0.04, p[1], b.rot * Math.PI / 2 + Math.sin(w * 0.5) * 1.4 + k * 2, 1, 1, 1, ...HORSES[(b.id + k * 2) % HORSES.length], 0);
@@ -2511,18 +2537,18 @@ class World {
         const col = mix3([0.45, 0.72, 0.33], [0.93, 0.78, 0.33], clamp(g * 1.3 - 0.2, 0, 1));
         R.push(B(this.crop), x, b.y, z, ry, sx, Math.max(0.04, g) * sy, sz, col[0], col[1], col[2], 0);
       }
-      if (b.type === 'hall') {
+      if (b.type === 'hall' && this.era !== 'modern') {
         const [x, z] = Sim.center(b), ry = b.rot * Math.PI / 2, c = Math.cos(ry), s = Math.sin(ry);
         const px = x + 0.78 * c + 0.78 * s, pz = z - 0.78 * s + 0.78 * c;
         R.push(B(this.flag), px, b.y + 1.5 * sy, pz, ry + Math.sin(t * 2.3) * 0.35 * wind + 0.4, 1, 1, 1, 1, 1, 1, 0, 0, Math.sin(t * 5.1) * 0.05);
       }
-      if (Sim.done(b) && b.type === 'farm') { const p = this.local(b, -1.15, 1.07); R.push(B(this.blades), p[0], b.y + 0.98 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (b.staff ? 1.1 : 0.25) * wind); }
-      if (Sim.done(b) && b.type === 'tavern') { const p = this.local(b, 0.6, 0.35); R.push(B(this.sign), p[0], b.y + 0.76 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, Math.sin(t * 1.4 + b.id) * 0.16 * wind, 0); }
-      if (Sim.done(b) && b.type === 'sawmill') { const p = this.local(b, 0.28, -0.15); R.push(B(this.saw), p[0], b.y + 0.33 * sy, p[1], b.rot * Math.PI / 2 + Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, -t * (b.staff ? 9 : 0)); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'farm') { const p = this.local(b, -1.15, 1.07); R.push(B(this.blades), p[0], b.y + 0.98 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (b.staff ? 1.1 : 0.25) * wind); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'tavern') { const p = this.local(b, 0.6, 0.35); R.push(B(this.sign), p[0], b.y + 0.76 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, Math.sin(t * 1.4 + b.id) * 0.16 * wind, 0); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'sawmill') { const p = this.local(b, 0.28, -0.15); R.push(B(this.saw), p[0], b.y + 0.33 * sy, p[1], b.rot * Math.PI / 2 + Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, -t * (b.staff ? 9 : 0)); }
       if (Sim.done(b) && b.type === 'mine') { const u = b.staff ? 0.5 + 0.5 * Math.sin(t * 0.35 + b.id) : 0.9, p = this.local(b, 0, 0.0 + u * 0.85); R.push(B(this.minecart), p[0], b.y, p[1], b.rot * Math.PI / 2, sx, sy, sz); }
-      if (Sim.done(b) && b.type === 'blacksmith' && b.staff > 0) { const p = this.local(b, -0.18, -0.12), f = 0.85 + 0.25 * Math.sin(t * 13 + b.id) * Math.sin(t * 7.3); R.push(B(this.fire), p[0], b.y + 0.24, p[1], t * 2, f, f * (0.9 + 0.3 * Math.sin(t * 9)), f, 1, 1, 1, 1.6); }
-      if (Sim.done(b) && b.type === 'bakery' && b.staff > 0) { const p = this.local(b, -0.22, -0.25), f = 0.6 + 0.1 * Math.sin(t * 11 + b.id); R.push(B(this.fire), p[0], b.y + 0.03, p[1], t, f, f * 0.6, f * 0.5, 1, 1, 1, 1.4); }
-      if (Sim.done(b) && b.type === 'port') { const p = this.local(b, 0.6, 0.5); R.push(B(this.jib), p[0], b.y + 1.39 * sy, p[1], b.rot * Math.PI / 2 + Math.sin(t * 0.22 + b.id) * 1.1, sx, sy, sz); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'blacksmith' && b.staff > 0) { const p = this.local(b, -0.18, -0.12), f = 0.85 + 0.25 * Math.sin(t * 13 + b.id) * Math.sin(t * 7.3); R.push(B(this.fire), p[0], b.y + 0.24, p[1], t * 2, f, f * (0.9 + 0.3 * Math.sin(t * 9)), f, 1, 1, 1, 1.6); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'bakery' && b.staff > 0) { const p = this.local(b, -0.22, -0.25), f = 0.6 + 0.1 * Math.sin(t * 11 + b.id); R.push(B(this.fire), p[0], b.y + 0.03, p[1], t, f, f * 0.6, f * 0.5, 1, 1, 1, 1.4); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'port') { const p = this.local(b, 0.6, 0.5); R.push(B(this.jib), p[0], b.y + 1.39 * sy, p[1], b.rot * Math.PI / 2 + Math.sin(t * 0.22 + b.id) * 1.1, sx, sy, sz); }
     }
     if (this.raidBoat) { const rb = this.raidBoat; R.push(B(this.ships[rb.level || 1] || this.longboat), rb.x, 0.02 + Math.sin(t * 1.3) * 0.03, rb.z, rb.ry, 1, 1, 1, 1, 1, 1, 0, Math.sin(t * 1.1) * 0.025, Math.sin(t * 0.9) * 0.035); }
     for (const q of this.quayProps || []) {
@@ -2610,6 +2636,13 @@ class World {
       const ps = clamp((t - a.pop) / 0.5, 0, 1), s = backOut(ps) * this.pscale * ks;
       let y = groundY(a.x, a.z);
       const ph = a.phase, P = { legL: 0, legR: 0, armL: 0.05 + idleArms(a), armR: -0.05 - idleArms(a), lean: 0, bob: 0 };
+      if (this.era === 'modern' && ((a.riding && moving) || a.mounted)) {
+        const vs = 1.35 * hsc, col = a.mounted ? [0.42, 0.47, 0.33] : hex(MCARS[a.id % MCARS.length]);
+        // keep to the right-hand side of the road so traffic passes instead of overlapping
+        const lane = a.mounted ? 0 : 0.17, lx = a.x + Math.cos(a.ry) * lane, lz = a.z - Math.sin(a.ry) * lane;
+        R.push(B(a.mounted ? this.mod.acar : this.mod.car), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        continue;
+      }
       if ((a.riding && moving) || a.mounted) {
         const hs = 1.25 * hsc;
         drawHorse(a.x, y, a.z, a.ry, hs, a.horseCol, ph * 3, moving ? 2 : 0, true);
@@ -2679,6 +2712,7 @@ class World {
     for (const c of this.carts) {
       const fade = clamp((c.L + 0.6 - c.d) / 0.6, 0, 1) * clamp((this.now - c.t0) / 0.4, 0, 1);
       const cs = 1.2 * hsc * fade;
+      if (this.era === 'modern') { const tp = this.cartPose(c, c.d - 0.3 * hsc), col = hex(MCARS[(c.t0 * 7 | 0) % MCARS.length]); R.push(B(this.mod.truck), tp[0], groundY(tp[0], tp[1]), tp[1], tp[2], cs, cs, cs, col[0], col[1], col[2], 0); continue; }
       const hp = this.cartPose(c, c.d), cp = this.cartPose(c, c.d - 0.6 * hsc);
       const hy = groundY(hp[0], hp[1]), cy = groundY(cp[0], cp[1]);
       drawHorse(hp[0], hy, hp[1], hp[2], cs, c.horse, c.d * 9, 1, false);
@@ -2802,6 +2836,7 @@ class World {
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2);
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
+    gl.uniform1f(P.u.uModern, this.era === 'modern' ? 1 : 0);
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
     for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);

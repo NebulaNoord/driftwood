@@ -43,10 +43,13 @@ const TYPES = {
   cavyard:    { name: 'Cavalry Yard', size: 2, jobs: 2, cost: { wood: 70, stone: 20, gold: 120 }, unlock: 50, build: 2.4, army: 'cav', desc: 'Trains mounted riders, 8 per yard. Fast, tough, and they carry the most loot.' },
   foundry:    { name: 'Cannon Foundry', size: 2, jobs: 3, cost: { wood: 60, stone: 80, gold: 200 }, unlock: 70, build: 3, army: 'can', desc: 'Casts cannons, 4 per foundry. They smash walls and buildings from long range.' },
   warschool:  { name: 'Military School', size: 2, jobs: 3, cost: { wood: 80, stone: 100, gold: 300 }, unlock: 40, unique: true, build: 3, desc: 'Officers train here. Research stronger troops and build bigger warships.' },
+  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
+  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
+  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
   guardhouse: { name: 'Guardhouse', size: 1, jobs: 3, cost: { wood: 40, stone: 25, gold: 60 }, unlock: 25, build: 1.4, guard: 'guards', desc: 'Three guards patrol nearby and rush out to fight raiders.' },
 };
-const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'stable', 'shipyard', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
-const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'market', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
+const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'stable', 'shipyard', 'store', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
+const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'store', 'market', 'factory', 'office', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
 // raids: how much a raid can carry off, and how long an island is safe afterwards
 // the army: four kinds of troops, trained at their own buildings
 const TROOPS = {
@@ -61,6 +64,59 @@ const RESEARCH = [null, null, { gold: 150, wood: 60 }, { gold: 400, wood: 100, s
 const BOATS = [null, { name: 'Longboat', cap: 6, guns: 0 }, { name: 'Drakkar', cap: 10, guns: 0, cost: { wood: 120, gold: 150 } },
   { name: 'Galleon', cap: 16, guns: 2, cost: { wood: 250, stone: 60, gold: 400 }, need: 'shipyard' }, { name: 'Man-o’-war', cap: 24, guns: 4, cost: { wood: 400, stone: 150, gold: 900 }, need: 'warschool' }];
 const WALLS = { 1: { name: 'Palisade', cost: { wood: 3 }, hp: 260, unlock: 15 }, 2: { name: 'Stone wall', cost: { stone: 4, gold: 2 }, hp: 650, unlock: 40 } };
+/* Eras. Every building keeps its job in both eras; the modern era renames and redraws it, and adds offices, factories and corner shops.
+   applyEra swaps the names in place when an island loads, so everything that shows a name picks up the right one. */
+const MODERN = {
+  hall: ['Town Hall', 'The heart of town. Roads must connect back here. The council meets here every Sunday.'],
+  house: ['Family Home', 'A family moves in. With shops nearby it grows into a two-storey house; add a water tower and a church for a big detached home.'],
+  fishhut: ['Beach Shack', 'A cheap cabin by the water for three. Must be close to the water.'],
+  rowhouse: ['Townhouses', 'Three brick townhouses sharing their walls. Lots of beds on a small plot.'],
+  villa: ['Mansion', 'A big house with a pool for wealthy residents, who pay three times the taxes. They expect a park or square nearby.'],
+  apartment: ['Apartment Tower', 'Five floors of flats for 32. Tenants want shops nearby and love a paved street.'],
+  lumber: ['Lumber Yard', 'Fells grown trees nearby with chainsaws and replants saplings. Works slowly if the forest runs out.'],
+  farm: ['Farm', 'Fields worked by tractor. Feeds about 60 people.'],
+  dock: ['Fishing Pier', 'A trawler heads out each morning. Feeds about 30 people.'],
+  sawmill: ['Timber Mill', 'Turns logs into building timber. Needs a lumber yard within 8 tiles.'],
+  blacksmith: ['Auto Garage', 'Fixes cars and sells parts. Noisy, but pays well.'],
+  stable: ['Trucking Depot', 'Trucks haul goods to the town hall, adding 15% to all production. Residents drive cars on long trips.'],
+  market: ['Strip Mall', 'Shops and a car park. Homes nearby grow bigger and pay 50% more in taxes.'],
+  well: ['Water Tower', 'Running water for the neighbourhood. Needed for big detached homes.'],
+  garden: ['Park', 'Trees, a bench and a fountain. Homes nearby are happier.'],
+  plaza: ['Town Square', 'A paved square with a fountain. Residents meet here, and homes nearby are happier.'],
+  clinic: ['Hospital', 'Doctors and nurses keep families healthy. Homes nearby are happier.'],
+  tavern: ['Fast Food', 'Burgers and fries. Residents drop by in the evening: a big boost to happiness nearby.'],
+  chapel: ['Church', 'Lifts spirits across a wide area. Needed for big detached homes.'],
+  academy: ['University', 'Higher learning. Every home within 22 tiles pays 20% more taxes. Needs a school.'],
+  port: ['Ferry Port', 'A cargo ferry calls every other morning and buys your surplus.'],
+  pier: ['Ferry Landing', 'New residents arrive by ferry here. Keep it connected to the town hall by road.'],
+  watchtower: ['Guard Tower', 'A marksman keeps watch and fires at raiders within 6 tiles.'],
+  barracks: ['Army Barracks', 'Trains riflemen, 12 per barracks. Tough soldiers who wreck buildings and carry loot.'],
+  archery: ['Firing Range', 'Trains marksmen, 12 per range. They shoot from a distance and set buildings on fire.'],
+  cavyard: ['Motor Pool', 'Builds armoured cars, 8 per pool. Fast, tough, and they carry the most loot.'],
+  foundry: ['Tank Factory', 'Builds tanks, 4 per factory. They smash walls and buildings from long range.'],
+  warschool: ['Military Academy', 'Officers train here. Research stronger troops and build bigger warships.'],
+  guardhouse: ['Police Station', 'Three officers patrol nearby and rush out to stop raiders.'],
+};
+const MODERN_TROOPS = { inf: ['Riflemen', 'rifleman'], arc: ['Marksmen', 'marksman'], cav: ['Armoured cars', 'armoured car'], can: ['Tanks', 'tank'] };
+const MODERN_BOATS = [null, 'Landing Craft', 'Patrol Boat', 'Frigate', 'Destroyer'];
+const MODERN_WALLS = { 1: 'Chain-link fence', 2: 'Concrete wall' };
+// an island picks its era when it's founded and keeps it
+const ERAS = { medieval: 'Medieval', modern: 'Modern' };
+function eraOf(S) { return S && S.era === 'modern' ? 'modern' : 'medieval'; }
+const ERA_WORDS = [[/Colony Hall/g, 'Town Hall'], [/settler ships?/g, 'ferry'], [/by ship\b/g, 'by ferry'], [/\bcottages\b/g, 'family homes'], [/\bCottages\b/g, 'Family homes'], [/\bcottage\b/g, 'family home'], [/\bCottage\b/g, 'Family home'],
+  [/\binto (a )?townhouses?\b/g, 'into a two-storey house'], [/\bhorse carts?\b/g, 'trucks'], [/\blumber camps?\b/g, 'lumber yard'], [/\bfishing dock\b/g, 'fishing pier'], [/\bon horseback\b/g, 'by car'], [/\bsettlers\b/g, 'residents'], [/\bSettlers\b/g, 'Residents'], [/\bsettler\b/g, 'resident'], [/\bSettler\b/g, 'Resident'],
+  [/\bLanding Pier\b/g, 'Ferry Landing'], [/\btavern\b/g, 'fast food place'], [/\bmarket\b/g, 'strip mall'], [/\bchapel\b/g, 'church'],
+  [/\bmanors?\b/g, 'detached homes'], [/\bcolony\b/g, 'town'], [/\bColony\b/g, 'Town']];
+function eraText(S, t) { if (eraOf(S) !== 'modern' || typeof t !== 'string') return t; for (const [a, b] of ERA_WORDS) t = t.replace(a, b); return t; }
+let eraNow = 'medieval';
+function applyEra(S) {
+  const e = eraOf(S); if (e === eraNow) return; eraNow = e;
+  for (const k in TYPES) { const T = TYPES[k]; if (!T._m) T._m = [T.name, T.desc]; const M = MODERN[k]; T.name = e === 'modern' && M ? M[0] : T._m[0]; T.desc = e === 'modern' && M ? M[1] : T._m[1]; }
+  for (const k in TROOPS) { const T = TROOPS[k]; if (!T._m) T._m = [T.name, T.one]; T.name = e === 'modern' ? MODERN_TROOPS[k][0] : T._m[0]; T.one = e === 'modern' ? MODERN_TROOPS[k][1] : T._m[1]; }
+  BOATS.forEach((B, i) => { if (!B) return; if (!B._m) B._m = B.name; B.name = e === 'modern' ? MODERN_BOATS[i] : B._m; });
+  for (const k in WALLS) { const W = WALLS[k]; if (!W._m) W._m = W.name; W.name = e === 'modern' ? MODERN_WALLS[k] : W._m; }
+  for (const g of GOALS) { if (!g._m) g._m = [g.title, g.desc]; g.title = e === 'modern' ? eraText(S, g._m[0]) : g._m[0]; g.desc = e === 'modern' ? eraText(S, g._m[1]) : g._m[1]; }
+}
 const RAID = { share: 0.3, cap: { gold: 600, wood: 300, stone: 250 }, shieldH: 8, minPop: 15 };
 const UPGRADE = [null, { wood: 10, stone: 5 }, { wood: 15, stone: 20 }];
 const RESERVE = { wood: 25, stone: 15 }; // houses never spend your stock below this when they upgrade
@@ -279,7 +335,7 @@ function placeHall(S, r) {
 }
 
 /* ---------------- State ---------------- */
-function newGame(seed) {
+function newGame(seed, era) {
   seed = (seed >>> 0) || 1;
   const S = {
     v: 1, seed, rng: Math.imul(seed, 2654435761) | 0, t: 8, speed: 1,
@@ -289,6 +345,7 @@ function newGame(seed) {
     b: [], nextId: 1, goals: {}, pending: null, starving: false, happy: 60, news: [],
     stats: { wood: 0, stone: 0, food: 0, gold: 0, trades: 0, days: [], arrivals: 0, meetings: 0 }, landing: null,
     weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N), wear: new Uint8Array(N * N),
+    era: ERAS[era] ? era : 'medieval',
   };
   attach(S);
   genIsland(S);
@@ -363,6 +420,7 @@ function attach(S) {
 }
 const ev = (S, e) => { S._ev.push(e); };
 function say(S, text, kind) {
+  text = eraText(S, text);
   S.news.unshift({ t: S.t, text, kind: kind || 'info' });
   if (S.news.length > 30) S.news.length = 30;
   ev(S, { type: 'toast', text, kind: kind || 'info' });
@@ -478,9 +536,9 @@ function quayNear(S, b, r) {
 function cobbleNext(S, b) { for (const [i, j] of around(b)) if (S.road[ci(i, j)] === 3) return true; return false; }
 function coverage(S) {
   const ok = (t, needStaff) => S.b.filter(b => b.type === t && b.conn && done(b) && !b.burnt && (!needStaff || b.staff > 0));
-  const L = { market: ok('market', 1), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
+  const L = { market: ok('market', 1).concat(ok('store', 1)), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
     plaza: ok('plaza'), clinic: ok('clinic', 1), library: ok('library', 1), academy: ok('academy', 1) };
-  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill');
+  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory');
   const light = S.b.some(b => b.type === 'lighthouse' && done(b));
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
@@ -491,7 +549,7 @@ function coverage(S) {
   for (const b of S.b) {
     const T = TYPES[b.type];
     if (!T.home) continue;
-    const near = (k, r) => L[k].some(m => bDist(m, b) <= (r || TYPES[k].radius));
+    const near = (k, r) => L[k].some(m => bDist(m, b) <= (r || TYPES[m.type].radius || TYPES[k].radius));
     b.cov = {
       market: near('market'), well: near('well'), chapel: near('chapel'), tavern: near('tavern'), school: near('school'), garden: near('garden'),
       orchard: near('orchard', 3.5), plaza: near('plaza'), clinic: near('clinic'), library: near('library'), academy: near('academy'),
@@ -590,6 +648,7 @@ function costText(cost) { return Object.keys(cost).map(k => cost[k] + ' ' + k).j
 function canPlace(S, type, i, j, rot) {
   const T = TYPES[type]; if (!T) return { ok: false, reason: 'Unknown building.' };
   const s = T.size;
+  if (T.era && T.era !== eraOf(S)) return { ok: false, reason: 'Only on modern islands.', rot };
   if (T.unlock && pop(S) < T.unlock && !S.goals['unlock_' + type]) return { ok: false, reason: `Unlocks at ${T.unlock} settlers.`, rot };
   if (T.unique && S.b.some(b => b.type === type)) return { ok: false, reason: `You can only build one ${T.name.toLowerCase()}.`, rot };
   if (i < 1 || j < 1 || i + s > N - 1 || j + s > N - 1) return { ok: false, reason: 'Too close to the edge.', rot };
@@ -1317,7 +1376,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
-    rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
+    era: eraOf(S), rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1362,6 +1421,7 @@ function deserialize(o) {
     weather: ['sun', 'cloud', 'rain'].includes(o.weather) ? o.weather : 'sun', fx: Array.isArray(o.fx) ? o.fx : [], meeting: o.meeting || null, promise: o.promise || null, week: o.week || null, warn: o.warn || {},
     mp: o.mp && typeof o.mp === 'object' ? o.mp : undefined, wall: o.wall ? unb64(o.wall, Uint8Array, N * N) : new Uint8Array(N * N),
     army: o.army && typeof o.army === 'object' ? o.army : undefined,
+    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval',
   };
   attach(S);
   for (const r of (o.b || [])) {
@@ -1396,6 +1456,7 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   canPlace, place, demolish, placePier, pierOk, roadPath, roadQuote, buildRoad, removeRoad, brush, plantTrees, clearTrees,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
-  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock };
+  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock,
+  ERAS, eraOf, applyEra, eraText };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -217,7 +217,7 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -245,17 +245,31 @@ void main() {
     float dirt = smoothstep(0.33, 0.43, rd.r + rn * 0.1);
     float dirtEdge = smoothstep(0.24, 0.34, rd.r + rn * 0.1) - dirt;
     vec3 dirtC = vec3(0.73, 0.6, 0.43) * (0.9 + 0.16 * vnoise(vWorld.xz * 6.0)) * (0.95 + 0.08 * vnoise(vWorld.xz * 1.3));
+    if (uModern > 0.5) {
+      // asphalt with a pale kerb, and a dashed centre line where the road runs straight along a grid line
+      dirt = smoothstep(0.34, 0.4, rd.r); dirtEdge = smoothstep(0.26, 0.32, rd.r) - dirt;
+      dirtC = vec3(0.33, 0.34, 0.36) * (0.92 + 0.12 * vnoise(vWorld.xz * 9.0));
+      vec2 cell = fract(vWorld.xz);
+      float lx = step(abs(cell.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)), lz = step(abs(cell.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6));
+      float hx = texture(uRoads, (vWorld.xz + vec2(48.0, 47.0)) / 96.0).r * texture(uRoads, (vWorld.xz + vec2(48.0, 49.0)) / 96.0).r;
+      float hz = texture(uRoads, (vWorld.xz + vec2(47.0, 48.0)) / 96.0).r * texture(uRoads, (vWorld.xz + vec2(49.0, 48.0)) / 96.0).r;
+      // only on single-lane roads: no road on either side
+      float sx = texture(uRoads, (vWorld.xz + vec2(47.0, 48.0)) / 96.0).r + texture(uRoads, (vWorld.xz + vec2(49.0, 48.0)) / 96.0).r;
+      float sz = texture(uRoads, (vWorld.xz + vec2(48.0, 47.0)) / 96.0).r + texture(uRoads, (vWorld.xz + vec2(48.0, 49.0)) / 96.0).r;
+      dirtC = mix(dirtC, vec3(0.93, 0.86, 0.55), max(lx * step(0.9, hx) * step(sx, 0.1), lz * step(0.9, hz) * step(sz, 0.1)) * 0.85);
+      alb = mix(alb, vec3(0.78, 0.77, 0.74), dirtEdge * 0.95);
+    } else
     alb = mix(alb, alb * 0.82, dirtEdge * 0.7);
     alb = mix(alb, dirtC, dirt);
     float path = smoothstep(0.56, 0.64, rd.g + rn * 0.12);
-    alb = mix(alb, vec3(0.79, 0.71, 0.55) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
+    alb = mix(alb, (uModern > 0.5 ? vec3(0.8, 0.79, 0.76) : vec3(0.79, 0.71, 0.55)) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
     float cob = smoothstep(0.34, 0.4, rd.b + rn * 0.03);
     if (cob > 0.0) {
       // setts in running bond, each its own shade, with dark joints
       vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
       vec2 f = fract(p), id = floor(p);
       float joint = min(min(f.x, 1.0 - f.x) * 0.55, min(f.y, 1.0 - f.y));
-      vec3 sett = vec3(0.64, 0.61, 0.57) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
+      vec3 sett = (uModern > 0.5 ? vec3(0.66, 0.42, 0.34) : vec3(0.64, 0.61, 0.57)) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
       vec3 cobC = mix(vec3(0.36, 0.34, 0.31), sett, smoothstep(0.03, 0.09, joint));
       float kerb = smoothstep(0.24, 0.3, rd.b) - smoothstep(0.34, 0.4, rd.b);
       alb = mix(alb, vec3(0.8, 0.77, 0.71), kerb * 0.8);

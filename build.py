@@ -2,13 +2,14 @@ import pathlib
 root = pathlib.Path(__file__).parent
 html = (root/'src/index.html').read_text()
 parts = {k: (root/f'src/{f}').read_text() for k, f in [('SIM','sim.js'),('GL','gl.js'),('WORLD','world.js'),('RAID','raid.js'),('APP','app.js')]}
+parts['WORLD'] = parts['WORLD'].replace('/*MODERN_MODELS*/', (root/'src/modern_models.js').read_text())
 parts['APP'] = parts['APP'].replace('/*ONLINE*/', (root/'src/online.js').read_text())
 for k, v in parts.items():
     assert '</script' not in v, k
     html = html.replace(f'/*{k}*/', v)
 # background music: embedded in the single-file builds, served as files on the web build
 import base64, json, shutil
-TRACKS = ['spring', 'tavern', 'brew', 'night', 'rain']
+TRACKS = ['spring', 'tavern', 'brew', 'night', 'rain', 'lounge']
 embedded = json.dumps({t: 'data:audio/mp4;base64,' + base64.b64encode((root/f'music/{t}.m4a').read_bytes()).decode() for t in TRACKS})
 linked = json.dumps({t: [f'/music/{t}.m4a', f'/music/{t}.webm'] for t in TRACKS})
 web_html = html.replace('/*MUSIC*/null', linked)

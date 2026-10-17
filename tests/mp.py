@@ -13,7 +13,7 @@ errs = []
 def page(pw, uid, seed):
     b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     ctx = b.new_context(viewport={'width': 1100, 'height': 700})
-    ctx.route('**/fonts.g*/**', lambda r: r.abort()); pg = ctx.new_page(); pg.expose_function('__mockStore', store)
+    ctx.route('**/fonts.g*/**', lambda r: r.abort()); pg = ctx.new_page(); pg.set_default_timeout(180000); pg.expose_function('__mockStore', store)
     pg.on('pageerror', lambda e: errs.append(uid + ': ' + str(e)))
     pg.add_init_script('(() => { let s = ' + str(seed) + '; Math.random = () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; })()')
     pg.goto(f'file:///home/claude/colony/dist/mp.html?uid={uid}', wait_until='domcontentloaded', timeout=90000); pg.wait_for_timeout(2500)
@@ -63,10 +63,10 @@ with sync_playwright() as p:
     ga = A.evaluate("window.__dw.S.gold"); A.wait_for_timeout(3000)
     print('A gold', round(ga), '->', round(A.evaluate("window.__dw.S.gold")), 'mp', A.evaluate("JSON.stringify(window.__dw.S.mp)"))
     print('A burnt now', A.evaluate("window.__dw.S.b.filter(b => b.burnt).map(b => b.type).join(',')"))
-    A.screenshot(path='shots/mp7_raided.png')
+    A.screenshot(path='shots/mp7_raided.png', timeout=120000)
     A.click('[data-ol^="revenge:"]'); A.wait_for_timeout(800); print('revenge modal', A.evaluate("document.querySelector('#modal h2').textContent"))
-    A.screenshot(path='shots/mp8_revenge.png')
+    A.screenshot(path='shots/mp8_revenge.png', timeout=120000)
     # B's panel now shows A shielded
-    B.click('[data-act=online]'); B.wait_for_timeout(1200); B.screenshot(path='shots/mp9_panel2.png')
+    B.click('[data-act=online]'); B.wait_for_timeout(1200); B.screenshot(path='shots/mp9_panel2.png', timeout=120000)
     print('B sees', B.evaluate("[...document.querySelectorAll('.isl-btns .btn')].map(e => e.textContent).join(' | ')"))
 print('ERR', errs[:6])

@@ -18,9 +18,18 @@ Store rules (enforced in `api/db.js`):
 
 Writes are rate-limited per player, and raid loot is capped on the server.
 
+## Eras
+
+Every island picks an era when it's founded and keeps it:
+
+- **Medieval:** cottages, markets, taverns, lumber camps and a clinic, with archers, cavalry and cannons.
+- **Modern:** family homes, townhouses, apartment towers, strip malls, corner shops, fast food, offices, factories, a hospital, a police station and a ferry port. Residents drive cars, and the army has riflemen, marksmen, armoured cars and tanks.
+
+Both eras share the same simulation; a modern island renames and redraws each building (`MODERN` in `src/sim.js`, models in `src/modern_models.js`) and adds offices, factories and corner shops. Raids only happen between islands of the same era.
+
 ## Music
 
-Background music is from [“Cozy Music Sampler” by Spaceyyy](https://aquumgifts.itch.io/cozy-music-complete), licensed CC BY 4.0 (see `music/LICENSE.txt`). Five tracks are used: Spring Morning, Cozy Tavern and Morning Brew rotate through the day, Late-Night Study plays at night, and Snowy Village plays on rainy days. The files in `music/` are volume-matched AAC copies, with Opus copies as a fallback for browsers that can't play AAC.
+Background music is from [“Cozy Music Sampler” by Spaceyyy](https://aquumgifts.itch.io/cozy-music-complete), licensed CC BY 4.0 (see `music/LICENSE.txt`). Six tracks are used: Spring Morning, Cozy Tavern and Morning Brew rotate through a medieval day (Morning Brew, Crew Lounge and Spring Morning on modern islands), Late-Night Study plays at night, and Snowy Village plays on rainy days. The files in `music/` are volume-matched AAC copies, with Opus copies as a fallback for browsers that can't play AAC.
 
 ## Deploy on Vercel
 

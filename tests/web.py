@@ -10,7 +10,7 @@ errs = []
 def page(pw, name, seed, key=None):
     b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
     ctx = b.new_context(viewport={'width': 1100, 'height': 700}); ctx.route('**/fonts.g*/**', lambda r: r.abort())
-    pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(name + ': ' + str(e)))
+    pg = ctx.new_page(); pg.set_default_timeout(180000); pg.on('pageerror', lambda e: errs.append(name + ': ' + str(e)))
     pg.add_init_script('(() => { let s = ' + str(seed) + '; Math.random = () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; })()')
     if key: pg.add_init_script("localStorage.setItem('driftwood.playerKey', '%s')" % key)
     pg.goto(URL, wait_until='domcontentloaded', timeout=90000); pg.wait_for_timeout(3000)

@@ -73,7 +73,7 @@ async function publishIsland(force) {
     const z = await packSave(save);
     await Online.db.doc('islands/' + Online.me).set({ v: 1, owner: Online.me, name: myName(), pop: Sim.pop(H), happy: H.happy, day: Math.floor(H.t / 24) + 1,
       gold: Math.floor(H.gold), wood: Math.floor(H.wood), stone: Math.floor(H.stone), towers: def.towers, guards: def.guards, troops: Sim.TROOP_KEYS.reduce((n, t) => n + (def.troops[t] || 0), 0), walls: def.walls,
-      shieldUntil: m.shieldUntil || 0, won: m.won || 0, lost: m.lost || 0, at: Date.now(), z });
+      shieldUntil: m.shieldUntil || 0, won: m.won || 0, lost: m.lost || 0, at: Date.now(), era: Sim.eraOf(H), z });
     Online.pubAt = performance.now(); Online.pubT = H.t;
   } catch (e) {
     if (e && e.code === 'invalid_argument') Online.can = false;
@@ -126,6 +126,7 @@ function shieldOf(id, data) {
 }
 function raidBlock(id, data) {
   if (id === Online.me) return 'That’s you';
+  if (data && (data.era || 'medieval') !== Sim.eraOf(homeS())) return data.era === 'modern' ? 'A modern island' : 'A medieval island';
   const sh = shieldOf(id, data); if (sh > Date.now()) return 'Shielded · ' + fmtLeft(sh - Date.now());
   if (!canShare()) { const g = ((mp().ghostAt || {})[id] || 0) + Sim.RAID.shieldH * HOUR; if (g > Date.now()) return 'Shielded · ' + fmtLeft(g - Date.now()); }
   return null;
@@ -153,12 +154,13 @@ function renderOnline() {
   h += `<h3 class="ol-h">Computer islands</h3>`;
   for (const R of RIVALS) {
     const wait = Math.max(0, ((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR - now);
-    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
+    h += `<div class="isl"><div class="isl-main"><b>${esc(rivalName(R))} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(rivalDesc(R))} Half loot.</span></div>
       <div class="isl-btns"><button class="btn primary" data-ol="rival:${R.id}" ${wait ? 'disabled' : ''}>${wait ? 'Ready in ' + fmtLeft(wait) : 'Raid'}</button></div></div>`;
   }
   // other players
   if (!Online.off) {
-    const others = Online.islands.filter(x => x.id !== Online.me).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
+    const myEra = Sim.eraOf(homeS());
+    const others = Online.islands.filter(x => x.id !== Online.me && (x.data.era || 'medieval') === myEra).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
     h += `<h3 class="ol-h">Players’ islands</h3>`;
     if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
@@ -251,6 +253,11 @@ function sailHome() {
 }
 
 /* --- computer islands: four rivals from sleepy to fortress, rebuilt every couple of hours --- */
+// what the computer islands are called in the modern era
+const RIVALS_MODERN = { cove: ['Rum Runner Bay', 'A sleepy harbour town with a couple of police officers and no walls.'], pirate: ['Cartel Key', 'Smugglers with a garrison that grows with your army.'],
+  iron: ['Fort Granite', 'A fenced town with guard towers, riflemen and marksmen.'], fort: ['Iron Citadel', 'A concrete fortress with tanks, armoured cars and towers. Bring a fleet.'] };
+const rivalName = R => Sim.eraOf(homeS()) === 'modern' ? RIVALS_MODERN[R.id][0] : R.name;
+const rivalDesc = R => Sim.eraOf(homeS()) === 'modern' ? RIVALS_MODERN[R.id][1] : R.desc;
 const RIVALS = [
   { id: 'cove', name: 'Smuggler’s Cove', stars: 1, cd: 0.5, desc: 'A sleepy fishing village with a couple of guards and no walls.', houses: 8, build: ['farm', 'market', 'lumber'], stores: [500, 250, 150] },
   { id: 'pirate', name: 'Pirate Cove', stars: 2, cd: 1, desc: 'Pirates with a garrison that grows with your army.', houses: 12, build: ['farm', 'market', 'lumber', 'tavern', 'orchard', 'barracks', 'quarry'], stores: [900, 400, 300], scale: true },
@@ -259,7 +266,7 @@ const RIVALS = [
 ];
 function makeRivalIsland(R) {
   const seed = ((Math.floor(Date.now() / (2 * HOUR)) * 7919) + R.stars * 104729) >>> 0;
-  const T = Sim.newGame(seed);
+  const T = Sim.newGame(seed, Sim.eraOf(homeS()));
   T.wood = T.gold = T.stone = T.food = 99999; for (const k of Sim.BUILDABLE) T.goals['unlock_' + k] = 1; T.goals.unlock_wall1 = T.goals.unlock_wall2 = 1;
   let s = seed % 2147483646 + 1; const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
   const conn = () => { const o = []; for (let c = 0; c < N * N; c++) if (T._conn[c]) o.push([c % N, (c / N) | 0]); return o; };
@@ -286,10 +293,10 @@ function makeRivalIsland(R) {
 }
 function startRival(id) {
   const R = RIVALS.find(x => x.id === id); if (!R) return;
-  const m = mp(); if (((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR > Date.now()) { toast(`${R.name} is still rebuilding.`, 'bad'); return; }
-  Online.busy = true; toast(`Charting a course to ${R.name}…`);
+  const m = mp(); if (((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR > Date.now()) { toast(`${rivalName(R)} is still rebuilding.`, 'bad'); return; }
+  Online.busy = true; toast(`Charting a course to ${rivalName(R)}…`);
   setTimeout(() => {
-    try { const T = makeRivalIsland(R); leaveHome(T, 'raid', { id: null, name: R.name, practice: true, rival: R.id }); startRaid(); }
+    try { const T = makeRivalIsland(R); leaveHome(T, 'raid', { id: null, name: rivalName(R), practice: true, rival: R.id }); startRaid(); }
     finally { Online.busy = false; }
   }, 50);
 }
@@ -314,7 +321,8 @@ function startRaid() {
   renderAway();
 }
 const TROOP_ICON = { all: glyph('swords'), mil: glyph('axe'), inf: glyph('shield'), arc: glyph('bow'), cav: glyph('horse'), can: glyph('cannon') };
-const TROOP_LABEL = { all: 'All', mil: 'Volunteers', inf: 'Infantry', arc: 'Archers', cav: 'Cavalry', can: 'Cannons' };
+// group names follow the era: Sim.TROOPS is renamed when a modern island loads
+const TROOP_LABEL = new Proxy({ all: 'All', mil: 'Volunteers' }, { get: (o, k) => k in o ? o[k] : Sim.TROOPS[k] ? Sim.TROOPS[k].name : k });
 function showRaidResult(res) {
   if (!Online.raid) return;
   const l = res.loot, half = Online.target && (Online.target.practice || Online.target.ghost);
@@ -374,9 +382,9 @@ function renderAway() {
     h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>${glyph('swords')} ${r.raiders.length} · ${glyph('shield')} ${r.guards.length} · ${glyph('fire')} ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
       <div class="aw-loot">${['gold', 'wood', 'stone'].map(k => `<span>${ico(k, 18)}<b>${r.loot[k]}</b></span>`).join('')}</div></div>
       <div class="aw-groups" role="group" aria-label="Who to command">${groups.map(g => `<button class="grp ${r.sel === g ? 'on' : ''}" data-ol="sel:${g}" title="${TROOP_LABEL[g]}">${TROOP_ICON[g]}<span>${g === 'all' ? 'All ' + r.raiders.length : TROOP_LABEL[g] + ' ' + cnt[g]}</span></button>`).join('')}</div>
-      <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>To the ship</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
+      <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>${Sim.eraOf(S) === 'modern' ? 'To the boat' : 'To the ship'}</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
   }
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 // health bars over fighters, damage bars over buildings
 const hpPool = [], stPool = [];
@@ -599,7 +607,7 @@ function renderSaves() {
     });
     h += `</div>`;
   }
-  page.innerHTML = h; page.hidden = false; hint(null);
+  page.innerHTML = eraH(h); page.hidden = false; hint(null);
   drawMinimap(page.querySelector('[data-mm=now]'), S);
   if (slots) slots.forEach((s, n) => { const cv = page.querySelector(`[data-mm="${n}"]`); if (!cv) return; (s.mini ? Promise.resolve(s.mini) : readSlot(s).then(o => (s.mini = Sim.deserialize(o)))).then(T => drawMinimap(cv, T)).catch(() => {}); });
 }

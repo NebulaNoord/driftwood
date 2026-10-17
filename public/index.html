@@ -323,6 +323,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #clock .time { cursor: pointer; }
 .gl { display: inline-block; vertical-align: -3px; flex: none; }
 .stars .gl { vertical-align: -2px; margin-right: 1px; }
+.eras { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0 4px; }
+.era { text-align: left; border: 1px solid rgba(58, 46, 38, 0.2); border-radius: 12px; background: var(--paper-2); padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: transform .15s ease, background .15s ease; }
+.era b { font-family: var(--f-display); font-weight: 700; font-size: 16px; line-height: 1.1; } .era span { font-size: 12px; font-weight: 600; color: var(--ink-soft); line-height: 1.3; }
+.era:hover { transform: translateY(-1px); background: #e6d6b8; }
+.era.on { background: #fffaf0; border-color: var(--coral); box-shadow: 0 0 0 2px var(--coral); }
+@media (max-width: 560px) { .eras { grid-template-columns: 1fr; } .era { flex-direction: row; flex-wrap: wrap; align-items: center; } .era span { flex-basis: 100%; } }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
@@ -493,7 +499,7 @@ body.raiding #res, body.raiding .speeds, body.raiding #chat { display: none !imp
   <div id="modal" hidden></div>
   <div id="isles" hidden></div>
 </div>
-<script>window.DW_MUSIC = {"spring": ["/music/spring.m4a", "/music/spring.webm"], "tavern": ["/music/tavern.m4a", "/music/tavern.webm"], "brew": ["/music/brew.m4a", "/music/brew.webm"], "night": ["/music/night.m4a", "/music/night.webm"], "rain": ["/music/rain.m4a", "/music/rain.webm"]};</script>
+<script>window.DW_MUSIC = {"spring": ["/music/spring.m4a", "/music/spring.webm"], "tavern": ["/music/tavern.m4a", "/music/tavern.webm"], "brew": ["/music/brew.m4a", "/music/brew.webm"], "night": ["/music/night.m4a", "/music/night.webm"], "rain": ["/music/rain.m4a", "/music/rain.webm"], "lounge": ["/music/lounge.m4a", "/music/lounge.webm"]};</script>
 <script>/* Driftwood — island colony simulation. Pure logic, no DOM. */
 (function (root) {
 'use strict';
@@ -539,10 +545,13 @@ const TYPES = {
   cavyard:    { name: 'Cavalry Yard', size: 2, jobs: 2, cost: { wood: 70, stone: 20, gold: 120 }, unlock: 50, build: 2.4, army: 'cav', desc: 'Trains mounted riders, 8 per yard. Fast, tough, and they carry the most loot.' },
   foundry:    { name: 'Cannon Foundry', size: 2, jobs: 3, cost: { wood: 60, stone: 80, gold: 200 }, unlock: 70, build: 3, army: 'can', desc: 'Casts cannons, 4 per foundry. They smash walls and buildings from long range.' },
   warschool:  { name: 'Military School', size: 2, jobs: 3, cost: { wood: 80, stone: 100, gold: 300 }, unlock: 40, unique: true, build: 3, desc: 'Officers train here. Research stronger troops and build bigger warships.' },
+  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
+  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
+  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
   guardhouse: { name: 'Guardhouse', size: 1, jobs: 3, cost: { wood: 40, stone: 25, gold: 60 }, unlock: 25, build: 1.4, guard: 'guards', desc: 'Three guards patrol nearby and rush out to fight raiders.' },
 };
-const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'stable', 'shipyard', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
-const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'market', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
+const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'stable', 'shipyard', 'store', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
+const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'store', 'market', 'factory', 'office', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
 // raids: how much a raid can carry off, and how long an island is safe afterwards
 // the army: four kinds of troops, trained at their own buildings
 const TROOPS = {
@@ -557,6 +566,59 @@ const RESEARCH = [null, null, { gold: 150, wood: 60 }, { gold: 400, wood: 100, s
 const BOATS = [null, { name: 'Longboat', cap: 6, guns: 0 }, { name: 'Drakkar', cap: 10, guns: 0, cost: { wood: 120, gold: 150 } },
   { name: 'Galleon', cap: 16, guns: 2, cost: { wood: 250, stone: 60, gold: 400 }, need: 'shipyard' }, { name: 'Man-o’-war', cap: 24, guns: 4, cost: { wood: 400, stone: 150, gold: 900 }, need: 'warschool' }];
 const WALLS = { 1: { name: 'Palisade', cost: { wood: 3 }, hp: 260, unlock: 15 }, 2: { name: 'Stone wall', cost: { stone: 4, gold: 2 }, hp: 650, unlock: 40 } };
+/* Eras. Every building keeps its job in both eras; the modern era renames and redraws it, and adds offices, factories and corner shops.
+   applyEra swaps the names in place when an island loads, so everything that shows a name picks up the right one. */
+const MODERN = {
+  hall: ['Town Hall', 'The heart of town. Roads must connect back here. The council meets here every Sunday.'],
+  house: ['Family Home', 'A family moves in. With shops nearby it grows into a two-storey house; add a water tower and a church for a big detached home.'],
+  fishhut: ['Beach Shack', 'A cheap cabin by the water for three. Must be close to the water.'],
+  rowhouse: ['Townhouses', 'Three brick townhouses sharing their walls. Lots of beds on a small plot.'],
+  villa: ['Mansion', 'A big house with a pool for wealthy residents, who pay three times the taxes. They expect a park or square nearby.'],
+  apartment: ['Apartment Tower', 'Five floors of flats for 32. Tenants want shops nearby and love a paved street.'],
+  lumber: ['Lumber Yard', 'Fells grown trees nearby with chainsaws and replants saplings. Works slowly if the forest runs out.'],
+  farm: ['Farm', 'Fields worked by tractor. Feeds about 60 people.'],
+  dock: ['Fishing Pier', 'A trawler heads out each morning. Feeds about 30 people.'],
+  sawmill: ['Timber Mill', 'Turns logs into building timber. Needs a lumber yard within 8 tiles.'],
+  blacksmith: ['Auto Garage', 'Fixes cars and sells parts. Noisy, but pays well.'],
+  stable: ['Trucking Depot', 'Trucks haul goods to the town hall, adding 15% to all production. Residents drive cars on long trips.'],
+  market: ['Strip Mall', 'Shops and a car park. Homes nearby grow bigger and pay 50% more in taxes.'],
+  well: ['Water Tower', 'Running water for the neighbourhood. Needed for big detached homes.'],
+  garden: ['Park', 'Trees, a bench and a fountain. Homes nearby are happier.'],
+  plaza: ['Town Square', 'A paved square with a fountain. Residents meet here, and homes nearby are happier.'],
+  clinic: ['Hospital', 'Doctors and nurses keep families healthy. Homes nearby are happier.'],
+  tavern: ['Fast Food', 'Burgers and fries. Residents drop by in the evening: a big boost to happiness nearby.'],
+  chapel: ['Church', 'Lifts spirits across a wide area. Needed for big detached homes.'],
+  academy: ['University', 'Higher learning. Every home within 22 tiles pays 20% more taxes. Needs a school.'],
+  port: ['Ferry Port', 'A cargo ferry calls every other morning and buys your surplus.'],
+  pier: ['Ferry Landing', 'New residents arrive by ferry here. Keep it connected to the town hall by road.'],
+  watchtower: ['Guard Tower', 'A marksman keeps watch and fires at raiders within 6 tiles.'],
+  barracks: ['Army Barracks', 'Trains riflemen, 12 per barracks. Tough soldiers who wreck buildings and carry loot.'],
+  archery: ['Firing Range', 'Trains marksmen, 12 per range. They shoot from a distance and set buildings on fire.'],
+  cavyard: ['Motor Pool', 'Builds armoured cars, 8 per pool. Fast, tough, and they carry the most loot.'],
+  foundry: ['Tank Factory', 'Builds tanks, 4 per factory. They smash walls and buildings from long range.'],
+  warschool: ['Military Academy', 'Officers train here. Research stronger troops and build bigger warships.'],
+  guardhouse: ['Police Station', 'Three officers patrol nearby and rush out to stop raiders.'],
+};
+const MODERN_TROOPS = { inf: ['Riflemen', 'rifleman'], arc: ['Marksmen', 'marksman'], cav: ['Armoured cars', 'armoured car'], can: ['Tanks', 'tank'] };
+const MODERN_BOATS = [null, 'Landing Craft', 'Patrol Boat', 'Frigate', 'Destroyer'];
+const MODERN_WALLS = { 1: 'Chain-link fence', 2: 'Concrete wall' };
+// an island picks its era when it's founded and keeps it
+const ERAS = { medieval: 'Medieval', modern: 'Modern' };
+function eraOf(S) { return S && S.era === 'modern' ? 'modern' : 'medieval'; }
+const ERA_WORDS = [[/Colony Hall/g, 'Town Hall'], [/settler ships?/g, 'ferry'], [/by ship\b/g, 'by ferry'], [/\bcottages\b/g, 'family homes'], [/\bCottages\b/g, 'Family homes'], [/\bcottage\b/g, 'family home'], [/\bCottage\b/g, 'Family home'],
+  [/\binto (a )?townhouses?\b/g, 'into a two-storey house'], [/\bhorse carts?\b/g, 'trucks'], [/\blumber camps?\b/g, 'lumber yard'], [/\bfishing dock\b/g, 'fishing pier'], [/\bon horseback\b/g, 'by car'], [/\bsettlers\b/g, 'residents'], [/\bSettlers\b/g, 'Residents'], [/\bsettler\b/g, 'resident'], [/\bSettler\b/g, 'Resident'],
+  [/\bLanding Pier\b/g, 'Ferry Landing'], [/\btavern\b/g, 'fast food place'], [/\bmarket\b/g, 'strip mall'], [/\bchapel\b/g, 'church'],
+  [/\bmanors?\b/g, 'detached homes'], [/\bcolony\b/g, 'town'], [/\bColony\b/g, 'Town']];
+function eraText(S, t) { if (eraOf(S) !== 'modern' || typeof t !== 'string') return t; for (const [a, b] of ERA_WORDS) t = t.replace(a, b); return t; }
+let eraNow = 'medieval';
+function applyEra(S) {
+  const e = eraOf(S); if (e === eraNow) return; eraNow = e;
+  for (const k in TYPES) { const T = TYPES[k]; if (!T._m) T._m = [T.name, T.desc]; const M = MODERN[k]; T.name = e === 'modern' && M ? M[0] : T._m[0]; T.desc = e === 'modern' && M ? M[1] : T._m[1]; }
+  for (const k in TROOPS) { const T = TROOPS[k]; if (!T._m) T._m = [T.name, T.one]; T.name = e === 'modern' ? MODERN_TROOPS[k][0] : T._m[0]; T.one = e === 'modern' ? MODERN_TROOPS[k][1] : T._m[1]; }
+  BOATS.forEach((B, i) => { if (!B) return; if (!B._m) B._m = B.name; B.name = e === 'modern' ? MODERN_BOATS[i] : B._m; });
+  for (const k in WALLS) { const W = WALLS[k]; if (!W._m) W._m = W.name; W.name = e === 'modern' ? MODERN_WALLS[k] : W._m; }
+  for (const g of GOALS) { if (!g._m) g._m = [g.title, g.desc]; g.title = e === 'modern' ? eraText(S, g._m[0]) : g._m[0]; g.desc = e === 'modern' ? eraText(S, g._m[1]) : g._m[1]; }
+}
 const RAID = { share: 0.3, cap: { gold: 600, wood: 300, stone: 250 }, shieldH: 8, minPop: 15 };
 const UPGRADE = [null, { wood: 10, stone: 5 }, { wood: 15, stone: 20 }];
 const RESERVE = { wood: 25, stone: 15 }; // houses never spend your stock below this when they upgrade
@@ -775,7 +837,7 @@ function placeHall(S, r) {
 }
 
 /* ---------------- State ---------------- */
-function newGame(seed) {
+function newGame(seed, era) {
   seed = (seed >>> 0) || 1;
   const S = {
     v: 1, seed, rng: Math.imul(seed, 2654435761) | 0, t: 8, speed: 1,
@@ -785,6 +847,7 @@ function newGame(seed) {
     b: [], nextId: 1, goals: {}, pending: null, starving: false, happy: 60, news: [],
     stats: { wood: 0, stone: 0, food: 0, gold: 0, trades: 0, days: [], arrivals: 0, meetings: 0 }, landing: null,
     weather: 'sun', fx: [], meeting: null, promise: null, week: null, warn: {}, wall: new Uint8Array(N * N), wear: new Uint8Array(N * N),
+    era: ERAS[era] ? era : 'medieval',
   };
   attach(S);
   genIsland(S);
@@ -859,6 +922,7 @@ function attach(S) {
 }
 const ev = (S, e) => { S._ev.push(e); };
 function say(S, text, kind) {
+  text = eraText(S, text);
   S.news.unshift({ t: S.t, text, kind: kind || 'info' });
   if (S.news.length > 30) S.news.length = 30;
   ev(S, { type: 'toast', text, kind: kind || 'info' });
@@ -974,9 +1038,9 @@ function quayNear(S, b, r) {
 function cobbleNext(S, b) { for (const [i, j] of around(b)) if (S.road[ci(i, j)] === 3) return true; return false; }
 function coverage(S) {
   const ok = (t, needStaff) => S.b.filter(b => b.type === t && b.conn && done(b) && !b.burnt && (!needStaff || b.staff > 0));
-  const L = { market: ok('market', 1), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
+  const L = { market: ok('market', 1).concat(ok('store', 1)), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
     plaza: ok('plaza'), clinic: ok('clinic', 1), library: ok('library', 1), academy: ok('academy', 1) };
-  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill');
+  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory');
   const light = S.b.some(b => b.type === 'lighthouse' && done(b));
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
@@ -987,7 +1051,7 @@ function coverage(S) {
   for (const b of S.b) {
     const T = TYPES[b.type];
     if (!T.home) continue;
-    const near = (k, r) => L[k].some(m => bDist(m, b) <= (r || TYPES[k].radius));
+    const near = (k, r) => L[k].some(m => bDist(m, b) <= (r || TYPES[m.type].radius || TYPES[k].radius));
     b.cov = {
       market: near('market'), well: near('well'), chapel: near('chapel'), tavern: near('tavern'), school: near('school'), garden: near('garden'),
       orchard: near('orchard', 3.5), plaza: near('plaza'), clinic: near('clinic'), library: near('library'), academy: near('academy'),
@@ -1086,6 +1150,7 @@ function costText(cost) { return Object.keys(cost).map(k => cost[k] + ' ' + k).j
 function canPlace(S, type, i, j, rot) {
   const T = TYPES[type]; if (!T) return { ok: false, reason: 'Unknown building.' };
   const s = T.size;
+  if (T.era && T.era !== eraOf(S)) return { ok: false, reason: 'Only on modern islands.', rot };
   if (T.unlock && pop(S) < T.unlock && !S.goals['unlock_' + type]) return { ok: false, reason: `Unlocks at ${T.unlock} settlers.`, rot };
   if (T.unique && S.b.some(b => b.type === type)) return { ok: false, reason: `You can only build one ${T.name.toLowerCase()}.`, rot };
   if (i < 1 || j < 1 || i + s > N - 1 || j + s > N - 1) return { ok: false, reason: 'Too close to the edge.', rot };
@@ -1813,7 +1878,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
-    rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
+    era: eraOf(S), rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1858,6 +1923,7 @@ function deserialize(o) {
     weather: ['sun', 'cloud', 'rain'].includes(o.weather) ? o.weather : 'sun', fx: Array.isArray(o.fx) ? o.fx : [], meeting: o.meeting || null, promise: o.promise || null, week: o.week || null, warn: o.warn || {},
     mp: o.mp && typeof o.mp === 'object' ? o.mp : undefined, wall: o.wall ? unb64(o.wall, Uint8Array, N * N) : new Uint8Array(N * N),
     army: o.army && typeof o.army === 'object' ? o.army : undefined,
+    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval',
   };
   attach(S);
   for (const r of (o.b || [])) {
@@ -1892,7 +1958,8 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   canPlace, place, demolish, placePier, pierOk, roadPath, roadQuote, buildRoad, removeRoad, brush, plantTrees, clearTrees,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
-  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock };
+  wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock,
+  ERAS, eraOf, applyEra, eraText };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -2115,7 +2182,7 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -2143,17 +2210,31 @@ void main() {
     float dirt = smoothstep(0.33, 0.43, rd.r + rn * 0.1);
     float dirtEdge = smoothstep(0.24, 0.34, rd.r + rn * 0.1) - dirt;
     vec3 dirtC = vec3(0.73, 0.6, 0.43) * (0.9 + 0.16 * vnoise(vWorld.xz * 6.0)) * (0.95 + 0.08 * vnoise(vWorld.xz * 1.3));
+    if (uModern > 0.5) {
+      // asphalt with a pale kerb, and a dashed centre line where the road runs straight along a grid line
+      dirt = smoothstep(0.34, 0.4, rd.r); dirtEdge = smoothstep(0.26, 0.32, rd.r) - dirt;
+      dirtC = vec3(0.33, 0.34, 0.36) * (0.92 + 0.12 * vnoise(vWorld.xz * 9.0));
+      vec2 cell = fract(vWorld.xz);
+      float lx = step(abs(cell.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)), lz = step(abs(cell.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6));
+      float hx = texture(uRoads, (vWorld.xz + vec2(48.0, 47.0)) / 96.0).r * texture(uRoads, (vWorld.xz + vec2(48.0, 49.0)) / 96.0).r;
+      float hz = texture(uRoads, (vWorld.xz + vec2(47.0, 48.0)) / 96.0).r * texture(uRoads, (vWorld.xz + vec2(49.0, 48.0)) / 96.0).r;
+      // only on single-lane roads: no road on either side
+      float sx = texture(uRoads, (vWorld.xz + vec2(47.0, 48.0)) / 96.0).r + texture(uRoads, (vWorld.xz + vec2(49.0, 48.0)) / 96.0).r;
+      float sz = texture(uRoads, (vWorld.xz + vec2(48.0, 47.0)) / 96.0).r + texture(uRoads, (vWorld.xz + vec2(48.0, 49.0)) / 96.0).r;
+      dirtC = mix(dirtC, vec3(0.93, 0.86, 0.55), max(lx * step(0.9, hx) * step(sx, 0.1), lz * step(0.9, hz) * step(sz, 0.1)) * 0.85);
+      alb = mix(alb, vec3(0.78, 0.77, 0.74), dirtEdge * 0.95);
+    } else
     alb = mix(alb, alb * 0.82, dirtEdge * 0.7);
     alb = mix(alb, dirtC, dirt);
     float path = smoothstep(0.56, 0.64, rd.g + rn * 0.12);
-    alb = mix(alb, vec3(0.79, 0.71, 0.55) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
+    alb = mix(alb, (uModern > 0.5 ? vec3(0.8, 0.79, 0.76) : vec3(0.79, 0.71, 0.55)) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
     float cob = smoothstep(0.34, 0.4, rd.b + rn * 0.03);
     if (cob > 0.0) {
       // setts in running bond, each its own shade, with dark joints
       vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
       vec2 f = fract(p), id = floor(p);
       float joint = min(min(f.x, 1.0 - f.x) * 0.55, min(f.y, 1.0 - f.y));
-      vec3 sett = vec3(0.64, 0.61, 0.57) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
+      vec3 sett = (uModern > 0.5 ? vec3(0.66, 0.42, 0.34) : vec3(0.64, 0.61, 0.57)) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
       vec3 cobC = mix(vec3(0.36, 0.34, 0.31), sett, smoothstep(0.03, 0.09, joint));
       float kerb = smoothstep(0.24, 0.3, rd.b) - smoothstep(0.34, 0.4, rd.b);
       alb = mix(alb, vec3(0.8, 0.77, 0.71), kerb * 0.8);
@@ -2452,8 +2533,10 @@ function backOut(t) { const c = 2.2; t = clamp(t, 0, 1) - 1; return 1 + (c + 1) 
 const WALLS = ['#eee2c8', '#e6c88a', '#cdd6b8', '#e8c6b2', '#d2dde0', '#efe7d6', '#ddd2dc'];
 const ROOFS = ['#b65a40', '#4e6576', '#7d4f3c', '#68804f', '#923f35', '#3f4652'];
 // homespun dyes: madder, woad, weld, moss, undyed linen, walnut, rust, slate, sloe, verdigris
+const MSHIRTS = ['#d0473a', '#2f6fa8', '#e8c14a', '#4a8a5a', '#f2f0ea', '#3a3d42', '#e07b39', '#7a5aa0', '#d9748a', '#3fa3a0'];
 const SHIRTS = ['#a8513f', '#4f6d8a', '#c9a54a', '#6d7f48', '#d9cdb4', '#7b5a42', '#b06a3f', '#55606b', '#7a5468', '#4c7c74'];
 const WIN = '#fff1c4';
+const MCARS = ['#b8412f', '#2f5f8a', '#e8e4dc', '#3a3d42', '#6f8f5a', '#c9a23c', '#8a8f96', '#7a3b4f'];
 const HAIR = [[0.17, 0.11, 0.08], [0.29, 0.18, 0.1], [0.48, 0.29, 0.15], [0.72, 0.53, 0.24], [0.85, 0.75, 0.54], [0.55, 0.55, 0.55], [0.1, 0.1, 0.1], [0.63, 0.26, 0.16]];
 const PANTS = [[0.23, 0.23, 0.28], [0.35, 0.27, 0.2], [0.18, 0.28, 0.35], [0.42, 0.36, 0.27], [0.27, 0.27, 0.27], [0.46, 0.3, 0.3]];
 const SKIN = [[0.98, 0.84, 0.7], [0.93, 0.74, 0.58], [0.8, 0.6, 0.45], [0.62, 0.44, 0.32], [0.47, 0.33, 0.24]];
@@ -2464,6 +2547,7 @@ const FIRST_M = ['Arlo', 'Bram', 'Cal', 'Dov', 'Emil', 'Finn', 'Gus', 'Hal', 'Ik
 const SURN = ['Fletcher', 'Marsh', 'Tanner', 'Crabb', 'Hollis', 'Pike', 'Rowe', 'Saltmarsh', 'Thatcher', 'Wick', 'Brindle', 'Cole', 'Dunmore', 'Fenn', 'Gale', 'Harbour', 'Kettle', 'Lark', 'Mossop', 'Nettle', 'Oakes', 'Penrose', 'Quill', 'Reed', 'Shore', 'Tidewell', 'Underhill', 'Vane', 'Weller', 'Yarrow'];
 const JOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Lumberjack', quarry: 'Stonecutter', dock: 'Fisher', market: 'Market trader', stable: 'Stablehand', tavern: 'Innkeeper', school: 'Teacher', chapel: 'Priest', port: 'Dockhand', bakery: 'Baker', sawmill: 'Sawyer', mine: 'Miner', blacksmith: 'Blacksmith', shipyard: 'Shipwright', clinic: 'Doctor', library: 'Librarian', academy: 'Scholar', watchtower: 'Lookout', guardhouse: 'Guard', barracks: 'Drill sergeant', archery: 'Bowyer', cavyard: 'Horse master', foundry: 'Gunsmith', warschool: 'Officer' };
 const SMOKE = { rowhouse: [[-0.42, -0.45, 1.42], [0.2, -0.45, 1.56], [0.82, -0.45, 1.48]], apartment: [[0.45, -0.3, 1.88]], bakery: [[-0.22, -0.42, 0.84]], blacksmith: [[-0.18, -0.22, 0.9]], foundry: [[0.5, -0.65, 1.62]] };
+const SMOKE_M = { factory: [[0.75, -0.6, 1.72], [0.45, -0.75, 1.38]], foundry: [[0.65, -0.6, 1.42]], bakery: [[0.2, -0.2, 0.6]] };
 const isHome = b => !!TYPES[b.type].home;
 
 /* ---------------- Models ---------------- */
@@ -2489,6 +2573,433 @@ function logX(B, x, y, z, len, r, col) {
   }
 }
 function plinth(B, w, d) { B.box(0, -0.04, 0, w * 0.97, 0.07, d * 0.97, '#9b8f7e'); B.box(0, 0.025, 0, w * 0.97 + 0.02, 0.012, d * 0.97 + 0.02, '#a99c89'); }
+
+/* ---------- Modern era buildings ----------
+   Same footprints and doors as the medieval ones (front is +z, 1 unit is one cell); brick, siding, concrete and glass instead of timber and thatch. */
+const MSIDE = ['#e8e3d7', '#d3dce1', '#e2d3b3', '#c3ceb7', '#ece6dc', '#d8c5be', '#cfd6c9'];
+const MBRICK = ['#a65a43', '#8f4f3b', '#b3664c', '#9b5f48'];
+const MCONC = ['#cbc6bc', '#bab5ab', '#d6d1c7'];
+const MROOF = ['#56595f', '#6b4a3e', '#4b5662', '#6c6f73', '#7b5a48'];
+const MDOOR = ['#3f5f7a', '#7a3b33', '#2f4a3a', '#5a4a3f', '#c99a3d'];
+const CARS = ['#b8412f', '#2f5f8a', '#e8e4dc', '#3a3d42', '#6f8f5a', '#c9a23c', '#8a8f96'];
+const GLASS = '#7d97a8';
+function mAt(B, x, z, ry) { B.at(x, 0, z, ry || 0); }
+function mReset(B) { B.at(0, 0, 0, 0); }
+// windows on every side of a box centred on the origin
+function mGrid(W, w, d, y0, floors, fh, ww, wh, sides) {
+  for (let f = 0; f < floors; f++) {
+    const y = y0 + f * fh + (fh - wh) * 0.55;
+    const nx = Math.max(1, Math.floor(w / 0.2)), nz = Math.max(1, Math.floor(d / 0.2));
+    for (let k = 0; k < nx; k++) { const x = -w / 2 + (k + 0.5) * w / nx; W.box(x, y, d / 2 + 0.004, ww, wh, 0.012, WIN); if (sides !== 'front') W.box(x, y, -d / 2 - 0.004, ww, wh, 0.012, WIN); }
+    if (sides === 'all') for (let k = 0; k < nz; k++) { const z = -d / 2 + (k + 0.5) * d / nz; W.box(w / 2 + 0.004, y, z, 0.012, wh, ww, WIN); W.box(-w / 2 - 0.004, y, z, 0.012, wh, ww, WIN); }
+  }
+}
+// a flat roof with a low parapet and a couple of rooftop units
+function mFlat(B, w, d, y, col, units, seed) {
+  B.box(0, y, 0, w, 0.02, d, col || '#6b6e70');
+  const p = 0.03, c = '#9a958c';
+  B.box(0, y, d / 2 - p / 2, w, 0.05, p, c); B.box(0, y, -d / 2 + p / 2, w, 0.05, p, c); B.box(w / 2 - p / 2, y, 0, p, 0.05, d, c); B.box(-w / 2 + p / 2, y, 0, p, 0.05, d, c);
+  for (let k = 0; k < (units || 0); k++) { const r = hash((seed || 1) * 7 + k); B.box((r - 0.5) * w * 0.6, y + 0.02, (hash((seed || 1) * 11 + k) - 0.5) * d * 0.6, 0.12, 0.07, 0.1, '#c9cbcc'); }
+}
+function mCar(B, x, z, ry, col) {
+  mAt(B, x, z, ry);
+  B.box(0, 0.025, 0, 0.13, 0.055, 0.25, col); B.box(0, 0.08, -0.01, 0.115, 0.05, 0.13, '#a9bccb'); B.box(0, 0.128, -0.01, 0.118, 0.008, 0.13, col);
+  for (const [a, b] of [[-0.065, 0.08], [0.065, 0.08], [-0.065, -0.08], [0.065, -0.08]]) B.box(a, 0, b, 0.02, 0.045, 0.05, '#2a2b2e');
+  mReset(B);
+}
+function mTree(B, x, z, s) { B.cyl(x, 0, z, 0.02 * s, 0.018 * s, 0.18 * s, 5, '#6b4a33'); smoothBlob(B, x, 0.24 * s, z, 0.11 * s, 0.11 * s, 0.11 * s, '#5f9a4b', 0); }
+function mDoor(B, x, z, col) { B.box(x, 0.02, z, 0.1, 0.17, 0.014, col || '#3f5f7a'); B.box(x, 0.19, z + 0.01, 0.13, 0.015, 0.03, '#d8d3c9'); }
+function mLot(B, w, d, z) { B.box(0, 0, z, w, 0.012, d, '#5a5d61'); for (let k = -2; k <= 2; k++) B.box(k * w / 5, 0.013, z, 0.012, 0.004, d * 0.7, '#e8e4dc'); }
+function mAwning(B, x, y, z, w, col) { B.at(x, y, z, 0); B.box(0, 0, 0.06, w, 0.012, 0.13, col); B.box(0, -0.035, 0.125, w, 0.035, 0.008, col); mReset(B); }
+// a flat round face looking along +z (clocks, signs, wheels, targets)
+function mDisc(B, x, y, z, r, col, seg) { const c = hex(col), n = seg || 14; for (let k = 0; k < n; k++) { const a = k / n * 6.283, b = (k + 1) / n * 6.283; B.tri([x, y, z], [x + Math.cos(a) * r, y + Math.sin(a) * r, z], [x + Math.cos(b) * r, y + Math.sin(b) * r, z], c, [x, y, z - 1]); } }
+function mFlag(B, x, z, h) { B.box(x, 0, z, 0.018, h, 0.018, '#d0d3d6'); B.box(x + 0.07, h - 0.1, z, 0.12, 0.08, 0.006, '#3d6b8c'); }
+
+function modernModel(type, level, variant) {
+  const B = new Builder(), W = new Builder();
+  const v = variant | 0, r = k => hash(v * 31 + k * 7 + level), side = MSIDE[v % MSIDE.length], brick = MBRICK[v % MBRICK.length], roof = MROOF[(v >> 2) % MROOF.length];
+  const pl = s => B.box(0, -0.04, 0, s, 0.06, s, '#a39c90');
+  switch (type) {
+    case 'hall': { // civic building with columns, steps, a clock and a flag
+      pl(1.94); B.box(0, 0.02, -0.1, 1.5, 0.62, 1.1, '#e3dccd'); mFlat(B, 1.5, 1.1, 0.64, '#8a8f93', 2, 3);
+      for (let k = 0; k < 6; k++) B.cyl(-0.55 + k * 0.22, 0.06, 0.55, 0.035, 0.035, 0.5, 8, '#f2ede3');
+      B.box(0, 0.56, 0.55, 1.3, 0.08, 0.12, '#f2ede3'); B.gable(0, 0.64, 0.5, 1.3, 0.22, 0.2, '#e3dccd');
+      B.box(0, 0.02, 0.72, 1.1, 0.04, 0.2, '#d6d1c7'); B.box(0, 0.06, 0.66, 1.0, 0.04, 0.12, '#d6d1c7');
+      B.box(0, 0.66, -0.15, 0.36, 0.4, 0.36, '#e3dccd'); B.cyl(0, 1.06, -0.15, 0.2, 0.04, 0.24, 10, '#5d7f74');
+      mDisc(B, 0, 0.85, 0.035, 0.09, '#fbf7ee');
+      mDoor(B, 0, 0.4, '#5a3f2e'); mGrid(W, 1.5, 1.1, 0.06, 2, 0.28, 0.07, 0.16, 'all');
+      break;
+    }
+    case 'house': {
+      const sh = v % 3, col = side, door = MDOOR[v % MDOOR.length];
+      if (level === 0) { // bungalow with a driveway
+        pl(0.86); B.box(-0.05, 0.02, -0.06, 0.56, 0.34, 0.48, col); B.gable(-0.05, 0.36, -0.06, 0.64, 0.22, 0.56, roof, col);
+        mDoor(B, -0.05, 0.181, door); frontWins(W, 0.181, [0.17], [-0.24, 0.14], 0.12, 0.1);
+        B.box(0.32, 0.012, 0.12, 0.16, 0.01, 0.6, '#b9b4ab'); if (r(1) < 0.6) mCar(B, 0.32, 0.12, 0, CARS[v % CARS.length]);
+        B.box(-0.38, 0.02, 0.36, 0.03, 0.12, 0.03, '#6b4a33'); B.box(-0.38, 0.13, 0.36, 0.05, 0.04, 0.08, '#3a5a7a');
+      } else if (level === 1) { // two storeys and a garage
+        pl(0.9); B.box(-0.08, 0.02, -0.06, 0.52, 0.66, 0.5, col); B.gable(-0.08, 0.68, -0.06, 0.6, 0.24, 0.58, roof, col);
+        B.box(0.3, 0.02, 0.0, 0.26, 0.3, 0.42, col); B.box(0.3, 0.32, 0.0, 0.3, 0.03, 0.46, roof); B.box(0.3, 0.03, 0.211, 0.2, 0.22, 0.012, '#e5e1d8');
+        for (let k = 0; k < 3; k++) B.box(0.3, 0.08 + k * 0.06, 0.218, 0.2, 0.006, 0.006, '#c9c4bb');
+        mDoor(B, -0.08, 0.191, door); frontWins(W, 0.191, [0.2, 0.47], [-0.25, 0.08], 0.11, 0.11);
+        if (sh === 1) { B.box(-0.08, 0.02, 0.27, 0.44, 0.02, 0.14, '#b9a688'); B.box(-0.08, 0.28, 0.27, 0.48, 0.02, 0.16, roof); for (const x of [-0.27, 0.11]) B.box(x, 0.04, 0.33, 0.02, 0.24, 0.02, '#f2ede3'); }
+      } else { // big detached home with porch and a tree
+        pl(0.96); B.box(-0.12, 0.02, -0.08, 0.6, 0.68, 0.56, col); B.gable(-0.12, 0.7, -0.08, 0.68, 0.26, 0.64, roof, col);
+        B.box(0.28, 0.02, -0.1, 0.32, 0.5, 0.48, col); B.gable(0.28, 0.52, -0.1, 0.36, 0.18, 0.52, roof, col);
+        B.box(-0.12, 0.02, 0.27, 0.6, 0.03, 0.16, '#b9a688'); B.box(-0.12, 0.3, 0.27, 0.64, 0.025, 0.18, roof);
+        for (const x of [-0.38, -0.12, 0.14]) B.box(x, 0.05, 0.34, 0.025, 0.25, 0.025, '#f2ede3');
+        mDoor(B, -0.12, 0.201, door); frontWins(W, 0.201, [0.2, 0.48], [-0.33, 0.09], 0.11, 0.12); frontWins(W, 0.141, [0.2], [0.28], 0.14, 0.12);
+        mTree(B, 0.36, 0.34, 0.9);
+      }
+      break;
+    }
+    case 'fishhut': {
+      for (const [x, z] of [[-0.22, -0.2], [0.22, -0.2], [-0.22, 0.2], [0.22, 0.2]]) B.box(x, -0.2, z, 0.04, 0.32, 0.04, '#6b5a4a');
+      B.box(0, 0.1, 0, 0.56, 0.04, 0.5, '#a08a70'); B.box(0, 0.14, -0.04, 0.46, 0.3, 0.4, ['#8fb6c9', '#e8c9a0', '#c9d9b4'][v % 3]);
+      B.box(0, 0.44, -0.04, 0.54, 0.03, 0.48, '#c4c8cc'); mDoor(B, 0.1, 0.161, '#e8e3d7'); frontWins(W, 0.161, [0.27], [-0.12], 0.1, 0.09);
+      break;
+    }
+    case 'rowhouse': { // three brick townhouses with stoops and their own doors
+      pl(1.94);
+      for (let k = 0; k < 3; k++) {
+        const x = -0.6 + k * 0.6, h = 0.92 + r(k) * 0.18, col = MBRICK[(v + k) % MBRICK.length];
+        B.box(x, 0.02, -0.12, 0.58, h, 1.1, col); mFlat(B, 0.58, 1.1, h + 0.02, '#5d6064', 1, v + k);
+        B.box(x, 0.02, 0.48, 0.24, 0.08, 0.12, '#cbc6bc'); mDoor(B, x + 0.08, 0.432, MDOOR[(v + k) % MDOOR.length]);
+        for (let f = 0; f < 3; f++) { W.box(x - 0.13, 0.12 + f * 0.27, 0.434, 0.12, 0.16, 0.012, WIN); if (f) W.box(x + 0.1, 0.12 + f * 0.27, 0.434, 0.12, 0.16, 0.012, WIN); }
+        B.box(x, h - 0.06, 0.43, 0.58, 0.05, 0.02, '#e3ddd1');
+      }
+      break;
+    }
+    case 'villa': { // mansion: portico, hip roof, a pool at the back
+      pl(1.94); B.box(0, 0.02, -0.15, 1.3, 0.72, 0.9, '#f1ece2'); B.cyl(0, 0.74, -0.15, 0.95, 0.5, 0.3, 4, roof, null, Math.PI / 4);
+      for (let k = 0; k < 4; k++) B.cyl(-0.3 + k * 0.2, 0.04, 0.4, 0.03, 0.03, 0.66, 8, '#ffffff');
+      B.box(0, 0.7, 0.38, 0.75, 0.06, 0.2, '#ffffff'); B.box(0, 0.02, 0.42, 0.8, 0.03, 0.26, '#d6d1c7');
+      mDoor(B, 0, 0.301, '#2f3a45'); mGrid(W, 1.3, 0.9, 0.08, 2, 0.32, 0.1, 0.18, 'all');
+      B.box(-0.3, -0.005, -0.8, 0.9, 0.03, 0.3, '#4fa3c7'); B.box(-0.3, -0.01, -0.8, 1.0, 0.025, 0.38, '#e3ddd1');
+      for (const x of [-0.85, 0.85]) mTree(B, x, 0.6, 1.1);
+      break;
+    }
+    case 'apartment': { // five floors with balconies and a water tank on the roof
+      pl(1.94); const h = 1.9;
+      B.box(0, 0.02, -0.05, 1.5, h, 1.3, MCONC[v % 3]); mFlat(B, 1.5, 1.3, h + 0.02, '#5d6064', 3, v);
+      mGrid(W, 1.5, 1.3, 0.1, 5, 0.36, 0.12, 0.2, 'all');
+      for (let f = 1; f < 5; f++) for (let k = 0; k < 3; k++) B.box(-0.5 + k * 0.5, 0.06 + f * 0.36, 0.66, 0.36, 0.025, 0.16, '#a9a49b');
+      B.cyl(0.4, h + 0.05, -0.3, 0.14, 0.14, 0.22, 10, '#8a6a4f'); B.cyl(0.4, h + 0.27, -0.3, 0.16, 0, 0.1, 10, '#6b4a33');
+      B.box(0, 0.02, 0.66, 0.4, 0.26, 0.04, '#7d97a8'); B.box(0, 0.3, 0.7, 0.5, 0.03, 0.12, '#3f4652');
+      break;
+    }
+    case 'lumber': { // shed, stacked logs and a forklift
+      pl(0.94); B.box(-0.18, 0.02, -0.18, 0.5, 0.36, 0.44, '#8f6e52'); B.box(-0.18, 0.38, -0.18, 0.56, 0.03, 0.5, '#7d8287');
+      for (let k = 0; k < 3; k++) logX(B, 0.22, 0.05 + k * 0.08, 0.1 + (k % 2) * 0.04, 0.42, 0.04, '#8a5a3a');
+      B.box(0.2, 0.02, -0.28, 0.14, 0.12, 0.22, '#e3b23c'); B.box(0.2, 0.14, -0.33, 0.1, 0.1, 0.08, '#2f3a45'); B.box(0.2, 0.02, -0.14, 0.12, 0.2, 0.02, '#3a3d42');
+      break;
+    }
+    case 'farm': { // barn, silo and tractor in the corner, fields everywhere else
+      B.box(-1.05, 0.02, 1.0, 0.7, 0.5, 0.6, '#a63d32'); B.gable(-1.05, 0.52, 1.0, 0.76, 0.3, 0.66, '#5c5f63', '#a63d32');
+      B.box(-1.05, 0.04, 1.31, 0.28, 0.32, 0.012, '#f2ede3');
+      B.cyl(-1.18, 0.02, 0.45, 0.16, 0.16, 0.95, 12, '#c9cbcc'); smoothBlob(B, -1.18, 0.97, 0.45, 0.16, 0.12, 0.16, '#b0b3b6', 0);
+      mAt(B, -0.55, 1.2, 0.6); B.box(0, 0.06, 0, 0.14, 0.1, 0.2, '#3f7d4e'); B.box(0, 0.16, -0.04, 0.1, 0.1, 0.09, '#a9bccb');
+      B.box(-0.08, 0.01, 0.06, 0.03, 0.14, 0.14, '#2a2b2e'); B.box(0.08, 0.01, 0.06, 0.03, 0.14, 0.14, '#2a2b2e'); mReset(B);
+      break;
+    }
+    case 'orchard': {
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { const x = -0.6 + i * 0.6, z = -0.6 + j * 0.55; B.cyl(x, 0, z, 0.03, 0.025, 0.2, 5, '#6b4a33'); smoothBlob(B, x, 0.3, z, 0.17, 0.15, 0.17, '#5c9a48', 0); for (let k = 0; k < 3; k++) B.box(x + (hash(i * 9 + j * 3 + k) - 0.5) * 0.24, 0.26 + hash(k + i) * 0.1, z + 0.15, 0.04, 0.04, 0.04, '#d9452f'); }
+      B.box(0.7, 0.02, 0.75, 0.3, 0.24, 0.26, '#d9cdb4'); B.box(0.7, 0.26, 0.75, 0.34, 0.03, 0.3, '#7d8287');
+      for (let k = 0; k < 3; k++) B.box(0.38 + k * 0.1, 0.02, 0.85, 0.08, 0.07, 0.1, '#b07b4f');
+      break;
+    }
+    case 'dock': { // concrete fishing pier with a hut and nets
+      B.box(0, -0.25, 0.1, 0.46, 0.33, 0.9, '#bdb8af'); B.box(0, 0.08, 0.1, 0.48, 0.02, 0.92, '#d0cbc2');
+      B.box(-0.1, 0.1, -0.22, 0.24, 0.24, 0.22, '#5b7d93'); B.box(-0.1, 0.34, -0.22, 0.28, 0.025, 0.26, '#7d8287');
+      for (const z of [0.2, 0.5]) B.cyl(0.18, 0.1, z, 0.025, 0.03, 0.08, 6, '#3a3d42');
+      B.box(0.12, 0.1, -0.12, 0.12, 0.05, 0.12, '#e3b23c');
+      break;
+    }
+    case 'bakery': {
+      pl(0.94); B.box(0, 0.02, -0.04, 0.68, 0.5, 0.56, '#efe2c8'); mFlat(B, 0.68, 0.56, 0.52, '#6b6e70', 1, v);
+      B.box(0, 0.4, 0.245, 0.68, 0.1, 0.02, '#8a3b2f'); mAwning(B, 0, 0.36, 0.245, 0.6, '#c9573f');
+      W.box(-0.17, 0.08, 0.25, 0.26, 0.22, 0.012, WIN); mDoor(B, 0.18, 0.241, '#5a3f2e');
+      break;
+    }
+    case 'sawmill': { // timber mill: sawtooth roof, stacks of boards
+      pl(1.94); B.box(0, 0.02, -0.15, 1.4, 0.5, 1.2, '#8a8d91');
+      for (let k = 0; k < 4; k++) { B.at(-0.525 + k * 0.35, 0.52, -0.15, 0); B.quad([-0.175, 0, -0.6], [-0.175, 0, 0.6], [0.175, 0.2, 0.6], [0.175, 0.2, -0.6], hex('#6d7176'), [0, -1, 0]); B.box(0.17, 0, 0, 0.012, 0.2, 1.2, '#a9bccb'); mReset(B); }
+      for (let k = 0; k < 3; k++) B.box(-0.4 + k * 0.4, 0.02, 0.65, 0.3, 0.1 + k * 0.03, 0.22, '#d8b98a');
+      B.box(0, 0.02, 0.455, 0.4, 0.32, 0.012, '#c9c4bb'); mGrid(W, 1.4, 1.2, 0.08, 1, 0.3, 0.12, 0.12, 'front');
+      break;
+    }
+    case 'quarry': { // excavator and gravel heaps
+      for (let k = 0; k < 3; k++) smoothBlob(B, -0.5 + k * 0.45, 0.04, -0.4 + (k % 2) * 0.3, 0.3, 0.18 + k * 0.04, 0.26, ['#b3ac9e', '#a39c90', '#c2bbad'][k], 0);
+      mAt(B, 0.4, 0.45, -0.6); B.box(0, 0.02, 0, 0.26, 0.08, 0.34, '#2f3236'); B.box(0, 0.1, 0, 0.24, 0.14, 0.24, '#e3b23c'); B.box(0.05, 0.24, 0.02, 0.1, 0.1, 0.1, '#a9bccb');
+      B.beam([-0.05, 0.2, 0.1], [-0.05, 0.42, 0.42], 0.05, 0.05, '#e3b23c'); B.beam([-0.05, 0.42, 0.42], [-0.05, 0.12, 0.62], 0.04, 0.04, '#e3b23c'); B.box(-0.05, 0.04, 0.62, 0.12, 0.08, 0.1, '#5a5d61'); mReset(B);
+      B.box(-0.5, 0.02, 0.7, 0.4, 0.22, 0.26, '#cbc6bc'); B.box(-0.5, 0.24, 0.7, 0.44, 0.02, 0.3, '#7d8287');
+      break;
+    }
+    case 'mine': { // headframe tower over the shaft
+      pl(1.94); B.box(-0.35, 0.02, 0.3, 0.7, 0.4, 0.6, '#a65a43'); mFlat(B, 0.7, 0.6, 0.42, '#5d6064', 1, v);
+      for (const [x, z] of [[0.25, -0.55], [0.75, -0.55], [0.25, -0.05], [0.75, -0.05]]) B.beam([x, 0, z], [0.5, 1.4, -0.3], 0.04, 0.04, '#6d7176');
+      mDisc(B, 0.5, 1.35, -0.28, 0.16, '#3a3d42'); mDisc(B, 0.5, 1.35, -0.32, 0.16, '#3a3d42'); mGrid(W, 0.7, 0.6, 0.08, 1, 0.3, 0.1, 0.12, 'front');
+      break;
+    }
+    case 'blacksmith': { // auto garage: roll-up doors, a car on the forecourt, tyres
+      pl(0.94); B.box(0, 0.02, -0.08, 0.72, 0.42, 0.56, '#d6d1c7'); mFlat(B, 0.72, 0.56, 0.44, '#6b6e70', 0, v);
+      B.box(0, 0.34, 0.205, 0.72, 0.07, 0.02, '#c9573f');
+      for (const x of [-0.18, 0.18]) { B.box(x, 0.02, 0.205, 0.28, 0.28, 0.012, '#b9bcbf'); for (let k = 0; k < 4; k++) B.box(x, 0.06 + k * 0.06, 0.212, 0.28, 0.006, 0.006, '#9a9da0'); }
+      mCar(B, 0.2, 0.36, 0.2, CARS[(v + 3) % CARS.length]); for (let k = 0; k < 3; k++) B.cyl(-0.33, 0.02 + k * 0.04, 0.33, 0.05, 0.05, 0.035, 10, '#2a2b2e');
+      break;
+    }
+    case 'office': { // glass office block with a canopy
+      pl(1.94); const h = 2.3;
+      B.box(0, 0.02, -0.05, 1.3, h, 1.2, '#8fa6b4'); mFlat(B, 1.3, 1.2, h + 0.02, '#5d6064', 3, v + 2);
+      for (let f = 0; f < 7; f++) B.box(0, 0.3 + f * 0.31, -0.05, 1.32, 0.03, 1.22, '#d6d9db');
+      mGrid(W, 1.3, 1.2, 0.08, 7, 0.31, 0.16, 0.22, 'all');
+      B.box(0, 0.32, 0.65, 0.7, 0.03, 0.22, '#d6d9db'); B.box(0, 0.02, 0.556, 0.36, 0.28, 0.012, '#a9bccb');
+      for (const x of [-0.75, 0.75]) mTree(B, x, 0.75, 0.9);
+      break;
+    }
+    case 'factory': { // sawtooth hall, two chimneys, a loading dock and a truck
+      pl(1.94); B.box(-0.1, 0.02, -0.1, 1.5, 0.6, 1.3, '#b8b3aa');
+      for (let k = 0; k < 4; k++) { B.at(-0.6 + k * 0.38, 0.62, -0.1, 0); B.quad([-0.19, 0, -0.65], [-0.19, 0, 0.65], [0.19, 0.22, 0.65], [0.19, 0.22, -0.65], hex('#7b7f84'), [0, -1, 0]); B.box(0.185, 0, 0, 0.012, 0.22, 1.3, '#9fb6c4'); mReset(B); }
+      B.cyl(0.75, 0.02, -0.6, 0.1, 0.08, 1.7, 10, '#a65a43'); B.cyl(0.75, 1.62, -0.6, 0.11, 0.11, 0.06, 10, '#3a3d42');
+      B.cyl(0.45, 0.02, -0.75, 0.08, 0.065, 1.35, 10, '#a65a43');
+      B.box(-0.3, 0.02, 0.58, 0.6, 0.14, 0.12, '#9a958c'); for (const x of [-0.45, -0.15]) B.box(x, 0.16, 0.556, 0.24, 0.3, 0.012, '#8a8d91');
+      mAt(B, 0.45, 0.8, 0); B.box(0, 0.03, 0.1, 0.2, 0.2, 0.42, '#e8e4dc'); B.box(0, 0.03, -0.2, 0.18, 0.16, 0.16, '#2f5f8a'); mReset(B);
+      mGrid(W, 1.5, 1.3, 0.1, 1, 0.4, 0.14, 0.14, 'front');
+      break;
+    }
+    case 'store': { // corner shop with an awning
+      pl(0.94); B.box(0, 0.02, -0.05, 0.64, 0.42, 0.54, MSIDE[(v + 2) % 7]); mFlat(B, 0.64, 0.54, 0.44, '#6b6e70', 1, v);
+      B.box(0, 0.34, 0.225, 0.64, 0.08, 0.02, ['#2f7c78', '#b5523b', '#d9a441'][v % 3]); mAwning(B, 0, 0.3, 0.225, 0.56, ['#2f7c78', '#b5523b', '#d9a441'][v % 3]);
+      W.box(-0.14, 0.06, 0.232, 0.28, 0.2, 0.012, WIN); mDoor(B, 0.18, 0.221, '#a9bccb');
+      B.box(-0.3, 0.02, 0.33, 0.1, 0.16, 0.06, '#d6d1c7');
+      break;
+    }
+    case 'stable': { // trucking depot
+      pl(1.94); B.box(-0.2, 0.02, -0.4, 1.4, 0.6, 0.9, '#9fa6ad'); mFlat(B, 1.4, 0.9, 0.62, '#5d6064', 2, v);
+      for (let k = 0; k < 3; k++) B.box(-0.65 + k * 0.45, 0.02, 0.055, 0.34, 0.42, 0.012, '#c9cbcc');
+      for (let k = 0; k < 2; k++) { mAt(B, -0.3 + k * 0.6, 0.55, 0); B.box(0, 0.03, -0.05, 0.22, 0.24, 0.5, ['#e8e4dc', '#b8412f'][k]); B.box(0, 0.03, 0.27, 0.2, 0.18, 0.16, '#2f5f8a'); B.box(0, 0.13, 0.355, 0.18, 0.06, 0.006, '#a9bccb'); mReset(B); }
+      break;
+    }
+    case 'shipyard': { // dry dock with a gantry crane
+      B.box(0, -0.2, 0, 1.8, 0.24, 1.8, '#bdb8af'); B.box(0, -0.15, 0.1, 0.9, 0.2, 1.5, '#7d97a8');
+      B.at(0, 0, 0.1, 0); B.box(0, 0.0, 0, 0.5, 0.25, 1.1, '#5d6064'); B.box(0, 0.25, 0.1, 0.3, 0.16, 0.4, '#e8e4dc'); mReset(B);
+      for (const x of [-0.6, 0.6]) B.box(x, 0, -0.3, 0.06, 1.3, 0.06, '#e3b23c'); B.box(0, 1.3, -0.3, 1.3, 0.08, 0.1, '#e3b23c'); B.box(0.2, 1.2, -0.3, 0.12, 0.12, 0.14, '#3a3d42');
+      break;
+    }
+    case 'market': { // strip mall: a row of shops and a car park
+      pl(1.94); B.box(0, 0.02, -0.45, 1.8, 0.48, 0.9, '#e3ddd1'); mFlat(B, 1.8, 0.9, 0.5, '#6b6e70', 3, v);
+      const C = ['#b5523b', '#2f7c78', '#d9a441', '#4f6d8a'];
+      for (let k = 0; k < 4; k++) { const x = -0.675 + k * 0.45; B.box(x, 0.38, 0.005, 0.42, 0.09, 0.02, C[k]); W.box(x - 0.06, 0.06, 0.012, 0.24, 0.24, 0.012, WIN); B.box(x + 0.13, 0.02, 0.012, 0.09, 0.26, 0.012, '#a9bccb'); }
+      B.box(0, 0.33, 0.07, 1.8, 0.02, 0.14, '#d6d1c7');
+      mLot(B, 1.8, 0.75, 0.55); for (let k = 0; k < 4; k++) if (r(k) < 0.7) mCar(B, -0.72 + k * 0.48, 0.55, 0, CARS[(v + k) % CARS.length]);
+      break;
+    }
+    case 'well': { // water tower
+      for (const [x, z] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) B.beam([x, 0, z], [x * 0.6, 0.9, z * 0.6], 0.03, 0.03, '#8a8f96');
+      B.cyl(0, 0.9, 0, 0.26, 0.26, 0.34, 14, '#cfd6d9'); B.cyl(0, 1.24, 0, 0.28, 0.02, 0.14, 14, '#a9b1b6'); B.cyl(0, 1.0, 0, 0.265, 0.265, 0.05, 14, '#3f6f8a');
+      break;
+    }
+    case 'garden': { // park
+      B.box(0, -0.005, 0, 0.92, 0.02, 0.92, '#7fae5a'); B.box(0, 0.006, 0, 0.12, 0.005, 0.92, '#d6cdb8'); B.box(0, 0.006, 0, 0.92, 0.005, 0.12, '#d6cdb8');
+      for (const [x, z] of [[-0.3, -0.3], [0.3, 0.3], [-0.3, 0.3]]) mTree(B, x, z, 1.1);
+      B.cyl(0.28, 0.01, -0.28, 0.12, 0.12, 0.06, 12, '#cbc6bc'); B.cyl(0.28, 0.05, -0.28, 0.1, 0.1, 0.012, 12, '#6fb3d2');
+      bench(B, 0.12, 0.3, 0);
+      break;
+    }
+    case 'plaza': { // town square
+      B.box(0, -0.005, 0, 1.9, 0.025, 1.9, '#d6d1c7');
+      for (let i = -3; i <= 3; i++) { B.box(i * 0.27, 0.021, 0, 0.008, 0.003, 1.9, '#bdb8af'); B.box(0, 0.021, i * 0.27, 1.9, 0.003, 0.008, '#bdb8af'); }
+      B.cyl(0, 0.02, 0, 0.36, 0.38, 0.1, 16, '#cbc6bc'); B.cyl(0, 0.1, 0, 0.32, 0.32, 0.01, 16, '#6fb3d2'); B.cyl(0, 0.1, 0, 0.05, 0.04, 0.42, 8, '#cbc6bc'); B.cyl(0, 0.52, 0, 0.14, 0.05, 0.06, 10, '#cbc6bc');
+      for (const [x, z] of [[-0.75, -0.75], [0.75, -0.75], [-0.75, 0.75], [0.75, 0.75]]) mTree(B, x, z, 1.2);
+      for (const a of [0, 1, 2, 3]) lantern(B, W, Math.cos(a * 1.571 + 0.785) * 0.62, 0.02, Math.sin(a * 1.571 + 0.785) * 0.62, 0.5);
+      break;
+    }
+    case 'clinic': { // hospital with a red cross and an ambulance bay
+      pl(0.94); B.box(0, 0.02, -0.1, 0.78, 0.9, 0.6, '#f2f0ea'); mFlat(B, 0.78, 0.6, 0.92, '#6b6e70', 1, v);
+      B.box(0, 0.62, 0.205, 0.22, 0.07, 0.012, '#c8372d'); B.box(0, 0.555, 0.205, 0.07, 0.2, 0.012, '#c8372d');
+      mGrid(W, 0.78, 0.6, 0.06, 3, 0.28, 0.09, 0.14, 'all');
+      B.box(0, 0.24, 0.27, 0.5, 0.025, 0.16, '#d6d9db'); mAt(B, 0.28, 0.38, 1.571); B.box(0, 0.03, 0, 0.13, 0.12, 0.26, '#f4f2ec'); B.box(0, 0.09, 0.0, 0.135, 0.02, 0.27, '#c8372d'); mReset(B);
+      break;
+    }
+    case 'tavern': { // fast food: low building, a tall sign, a drive-through and outside tables
+      pl(1.94); B.box(-0.2, 0.02, -0.25, 1.2, 0.46, 1.0, '#ece6dc'); B.box(-0.2, 0.46, -0.25, 1.24, 0.1, 1.04, '#c8372d'); mFlat(B, 1.2, 1.0, 0.56, '#6b6e70', 2, v);
+      W.box(-0.2, 0.08, 0.256, 0.9, 0.26, 0.012, WIN); mDoor(B, 0.25, 0.252, '#a9bccb');
+      B.box(0.78, 0, 0.62, 0.05, 1.3, 0.05, '#8a8f96'); mDisc(B, 0.78, 1.42, 0.65, 0.2, '#e7b52b', 16); mDisc(B, 0.78, 1.42, 0.655, 0.12, '#c8372d', 16);
+      B.box(0.75, 0.005, -0.2, 0.3, 0.01, 1.4, '#5a5d61');
+      for (const x of [-0.6, -0.2]) { B.cyl(x, 0.02, 0.65, 0.12, 0.12, 0.012, 10, '#d6d1c7'); B.cyl(x, 0.02, 0.65, 0.015, 0.015, 0.16, 6, '#8a8f96'); B.cyl(x, 0.18, 0.65, 0.13, 0.13, 0.012, 10, '#e8e4dc'); B.cyl(x, 0.19, 0.65, 0.01, 0.01, 0.3, 4, '#8a8f96'); B.cyl(x, 0.48, 0.65, 0.18, 0, 0.08, 8, ['#c8372d', '#e7b52b'][x < -0.4 ? 0 : 1]); }
+      if (r(2) < 0.7) mCar(B, 0.75, 0.0, 0, CARS[(v + 1) % CARS.length]);
+      break;
+    }
+    case 'chapel': { // church with a steeple
+      pl(1.94); B.box(0, 0.02, -0.2, 1.0, 0.7, 1.3, '#f1ece2'); B.gable(0, 0.72, -0.2, 1.1, 0.45, 1.4, '#55585e', '#f1ece2');
+      B.box(0, 0.02, 0.6, 0.38, 1.25, 0.38, '#f1ece2'); B.cyl(0, 1.27, 0.6, 0.27, 0, 0.75, 4, '#55585e', null, Math.PI / 4);
+      B.box(0, 2.0, 0.6, 0.025, 0.2, 0.025, '#d9b45a'); B.box(0, 2.1, 0.6, 0.12, 0.025, 0.025, '#d9b45a');
+      mDoor(B, 0, 0.792, '#7a3b33');
+      for (let k = 0; k < 4; k++) { W.box(0.505, 0.2, -0.75 + k * 0.36, 0.012, 0.32, 0.1, '#e8d38a'); W.box(-0.505, 0.2, -0.75 + k * 0.36, 0.012, 0.32, 0.1, '#e8d38a'); }
+      break;
+    }
+    case 'school': { // brick school, flagpole, yellow bus, playground
+      pl(1.94); B.box(-0.1, 0.02, -0.3, 1.5, 0.75, 0.9, '#b3664c'); mFlat(B, 1.5, 0.9, 0.77, '#5d6064', 2, v);
+      B.box(-0.1, 0.62, 0.155, 1.5, 0.04, 0.02, '#e3ddd1'); mGrid(W, 1.5, 0.9, 0.06, 2, 0.34, 0.16, 0.2, 'all');
+      B.box(-0.1, 0.02, 0.16, 0.3, 0.32, 0.03, '#e3ddd1'); mDoor(B, -0.1, 0.18, '#3f5f7a');
+      mFlag(B, -0.85, 0.5, 1.0);
+      mAt(B, 0.55, 0.62, 1.571); B.box(0, 0.03, 0, 0.18, 0.16, 0.6, '#e7b52b'); B.box(0, 0.13, 0, 0.185, 0.05, 0.56, '#a9bccb'); B.box(0, 0.03, 0.31, 0.16, 0.08, 0.02, '#3a3d42'); mReset(B);
+      B.box(-0.35, 0.02, 0.68, 0.06, 0.32, 0.06, '#c8372d'); B.beam([-0.35, 0.3, 0.68], [-0.05, 0.02, 0.68], 0.06, 0.03, '#d9a441');
+      break;
+    }
+    case 'library': { // stone library with columns
+      pl(1.94); B.box(0, 0.02, -0.1, 1.5, 0.7, 1.2, '#d9d2c3'); mFlat(B, 1.5, 1.2, 0.72, '#7d8287', 1, v);
+      for (let k = 0; k < 5; k++) B.cyl(-0.5 + k * 0.25, 0.05, 0.6, 0.04, 0.04, 0.58, 8, '#f1ece2');
+      B.box(0, 0.62, 0.6, 1.2, 0.08, 0.14, '#f1ece2'); B.box(0, 0.02, 0.7, 1.2, 0.04, 0.14, '#cbc6bc');
+      mDoor(B, 0, 0.502, '#5a3f2e'); mGrid(W, 1.5, 1.2, 0.1, 2, 0.28, 0.08, 0.18, 'all');
+      break;
+    }
+    case 'academy': { // university with a clock tower
+      pl(1.94); B.box(0, 0.02, -0.2, 1.7, 0.9, 1.1, '#b3664c'); mFlat(B, 1.7, 1.1, 0.92, '#5d6064', 2, v);
+      B.box(0, 0.02, 0.5, 0.4, 1.7, 0.4, '#b3664c'); B.cyl(0, 1.72, 0.5, 0.3, 0, 0.4, 4, '#4f6e66', null, Math.PI / 4);
+      mDisc(B, 0, 1.4, 0.705, 0.1, '#fbf7ee');
+      mGrid(W, 1.7, 1.1, 0.08, 3, 0.28, 0.1, 0.16, 'all'); mDoor(B, 0, 0.702, '#3f4652');
+      break;
+    }
+    case 'port': { // ferry port: glass terminal, gangway and a crane
+      pl(1.94); B.box(-0.35, 0.02, -0.4, 1.1, 0.55, 0.9, '#cfd6d9'); B.box(-0.35, 0.57, -0.4, 1.2, 0.04, 1.0, '#5d6064');
+      mGrid(W, 1.1, 0.9, 0.08, 1, 0.45, 0.2, 0.32, 'all');
+      B.box(0.4, 0.2, 0.6, 0.22, 0.04, 0.8, '#8a8f96'); for (const x of [0.3, 0.5]) B.box(x, 0.24, 0.6, 0.012, 0.1, 0.8, '#c9cbcc');
+      B.box(0.65, 0, -0.6, 0.06, 1.4, 0.06, '#e3b23c');
+      break;
+    }
+    case 'pier': { // ferry landing: concrete jetty and a ticket booth
+      B.box(0, -0.3, 0.1, 0.5, 0.42, 1.0, '#bdb8af'); B.box(0, 0.11, 0.1, 0.52, 0.02, 1.02, '#d0cbc2');
+      B.box(0, 0.13, -0.25, 0.22, 0.24, 0.2, '#e8e4dc'); B.box(0, 0.37, -0.25, 0.26, 0.025, 0.24, '#2f7c78'); W.box(0, 0.22, -0.145, 0.12, 0.08, 0.012, WIN);
+      for (const z of [0.2, 0.5]) { B.cyl(0.22, 0.12, z, 0.025, 0.03, 0.08, 6, '#3a3d42'); B.cyl(-0.22, 0.12, z, 0.025, 0.03, 0.08, 6, '#3a3d42'); }
+      break;
+    }
+    case 'watchtower': { // guard tower: steel legs, a cabin and a searchlight
+      for (const [x, z] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]]) B.beam([x, 0, z], [x * 0.7, 1.2, z * 0.7], 0.035, 0.035, '#6d7176');
+      B.box(0, 1.2, 0, 0.42, 0.04, 0.42, '#5d6064'); B.box(0, 1.24, 0, 0.36, 0.28, 0.36, '#8a9a84'); B.box(0, 1.52, 0, 0.44, 0.03, 0.44, '#5d6064');
+      W.box(0, 1.34, 0.185, 0.28, 0.1, 0.012, WIN); B.cyl(0.18, 1.55, 0.18, 0.05, 0.06, 0.08, 8, '#e8e4dc');
+      break;
+    }
+    case 'guardhouse': { // police station: blue band and two patrol cars
+      pl(0.94); B.box(0, 0.02, -0.1, 0.76, 0.5, 0.5, '#e3ddd1'); mFlat(B, 0.76, 0.5, 0.52, '#5d6064', 1, v);
+      B.box(0, 0.36, 0.155, 0.76, 0.09, 0.02, '#2f4f8a'); mDoor(B, 0, 0.152, '#2f4f8a'); frontWins(W, 0.152, [0.18], [-0.24, 0.24], 0.13, 0.1);
+      for (const x of [-0.2, 0.2]) { mCar(B, x, 0.33, 1.571, '#f4f2ec'); B.box(x, 0.138, 0.33, 0.1, 0.02, 0.03, '#c8372d'); }
+      break;
+    }
+    case 'barracks': { // army barracks: concrete blocks, sandbags, a jeep, the flag
+      pl(1.94); B.box(-0.3, 0.02, -0.35, 1.2, 0.45, 0.8, '#9aa088'); B.box(-0.3, 0.47, -0.35, 1.26, 0.04, 0.86, '#5d6458');
+      mGrid(W, 1.2, 0.8, 0.08, 1, 0.35, 0.12, 0.12, 'front'); mDoor(B, -0.3, 0.052, '#4d5a44');
+      for (let k = 0; k < 6; k++) smoothBlob(B, 0.3 + (k % 3) * 0.14, 0.04 + Math.floor(k / 3) * 0.06, 0.6, 0.08, 0.04, 0.05, '#b7a77d', 0);
+      mAt(B, 0.65, -0.3, 0.3); B.box(0, 0.03, 0, 0.18, 0.1, 0.3, '#5d6b4a'); B.box(0, 0.13, 0.02, 0.17, 0.004, 0.14, '#5d6b4a'); for (const [a, c] of [[-0.09, 0.1], [0.09, 0.1], [-0.09, -0.1], [0.09, -0.1]]) B.box(a, 0, c, 0.03, 0.06, 0.06, '#2a2b2e'); mReset(B);
+      mFlag(B, -0.9, 0.6, 1.1);
+      break;
+    }
+    case 'archery': { // firing range: a long shed and targets down the range
+      B.box(0, -0.005, 0, 1.9, 0.02, 1.9, '#b9a77d');
+      B.box(0, 0.02, -0.75, 1.6, 0.36, 0.3, '#8a8f80'); B.box(0, 0.38, -0.7, 1.7, 0.03, 0.44, '#5d6458');
+      for (let k = 0; k < 4; k++) { const x = -0.6 + k * 0.4; B.box(x, 0, 0.75, 0.03, 0.3, 0.03, '#6b4a33'); mDisc(B, x, 0.3, 0.77, 0.1, '#f2ede3'); mDisc(B, x, 0.3, 0.775, 0.05, '#c8372d'); }
+      for (let k = 0; k < 8; k++) smoothBlob(B, -0.85 + k * 0.24, 0.05, 0.92, 0.1, 0.06, 0.06, '#b7a77d', 0);
+      break;
+    }
+    case 'cavyard': { // motor pool: garages and an armoured car
+      pl(1.94); B.box(-0.1, 0.02, -0.45, 1.6, 0.5, 0.8, '#8a9080'); mFlat(B, 1.6, 0.8, 0.52, '#5d6458', 1, v);
+      for (let k = 0; k < 3; k++) B.box(-0.6 + k * 0.5, 0.02, -0.045, 0.38, 0.36, 0.012, '#6d7266');
+      mAt(B, 0.2, 0.45, 0.2); B.box(0, 0.05, 0, 0.24, 0.16, 0.42, '#5d6b4a'); B.box(0, 0.21, -0.02, 0.2, 0.06, 0.24, '#55603f'); B.box(0, 0.25, 0.06, 0.03, 0.03, 0.2, '#3a3d42');
+      for (const [a, c] of [[-0.12, 0.13], [0.12, 0.13], [-0.12, -0.13], [0.12, -0.13]]) B.box(a, 0, c, 0.04, 0.09, 0.09, '#2a2b2e'); mReset(B);
+      break;
+    }
+    case 'foundry': { // tank factory
+      pl(1.94); B.box(0, 0.02, -0.3, 1.7, 0.8, 1.1, '#9a9d94'); mFlat(B, 1.7, 1.1, 0.82, '#5d6458', 3, v);
+      B.box(0, 0.02, 0.255, 0.7, 0.55, 0.012, '#6d7266'); B.cyl(0.65, 0.82, -0.6, 0.08, 0.07, 0.6, 10, '#7a7d76');
+      mGrid(W, 1.7, 1.1, 0.1, 1, 0.5, 0.12, 0.2, 'all');
+      break;
+    }
+    case 'warschool': { // military academy: brick, columns, flag, parade ground
+      pl(1.94); B.box(0, 0.02, -0.35, 1.6, 0.8, 0.9, '#8f4f3b'); mFlat(B, 1.6, 0.9, 0.82, '#5d6064', 2, v);
+      for (let k = 0; k < 4; k++) B.cyl(-0.36 + k * 0.24, 0.04, 0.16, 0.035, 0.035, 0.68, 8, '#e3ddd1'); B.box(0, 0.72, 0.16, 0.9, 0.06, 0.1, '#e3ddd1');
+      mGrid(W, 1.6, 0.9, 0.08, 2, 0.34, 0.12, 0.18, 'all'); mDoor(B, 0, 0.102, '#3f4652');
+      B.box(0, 0, 0.62, 1.6, 0.012, 0.6, '#cbc6bc'); mFlag(B, 0, 0.62, 1.2);
+      break;
+    }
+    default: return null;
+  }
+  return { B, W };
+}
+
+/* ---------- Modern vehicles, boats and kit ---------- */
+// a car, tinted per instance (so the body is white here); front is +z
+function carModel() {
+  const B = new Builder();
+  B.box(0, 0.03, 0, 0.16, 0.065, 0.32, '#ffffff'); B.box(0, 0.095, -0.015, 0.14, 0.06, 0.17, '#c9d6de'); B.box(0, 0.155, -0.015, 0.142, 0.01, 0.17, '#ffffff');
+  for (const [a, b] of [[-0.08, 0.1], [0.08, 0.1], [-0.08, -0.1], [0.08, -0.1]]) B.box(a, 0, b, 0.025, 0.055, 0.06, '#2a2b2e');
+  B.box(-0.05, 0.05, 0.161, 0.03, 0.02, 0.004, '#fff3c4'); B.box(0.05, 0.05, 0.161, 0.03, 0.02, 0.004, '#fff3c4');
+  return B;
+}
+function truckModel() {
+  const B = new Builder();
+  B.box(0, 0.04, -0.08, 0.2, 0.22, 0.4, '#e8e4dc'); B.box(0, 0.04, 0.2, 0.19, 0.17, 0.15, '#ffffff'); B.box(0, 0.13, 0.276, 0.17, 0.06, 0.004, '#a9bccb');
+  for (const [a, b] of [[-0.1, 0.2], [0.1, 0.2], [-0.1, -0.05], [0.1, -0.05], [-0.1, -0.2], [0.1, -0.2]]) B.box(a, 0, b, 0.03, 0.07, 0.07, '#2a2b2e');
+  return B;
+}
+function armouredCarModel() {
+  const B = new Builder();
+  B.box(0, 0.05, 0, 0.24, 0.14, 0.38, '#ffffff'); B.box(0, 0.19, -0.03, 0.2, 0.05, 0.22, '#e6e6e6'); B.cyl(0, 0.24, -0.02, 0.06, 0.06, 0.05, 8, '#d9d9d9'); B.box(0, 0.27, 0.08, 0.025, 0.025, 0.18, '#3a3d42');
+  for (const [a, b] of [[-0.125, 0.12], [0.125, 0.12], [-0.125, -0.12], [0.125, -0.12]]) B.box(a, 0, b, 0.04, 0.09, 0.09, '#2a2b2e');
+  return B;
+}
+function tankModel() {
+  const B = new Builder();
+  for (const s of [-1, 1]) { B.box(s * 0.12, 0, 0, 0.08, 0.09, 0.42, '#3a3d42'); for (let k = 0; k < 4; k++) B.box(s * 0.165, 0.02, -0.15 + k * 0.1, 0.008, 0.05, 0.05, '#2a2b2e'); }
+  B.box(0, 0.07, 0, 0.26, 0.09, 0.4, '#5d6b4a'); B.box(0, 0.16, -0.03, 0.18, 0.08, 0.2, '#55603f'); B.box(0, 0.18, 0.22, 0.035, 0.035, 0.32, '#4a5338');
+  return B;
+}
+function ferryModel() {
+  const B = new Builder();
+  B.box(0, -0.18, 0, 0.62, 0.34, 2.0, '#f2f0ea'); B.at(0, -0.18, 1.0, 0); B.gable(0, 0, 0.1, 0.62, 0.34, 0.2, '#f2f0ea'); mReset(B);
+  B.box(0, 0.0, 0, 0.64, 0.04, 2.0, '#2f5f8a'); B.box(0, 0.16, -0.1, 0.52, 0.22, 1.3, '#f2f0ea'); B.box(0, 0.38, -0.2, 0.42, 0.16, 0.8, '#f2f0ea');
+  for (let k = 0; k < 7; k++) { B.box(0.262, 0.24, -0.7 + k * 0.2, 0.004, 0.06, 0.12, '#5d7f93'); B.box(-0.262, 0.24, -0.7 + k * 0.2, 0.004, 0.06, 0.12, '#5d7f93'); }
+  B.cyl(0, 0.54, -0.45, 0.07, 0.07, 0.24, 10, '#c8372d'); B.box(0, 0.54, 0.25, 0.3, 0.08, 0.16, '#a9bccb');
+  return B;
+}
+function trawlerModel() {
+  const B = new Builder();
+  B.box(0, -0.08, 0, 0.32, 0.18, 0.8, '#2f5f8a'); B.at(0, -0.08, 0.42, 0); B.gable(0, 0, 0, 0.32, 0.18, 0.12, '#2f5f8a'); mReset(B);
+  B.box(0, 0.1, 0.12, 0.24, 0.18, 0.22, '#f2f0ea'); B.box(0, 0.18, 0.235, 0.2, 0.06, 0.004, '#a9bccb');
+  B.box(0, 0.1, -0.28, 0.02, 0.4, 0.02, '#e3b23c'); B.beam([0, 0.48, -0.28], [0, 0.2, -0.4], 0.015, 0.015, '#e3b23c');
+  return B;
+}
+function cargoShipModel() {
+  const B = new Builder();
+  B.box(0, -0.2, 0, 0.7, 0.36, 2.2, '#a63d32'); B.at(0, -0.2, 1.1, 0); B.gable(0, 0, 0.1, 0.7, 0.36, 0.22, '#a63d32'); mReset(B);
+  B.box(0, 0.16, 0, 0.72, 0.03, 2.2, '#3a3d42');
+  const C = ['#2f5f8a', '#c9a23c', '#6f8f5a', '#b8412f', '#e8e4dc'];
+  for (let k = 0; k < 5; k++) for (let l = 0; l < 2; l++) B.box(-0.15 + l * 0.3, 0.19 + (k % 2) * 0.13, 0.55 - k * 0.24, 0.28, 0.13, 0.22, C[(k + l * 2) % 5]);
+  B.box(0, 0.19, -0.85, 0.5, 0.36, 0.3, '#f2f0ea'); B.box(0, 0.45, -0.85, 0.42, 0.04, 0.34, '#3a3d42');
+  return B;
+}
+// raid ships by boat level: landing craft, patrol boat, frigate, destroyer
+function warshipModel(level) {
+  const B = new Builder(), grey = '#7d858d', dark = '#5d646c', big = [1, 0.75, 0.95, 1.1, 1.25][level] || 1;
+  B.at(0, 0, 0, 0, big);
+  if (level <= 1) {
+    B.box(0, -0.2, 0, 0.9, 0.42, 2.2, '#6b7a5a'); B.box(0, 0.22, 1.08, 0.86, 0.3, 0.06, '#5d6b4a'); B.box(0, 0.22, -0.9, 0.5, 0.36, 0.3, '#5d6b4a');
+  } else {
+    B.box(0, -0.25, 0, 0.9, 0.5, 2.8, grey); B.at(0, -0.25, 1.4, 0, big); B.gable(0, 0, 0.12, 0.9, 0.5, 0.36, grey); B.at(0, 0, 0, 0, big);
+    B.box(0, 0.25, 0, 0.92, 0.03, 2.8, dark);
+    B.box(0, 0.28, -0.3, 0.6, 0.4, 0.8, '#9aa1a8'); B.box(0, 0.68, -0.25, 0.44, 0.24, 0.5, '#9aa1a8'); B.box(0, 0.83, -0.0, 0.4, 0.06, 0.004, '#a9bccb');
+    B.box(0, 0.92, -0.3, 0.03, 0.6, 0.03, dark); B.box(0, 1.35, -0.3, 0.3, 0.02, 0.02, dark);
+    for (const z of level >= 3 ? [0.75, -1.05] : [0.75]) { B.cyl(0, 0.28, z, 0.15, 0.15, 0.12, 10, dark); B.box(0, 0.36, z + 0.25, 0.04, 0.04, 0.4, '#3a3d42'); }
+  }
+  B.at(0, 0, 0, 0, 1);
+  return B;
+}
+function rifleModel() { const B = new Builder(), y = -0.108; B.box(0, y - 0.01, 0.08, 0.018, 0.03, 0.2, '#3a3530'); B.box(0, y - 0.005, 0.24, 0.012, 0.012, 0.16, '#2a2b2e'); B.box(0, y - 0.035, 0.1, 0.012, 0.03, 0.03, '#2a2b2e'); return B; }
+function modernHelmModel(kind) {
+  const B = new Builder();
+  if (kind === 'horn') { smoothBlob(B, 0, 0.3, 0, 0.082, 0.06, 0.088, '#5d6b4a', 0); B.cyl(0, 0.278, 0, 0.1, 0.1, 0.01, 10, '#55603f'); }
+  else { B.cyl(0, 0.29, 0, 0.085, 0.08, 0.06, 10, '#22324a'); B.box(0, 0.29, 0.07, 0.12, 0.012, 0.07, '#1a2533'); B.box(0, 0.33, 0.075, 0.03, 0.025, 0.006, '#d9b45a'); }
+  return B;
+}
 
 function model(type, level, variant) {
   const B = new Builder(), W = new Builder();
@@ -3534,7 +4045,22 @@ class World {
     this.pscale = 1.4; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.cloudPos = []; this.carts = []; this.bubbles = []; this.replies = []; this.rain = []; this.chat = []; this.chatSeq = 0; this.agentSeq = 0; this.bubbleTimer = 1; this.pois = null; this.focus = [0, 0];
     for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283 + hash(k) * 0.5, r = 58 + hash(k + 50) * 34; this.cloudPos.push({ a, r, y: 17 + hash(k + 9) * 9, s: 1.1 + hash(k + 3) * 1.1, m: k % 3, v: 0.008 + hash(k + 7) * 0.008 }); }
   }
+  // medieval or modern: drop the cached buildings and swap vehicles, boats, weapons and helmets
+  setEra(era) {
+    const R = this.R, M = era === 'modern' && typeof modernModel === 'function';
+    this.era = era; this.models = {};
+    if (!this.med) this.med = { cannon: this.cannon, helms: this.helms, ships: this.ships, boats: this.boats, longboat: this.longboat, tools: Object.assign({}, this.tools) };
+    if (M && !this.mod) this.mod = { cannon: R.mesh(tankModel()), helms: { horn: R.mesh(modernHelmModel('horn')), guard: R.mesh(modernHelmModel('guard')) },
+      ships: [null, R.mesh(warshipModel(1)), R.mesh(warshipModel(2)), R.mesh(warshipModel(3)), R.mesh(warshipModel(4))],
+      boats: { fish: R.mesh(trawlerModel()), settle: R.mesh(ferryModel()), trade: R.mesh(cargoShipModel()) }, rifle: R.mesh(rifleModel()),
+      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()) };
+    const src = M ? this.mod : this.med;
+    this.cannon = src.cannon; this.helms = src.helms; this.ships = src.ships; this.boats = src.boats; this.longboat = src.ships[1];
+    for (const k of ['spear', 'sword', 'bow']) this.tools[k] = M ? this.mod.rifle : this.med.tools[k];
+    if (this.S) { this.S._dirty.roads = true; this.grassDirty = true; }
+  }
   setState(S) {
+    if (Sim.eraOf(S) !== this.era) { this.S = S; this.setEra(Sim.eraOf(S)); }
     this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
     S._dirty.terrain = S._dirty.roads = S._dirty.trees = true;
     this.waterGrid = null;
@@ -3543,7 +4069,7 @@ class World {
   getModel(type, level, variant) {
     const vkey = type === 'house' ? variant : ['fishhut', 'rowhouse', 'villa', 'apartment'].includes(type) ? variant % 12 : 0;
     const key = type + ':' + level + ':' + vkey;
-    if (!this.models[key]) { const m = model(type, level, vkey); this.models[key] = { body: this.R.mesh(m.B), win: this.R.mesh(m.W), key }; }
+    if (!this.models[key]) { const m = (this.era === 'modern' && typeof modernModel === 'function' && modernModel(type, level, vkey)) || model(type, level, vkey); this.models[key] = { body: this.R.mesh(m.B), win: this.R.mesh(m.W), key }; }
     return this.models[key];
   }
 
@@ -4136,11 +4662,11 @@ class World {
     const first = (female ? FIRST_F : FIRST_M)[Math.floor(r(3) * 30)];
     return { id: ++this.agentSeq, home: home.id, slot, x, z, ry: r(4) * 6.28, path: null, pi: 0, hidden: true, at: home.id, act: null, key: '', until: 0,
       name: first + ' ' + SURN[Math.floor(hash(home.id * 7 + 3) * SURN.length)], kid, female,
-      color: hex(SHIRTS[Math.floor(r(5) * SHIRTS.length)]), skin: SKIN[Math.floor(r(6) * SKIN.length)],
-      hat: !kid && r(7) < 0.22 ? HATS[Math.floor(r(8) * HATS.length)] : null,
+      color: hex((this.era === 'modern' ? MSHIRTS : SHIRTS)[Math.floor(r(5) * SHIRTS.length)]), skin: SKIN[Math.floor(r(6) * SKIN.length)],
+      hat: this.era !== 'modern' && !kid && r(7) < 0.22 ? HATS[Math.floor(r(8) * HATS.length)] : null,
       wake: kid ? 7 + r(9) * 0.6 : 5.8 + r(9) * 1.7, off: 15.6 + r(10) * 1.6, bed: kid ? 19 + r(11) * 1.2 : 20.2 + r(11) * 2.4,
       social: r(12), phase: r(13) * 6.28, work: null, speed: kid ? 9.5 + r(14) * 3 : 7.5 + r(14) * 2.5, pop: this.now,
-      horseCol: HORSES[Math.floor(r(15) * HORSES.length)], pants: PANTS[Math.floor(r(16) * PANTS.length)], hairStyle: female ? (r(17) < 0.5 ? 1 : 2) : 0, hairCol: HAIR[Math.floor(r(18) * HAIR.length)], tool: null, anim: 'idle', riding: false, sayAt: 0, thought: '' };
+      horseCol: HORSES[Math.floor(r(15) * HORSES.length)], pants: this.era === 'modern' && r(16) < 0.6 ? [0.24, 0.33, 0.48] : PANTS[Math.floor(r(16) * PANTS.length)], hairStyle: female ? (r(17) < 0.5 ? 1 : 2) : 0, hairCol: HAIR[Math.floor(r(18) * HAIR.length)], tool: null, anim: 'idle', riding: false, sayAt: 0, thought: '' };
   }
   syncAgents(initial) {
     const S = this.S;
@@ -4462,7 +4988,11 @@ class World {
     if (a.hidden) { a.x = from[0]; a.z = from[1]; a.hidden = false; a.pop = this.now; }
     // long trips on horseback when there is a stable
     let L = 0; for (let k = 1; k < a.path.length; k++) L += Math.abs(a.path[k][0] - a.path[k - 1][0]) + Math.abs(a.path[k][1] - a.path[k - 1][1]);
-    a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
+    if (this.era === 'modern') {
+      // modern residents drive anywhere more than a few streets away, as long as the route is mostly road
+      let onRoad = 0; for (const p of a.path) { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); if (Sim.inB(ci, cj) && S.road[cj * N + ci]) onRoad++; }
+      a.riding = !a.kid && L > 10 && onRoad >= a.path.length * 0.6 && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
+    } else a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
   }
   arriveAt(a) {
     const act = a.act || {};
@@ -4478,7 +5008,8 @@ class World {
   }
   walk(a, dtH) {
     const ci0 = Math.floor(a.x + N / 2), cj0 = Math.floor(a.z + N / 2), rt = Sim.inB(ci0, cj0) ? this.S.road[cj0 * N + ci0] : 0;
-    let step = a.speed * dtH * (a.riding ? 2.3 : 1) * (rt ? Sim.ROADS[rt].speed : 1);
+    const car = a.riding && this.era === 'modern';
+    let step = a.speed * dtH * (car ? (rt ? 3.2 : 1.2) : a.riding ? 2.3 : 1) * (rt && !car ? Sim.ROADS[rt].speed : 1);
     const step0 = step;
     while (step > 0 && a.path) {
       const p = a.path[a.pi + 1];
@@ -4492,7 +5023,7 @@ class World {
     a.phase += moved * (a.riding ? 7 : a.kid ? 30 : 24);
     // feet wear the grass down where people keep walking
     const ci1 = Math.floor(a.x + N / 2), cj1 = Math.floor(a.z + N / 2);
-    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c]) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
+    if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c] && !car) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
     const S = this.S, ctx = this.ctx();
@@ -4589,7 +5120,7 @@ class World {
     if (a.temp === 'builder') return a.leaving ? 'Heading back to the hall' : a.path ? 'Walking to a building site' : 'Building';
     if (a.temp === 'porter') return 'Carrying goods to the hall';
     const act = a.act || {}, w = act.b && TYPES[act.b.type] ? TYPES[act.b.type].name.toLowerCase() : '';
-    const going = a.path ? (a.riding ? 'Riding to ' : 'Walking to ') : '';
+    const going = a.path ? (a.riding ? (this.era === 'modern' ? 'Driving to ' : 'Riding to ') : 'Walking to ') : '';
     if (act.kind === 'home') return a.path ? 'Heading home' : (this.S.t % 24 >= a.bed || this.S.t % 24 < a.wake ? 'Asleep at home' : 'Relaxing at home');
     if (act.kind === 'school') return going ? going + 'school' : 'In class';
     if (act.kind === 'chapel') return going ? going + 'the chapel' : 'At the Sunday service';
@@ -4792,6 +5323,7 @@ class World {
     const S = this.S;
     this.now += dtReal;
     this.navMs = 0;
+    if (Sim.eraOf(S) !== this.era) this.setEra(Sim.eraOf(S));
     if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
     if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
@@ -4829,10 +5361,11 @@ class World {
     // chimney smoke
     const hour = S.t % 24, smoky = (hour > 5 && hour < 10) || hour > 17 || hour < 1;
     if (dtH > 0 && Math.random() < dtReal * (smoky ? 3 : 0.8)) {
-      const hs = S.b.filter(b => Sim.done(b) && ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0))));
+      const SM = this.era === 'modern' ? SMOKE_M : SMOKE;
+      const hs = S.b.filter(b => Sim.done(b) && (this.era === 'modern' ? (SM[b.type] && b.staff > 0) : ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0)))));
       if (hs.length) {
         const b = hs[Math.floor(Math.random() * hs.length)];
-        if (SMOKE[b.type]) { const L = SMOKE[b.type], o2 = L[Math.floor(Math.random() * L.length)], p = this.local(b, o2[0], o2[1]); this.addPart({ x: p[0], y: b.y + o2[2], z: p[1], vx: 0.15, vy: 0.45, vz: 0.05, life: 0, max: b.type === 'blacksmith' ? 1.6 : 2.2, size: 0.09, col: b.type === 'blacksmith' ? [0.7, 0.7, 0.72] : [0.92, 0.92, 0.92], g: -0.05, drag: 0.3, smoke: true }); }
+        if (SM[b.type]) { const L = SM[b.type], o2 = L[Math.floor(Math.random() * L.length)], p = this.local(b, o2[0], o2[1]); this.addPart({ x: p[0], y: b.y + o2[2], z: p[1], vx: 0.15, vy: 0.45, vz: 0.05, life: 0, max: b.type === 'blacksmith' ? 1.6 : 2.2, size: 0.09, col: b.type === 'blacksmith' ? [0.7, 0.7, 0.72] : [0.92, 0.92, 0.92], g: -0.05, drag: 0.3, smoke: true }); }
         else {
         const [x, z] = Sim.center(b), off = CHIMNEY[b.level][houseShape(b.variant)], r = b.rot * Math.PI / 2;
         const ox = off[0] * Math.cos(r) + off[1] * Math.sin(r), oz = -off[0] * Math.sin(r) + off[1] * Math.cos(r);
@@ -4936,7 +5469,7 @@ class World {
         const pop = an && an.k === 'site' ? elastic((t - an.t0) / 0.8) : 1;
         R.push(B(this.scaffold), x, b.y, z, b.rot * Math.PI / 2, s * 1.04 * pop, hgt * pop, s * 1.04 * pop);
       }
-      if (b.type === 'stable' && Sim.done(b)) {
+      if (this.era !== 'modern' && b.type === 'stable' && Sim.done(b)) {
         for (let k = 0; k < 2; k++) {
           const w = t * 0.12 + k * 2.6 + b.id, p = this.local(b, 0.52 + Math.sin(w) * 0.2, -0.3 + k * 0.62 + Math.cos(w * 0.7) * 0.18);
           R.push(B(this.horse), p[0], b.y + 0.04, p[1], b.rot * Math.PI / 2 + Math.sin(w * 0.5) * 1.4 + k * 2, 1, 1, 1, ...HORSES[(b.id + k * 2) % HORSES.length], 0);
@@ -4947,18 +5480,18 @@ class World {
         const col = mix3([0.45, 0.72, 0.33], [0.93, 0.78, 0.33], clamp(g * 1.3 - 0.2, 0, 1));
         R.push(B(this.crop), x, b.y, z, ry, sx, Math.max(0.04, g) * sy, sz, col[0], col[1], col[2], 0);
       }
-      if (b.type === 'hall') {
+      if (b.type === 'hall' && this.era !== 'modern') {
         const [x, z] = Sim.center(b), ry = b.rot * Math.PI / 2, c = Math.cos(ry), s = Math.sin(ry);
         const px = x + 0.78 * c + 0.78 * s, pz = z - 0.78 * s + 0.78 * c;
         R.push(B(this.flag), px, b.y + 1.5 * sy, pz, ry + Math.sin(t * 2.3) * 0.35 * wind + 0.4, 1, 1, 1, 1, 1, 1, 0, 0, Math.sin(t * 5.1) * 0.05);
       }
-      if (Sim.done(b) && b.type === 'farm') { const p = this.local(b, -1.15, 1.07); R.push(B(this.blades), p[0], b.y + 0.98 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (b.staff ? 1.1 : 0.25) * wind); }
-      if (Sim.done(b) && b.type === 'tavern') { const p = this.local(b, 0.6, 0.35); R.push(B(this.sign), p[0], b.y + 0.76 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, Math.sin(t * 1.4 + b.id) * 0.16 * wind, 0); }
-      if (Sim.done(b) && b.type === 'sawmill') { const p = this.local(b, 0.28, -0.15); R.push(B(this.saw), p[0], b.y + 0.33 * sy, p[1], b.rot * Math.PI / 2 + Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, -t * (b.staff ? 9 : 0)); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'farm') { const p = this.local(b, -1.15, 1.07); R.push(B(this.blades), p[0], b.y + 0.98 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (b.staff ? 1.1 : 0.25) * wind); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'tavern') { const p = this.local(b, 0.6, 0.35); R.push(B(this.sign), p[0], b.y + 0.76 * sy, p[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, Math.sin(t * 1.4 + b.id) * 0.16 * wind, 0); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'sawmill') { const p = this.local(b, 0.28, -0.15); R.push(B(this.saw), p[0], b.y + 0.33 * sy, p[1], b.rot * Math.PI / 2 + Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, -t * (b.staff ? 9 : 0)); }
       if (Sim.done(b) && b.type === 'mine') { const u = b.staff ? 0.5 + 0.5 * Math.sin(t * 0.35 + b.id) : 0.9, p = this.local(b, 0, 0.0 + u * 0.85); R.push(B(this.minecart), p[0], b.y, p[1], b.rot * Math.PI / 2, sx, sy, sz); }
-      if (Sim.done(b) && b.type === 'blacksmith' && b.staff > 0) { const p = this.local(b, -0.18, -0.12), f = 0.85 + 0.25 * Math.sin(t * 13 + b.id) * Math.sin(t * 7.3); R.push(B(this.fire), p[0], b.y + 0.24, p[1], t * 2, f, f * (0.9 + 0.3 * Math.sin(t * 9)), f, 1, 1, 1, 1.6); }
-      if (Sim.done(b) && b.type === 'bakery' && b.staff > 0) { const p = this.local(b, -0.22, -0.25), f = 0.6 + 0.1 * Math.sin(t * 11 + b.id); R.push(B(this.fire), p[0], b.y + 0.03, p[1], t, f, f * 0.6, f * 0.5, 1, 1, 1, 1.4); }
-      if (Sim.done(b) && b.type === 'port') { const p = this.local(b, 0.6, 0.5); R.push(B(this.jib), p[0], b.y + 1.39 * sy, p[1], b.rot * Math.PI / 2 + Math.sin(t * 0.22 + b.id) * 1.1, sx, sy, sz); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'blacksmith' && b.staff > 0) { const p = this.local(b, -0.18, -0.12), f = 0.85 + 0.25 * Math.sin(t * 13 + b.id) * Math.sin(t * 7.3); R.push(B(this.fire), p[0], b.y + 0.24, p[1], t * 2, f, f * (0.9 + 0.3 * Math.sin(t * 9)), f, 1, 1, 1, 1.6); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'bakery' && b.staff > 0) { const p = this.local(b, -0.22, -0.25), f = 0.6 + 0.1 * Math.sin(t * 11 + b.id); R.push(B(this.fire), p[0], b.y + 0.03, p[1], t, f, f * 0.6, f * 0.5, 1, 1, 1, 1.4); }
+      if (this.era !== 'modern' && Sim.done(b) && b.type === 'port') { const p = this.local(b, 0.6, 0.5); R.push(B(this.jib), p[0], b.y + 1.39 * sy, p[1], b.rot * Math.PI / 2 + Math.sin(t * 0.22 + b.id) * 1.1, sx, sy, sz); }
     }
     if (this.raidBoat) { const rb = this.raidBoat; R.push(B(this.ships[rb.level || 1] || this.longboat), rb.x, 0.02 + Math.sin(t * 1.3) * 0.03, rb.z, rb.ry, 1, 1, 1, 1, 1, 1, 0, Math.sin(t * 1.1) * 0.025, Math.sin(t * 0.9) * 0.035); }
     for (const q of this.quayProps || []) {
@@ -5046,6 +5579,13 @@ class World {
       const ps = clamp((t - a.pop) / 0.5, 0, 1), s = backOut(ps) * this.pscale * ks;
       let y = groundY(a.x, a.z);
       const ph = a.phase, P = { legL: 0, legR: 0, armL: 0.05 + idleArms(a), armR: -0.05 - idleArms(a), lean: 0, bob: 0 };
+      if (this.era === 'modern' && ((a.riding && moving) || a.mounted)) {
+        const vs = 1.35 * hsc, col = a.mounted ? [0.42, 0.47, 0.33] : hex(MCARS[a.id % MCARS.length]);
+        // keep to the right-hand side of the road so traffic passes instead of overlapping
+        const lane = a.mounted ? 0 : 0.17, lx = a.x + Math.cos(a.ry) * lane, lz = a.z - Math.sin(a.ry) * lane;
+        R.push(B(a.mounted ? this.mod.acar : this.mod.car), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        continue;
+      }
       if ((a.riding && moving) || a.mounted) {
         const hs = 1.25 * hsc;
         drawHorse(a.x, y, a.z, a.ry, hs, a.horseCol, ph * 3, moving ? 2 : 0, true);
@@ -5115,6 +5655,7 @@ class World {
     for (const c of this.carts) {
       const fade = clamp((c.L + 0.6 - c.d) / 0.6, 0, 1) * clamp((this.now - c.t0) / 0.4, 0, 1);
       const cs = 1.2 * hsc * fade;
+      if (this.era === 'modern') { const tp = this.cartPose(c, c.d - 0.3 * hsc), col = hex(MCARS[(c.t0 * 7 | 0) % MCARS.length]); R.push(B(this.mod.truck), tp[0], groundY(tp[0], tp[1]), tp[1], tp[2], cs, cs, cs, col[0], col[1], col[2], 0); continue; }
       const hp = this.cartPose(c, c.d), cp = this.cartPose(c, c.d - 0.6 * hsc);
       const hy = groundY(hp[0], hp[1]), cy = groundY(cp[0], cp[1]);
       drawHorse(hp[0], hy, hp[1], hp[2], cs, c.horse, c.d * 9, 1, false);
@@ -5238,6 +5779,7 @@ class World {
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2);
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
+    gl.uniform1f(P.u.uModern, this.era === 'modern' ? 1 : 0);
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
     for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);
@@ -5582,12 +6124,15 @@ class Raid {
   shoot(u, tx, tz, what, yo) {
     const W = this.W, y0 = yo !== undefined ? yo : Sim.groundAt(this.S, u.x, u.z) + (u.kind === 'can' ? 0.3 : 0.5), d = Math.hypot(tx - u.x, tz - u.z);
     const ty = Math.max(0, Sim.groundAt(this.S, tx, tz)) + 0.35, ball = u.kind === 'can' || u.kind === 'ship';
-    const dur = ball ? 0.5 + d * 0.06 : 0.25 + d * 0.05, g = ball ? 9 : 7;
+    // modern rifles fire fast, flat tracer rounds; bows loft arrows
+    const gun = !ball && Sim.eraOf(this.S) === 'modern';
+    const dur = ball ? 0.5 + d * 0.06 : gun ? 0.06 + d * 0.012 : 0.25 + d * 0.05, g = ball ? 9 : gun ? 0.4 : 7;
     const s = { x: u.x, y: y0, z: u.z, tx, ty, tz, t0: this.t, dur, g, vy: (ty - y0 + 0.5 * g * dur * dur) / dur, ball, what, side: u.side, dmg: u.dmg, kind: u.kind, from: u };
     this.shots.push(s);
-    if (!ball) W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.03, col: u.side === 'r' && what && what.b ? [1, 0.6, 0.2] : [0.35, 0.25, 0.15], e: what && what.b ? 1 : 0, g, drag: 0 });
+    if (gun) { W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.022, col: [1, 0.86, 0.45], e: 1, g, drag: 0 }); W.addPart({ x: u.x + (tx - u.x) / d * 0.25, y: y0, z: u.z + (tz - u.z) / d * 0.25, vx: 0, vy: 0.2, vz: 0, life: 0, max: 0.08, size: 0.07, col: [1, 0.8, 0.4], e: 1.5, g: 0, drag: 0 }); }
+    else if (!ball) W.addPart({ x: s.x, y: y0, z: s.z, vx: (tx - u.x) / dur, vy: s.vy, vz: (tz - u.z) / dur, life: 0, max: dur, size: 0.03, col: u.side === 'r' && what && what.b ? [1, 0.6, 0.2] : [0.35, 0.25, 0.15], e: what && what.b ? 1 : 0, g, drag: 0 });
     else { u.recoil = 1; this.sfx('cannon'); for (let k = 0; k < 6; k++) W.addPart({ x: u.x + Math.sin(u.a.ry) * 0.3, y: y0 + 0.05, z: u.z + Math.cos(u.a.ry) * 0.3, vx: Math.sin(u.a.ry) * (1 + Math.random()) + (Math.random() - 0.5), vy: 0.5 + Math.random() * 0.5, vz: Math.cos(u.a.ry) * (1 + Math.random()) + (Math.random() - 0.5), life: 0, max: 1.2, size: 0.14, col: [0.85, 0.85, 0.82], g: -0.2, drag: 1.5, smoke: true }); }
-    if (!ball) this.sfx('arrow');
+    if (!ball) this.sfx(gun ? 'shot' : 'arrow');
   }
   land2(s) {
     const W = this.W;
@@ -5960,8 +6505,8 @@ let lastTs = 0, uiTick = 0, saveTick = 0, thumbs = {}, cssW = 1, cssH = 1;
    "Cozy Music Sampler" by Spaceyyy (aquumgifts.itch.io), CC BY 4.0. Each file is an exact number of bars, so it loops on the beat.
    Daytime rotates three tracks, nights and rainy days have their own, and everything fades under raids and town meetings. */
 const Music = {
-  TRACKS: { spring: 55.384615, tavern: 51.428571, brew: 55.384615, night: 53.333333, rain: 55.384615 },
-  DAY: ['spring', 'tavern', 'brew'],
+  TRACKS: { spring: 55.384615, tavern: 51.428571, brew: 55.384615, night: 53.333333, rain: 55.384615, lounge: 48 },
+  DAY: ['spring', 'tavern', 'brew'], DAY_MODERN: ['brew', 'lounge', 'spring'],
   bus: null, cur: null, buffers: {}, fmt: 0, want: null, mood: null, moodAt: -1e9, day: 0, level: -1, hidden: false,
   ok() { return !!(window.DW_MUSIC && Sfx.ctx); },
   async load(name) {
@@ -5979,7 +6524,7 @@ const Music = {
     }
     throw new Error('can’t play this track here');
   },
-  pick(mood) { return mood === 'night' ? 'night' : mood === 'rain' ? 'rain' : this.DAY[this.day % this.DAY.length]; },
+  pick(mood) { const D = Sim.eraOf(S) === 'modern' ? this.DAY_MODERN : this.DAY; return mood === 'night' ? 'night' : mood === 'rain' ? 'rain' : D[this.day % D.length]; },
   async go(name, fade) {
     if (this.want === name) return;
     this.want = name;
@@ -6075,7 +6620,17 @@ const Amb = {
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
     if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
-    if (due('cart')) { this.next.cart = 10 + Math.random() * 18; if (!night && town > 0.2 && near > 0.3) for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W); }
+    if (due('cart')) {
+      const modern = Sim.eraOf(S) === 'modern';
+      this.next.cart = (modern ? 5 : 10) + Math.random() * (modern ? 9 : 18);
+      if (town > 0.2 && near > 0.3 && (!night || modern)) {
+        if (modern) {
+          // a car going by, and now and then someone leans on the horn
+          Sfx.noise(1.1, 220 + Math.random() * 120, 0.045 * near * town, 0, W); Sfx.noise(0.7, 900, 0.012 * near * town, 0.2, W);
+          if (Math.random() < 0.12) { const d = 0.4 + Math.random(); Sfx.tone(392, 390, 0.22, 'square', 0.008 * near, d, W); Sfx.tone(494, 492, 0.22, 'square', 0.006 * near, d, W); }
+        } else for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W);
+      }
+    }
   },
   gull(v) {
     const W = Sfx.world, p = 0.9 + Math.random() * 0.25, n = 2 + Math.floor(Math.random() * 3);
@@ -6145,6 +6700,7 @@ const Sfx = {
     else if (k === 'horn') { this.tone(110, 108, 1.4, 'sawtooth', 0.08); this.tone(165, 160, 1.4, 'triangle', 0.1, 0.05); }
     else if (k === 'clash') { this.noise(0.07, 3200 + Math.random() * 1500, 0.16); this.tone(1400 + Math.random() * 600, 900, 0.08, 'square', 0.025); }
     else if (k === 'arrow') this.noise(0.18, 1800, 0.06);
+    else if (k === 'shot') { this.noise(0.05, 2600 + Math.random() * 900, 0.13); this.noise(0.16, 380, 0.06, 0.01); }
     else if (k === 'down') this.tone(260, 90, 0.35, 'triangle', 0.12);
     else if (k === 'coins') { [1320, 1760, 1568].forEach((f, i) => this.tone(f, f, 0.09, 'triangle', 0.07, i * 0.05)); }
     else if (k === 'alarm') { for (let i = 0; i < 4; i++) this.tone(880, 860, 0.35, 'sine', 0.12, i * 0.3); }
@@ -6163,12 +6719,14 @@ const Sfx = {
 };
 
 /* ---------- Toasts & hint ---------- */
+// on a modern island, every word the player reads goes through the era's word list (text only, never tags or attributes)
+const eraH = h => Sim.eraOf(S) !== 'modern' || typeof h !== 'string' ? h : h.replace(/(^|>)([^<]+)/g, (m, a, t) => a + Sim.eraText(S, t));
 function toast(text, kind) {
-  const el = document.createElement('div'); el.className = 'toast ' + (kind || ''); el.textContent = text;
+  const el = document.createElement('div'); el.className = 'toast ' + (kind || ''); el.textContent = Sim.eraText(S, text);
   const box = $('#toasts'); box.appendChild(el); while (box.children.length > 3) box.firstChild.remove();
   setTimeout(() => { el.style.transition = 'opacity .3s, transform .3s'; el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 320); }, kind === 'goal' ? 4800 : 3200);
 }
-function hint(html) { const h = $('#hint'); if (!html) { h.hidden = true; return; } h.hidden = false; if (h._h !== html) { h.innerHTML = html; h._h = html; } h.classList.toggle('up', !$('#tray').hidden); }
+function hint(html) { const h = $('#hint'); if (!html) { h.hidden = true; return; } h.hidden = false; if (h._h !== html) { h.innerHTML = eraH(html); h._h = html; } h.classList.toggle('up', !$('#tray').hidden); }
 
 /* ---------- Camera ---------- */
 function updateCamera(dt) {
@@ -6373,11 +6931,11 @@ function renderRes() {
     const net = Rt[k].net, cls = net > 0.05 ? 'up' : net < -0.05 ? 'down' : '';
     h += `<div class="r ${low[k] ? 'low' : ''}" data-r="${k}" title="${names[k]}: ${fmtRate(net)} per hour">${RES_ICON[k]}<div><b>${vals[k]}</b><small class="rate ${cls}">${Math.abs(net) < 0.05 ? '±0' : fmtRate(net)}/h</small></div></div>`;
   }
-  h += `<div class="sep"></div><div class="r" data-r="pop" title="Settlers / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">settlers</small></div></div>`;
+  h += `<div class="sep"></div><div class="r" data-r="pop" title="${Sim.eraText(S, 'Settlers')} / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">${Sim.eraText(S, 'settlers')}</small></div></div>`;
   h += `<div class="r" title="Happiness">${I.face(S.happy)}<div><b>${S.happy}</b><small class="rate">happy</small></div></div>`;
   const el = $('#res');
   if (el._h !== h) {
-    el.innerHTML = h; el._h = h;
+    el.innerHTML = eraH(h); el._h = h;
     for (const k in vals) {
       if (UI.lastRes[k] !== undefined && vals[k] > UI.lastRes[k]) { const r = el.querySelector(`[data-r="${k}"]`); if (r) { r.classList.add('bump'); } }
       UI.lastRes[k] = vals[k];
@@ -6410,7 +6968,7 @@ function renderStock() {
     <p class="desc">Homes near a market: ${pct('market')}% · well: ${pct('well')}% · tavern: ${pct('tavern')}% · chapel: ${pct('chapel')}%</p>
     <p class="desc">One hour on the clock is 10 seconds at normal speed.</p>`;
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderClock() {
   const h = S.t % 24, day = Math.floor(S.t / 24) + 1, night = h < 6 || h >= 19.5, wd = Sim.WEEKDAYS[(day - 1) % 7];
@@ -6419,7 +6977,7 @@ function renderClock() {
   const html = `<div class="time" data-act="forecast" role="button" tabindex="0" title="${esc(Sim.WX[wk].name)} · tap for the forecast">${wIcon}<div><small>${wd.slice(0, 3)} · Day ${day}</small><b>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}</b></div></div>
     <div class="speeds" role="group" aria-label="Speed">${[I.pause, I.play, I.fast, I.faster].map((ic, k) => `<button data-speed="${k}" class="${UI.speed === k ? 'on' : ''}" title="${['Pause (Space)', 'Normal (1)', 'Fast (2)', 'Fastest (3)'][k]}" aria-label="${['Pause', 'Normal speed', 'Fast', 'Fastest'][k]}">${ic}</button>`).join('')}</div>
     ${Online.mode ? '' : `<button class="round" data-act="army" title="Your army" aria-label="Your army">${I.army.replace(/26/g, '20')}</button>`}${Online.mode ? '' : `<button class="round sea" data-act="online" title="Other islands: visit and raid" aria-label="Other islands">${I.ship}</button>`}<button class="round" data-act="menu" title="Menu" aria-label="Menu">${I.menu}</button>`;
-  const el = $('#clock'); if (el._h !== html) { el.innerHTML = html; el._h = html; }
+  const el = $('#clock'); if (el._h !== html) { el.innerHTML = eraH(html); el._h = html; }
 }
 function renderGoals() {
   const open = Sim.GOALS.filter(g => !S.goals[g.id]);
@@ -6431,7 +6989,7 @@ function renderGoals() {
   }
   if (open.length > 2) h += `<div class="more">${open.length - 2} more after these</div>`;
   const el = $('#goals'); el.classList.toggle('min', UI.goalsMin);
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderDock() {
   const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish };
@@ -6454,7 +7012,7 @@ function renderTray() {
     } else if (typeof it === 'string') {
       const T = TYPES[it], locked = T.unlock && p < T.unlock && !S.goals['unlock_' + it];
       const on = UI.tool === 'build:' + it;
-      h += `<button class="item ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-build="${it}" title="${esc(T.desc)}">${locked ? `<span class="lock">${T.unlock} settlers</span>` : ''}${thumbs[it] ? `<img src="${thumbs[it]}" alt="">` : '<span class="ico"></span>'}<b>${esc(T.name)}</b><span class="costs">${costChips(T.cost, true)}</span></button>`;
+      h += `<button class="item ${on ? 'on' : ''} ${locked ? 'locked' : ''}" data-build="${it}" title="${esc(T.desc)}">${locked ? `<span class="lock">${T.unlock} ${Sim.eraText(S, 'settlers')}</span>` : ''}${thumbs[it] ? `<img src="${thumbs[it]}" alt="">` : '<span class="ico"></span>'}<b>${esc(T.name)}</b><span class="costs">${costChips(T.cost, true)}</span></button>`;
     } else {
       const on = UI.tool === it.id;
       h += `<button class="item ${on ? 'on' : ''}" data-tool="${it.id}"><span class="ico">${I[it.id]}</span><b>${it.name}</b><span class="cost" style="color:var(--ink-soft)">${it.note}</span></button>`;
@@ -6463,7 +7021,7 @@ function renderTray() {
   h += '</div>';
   if (UI.tool.startsWith('build:') && !TYPES[UI.tool.slice(6)].coastal && TYPES[UI.tool.slice(6)].size >= 1) h += `<div class="size"><button class="btn" data-act="rotate" style="padding:6px 12px">↻ Rotate</button><span>Coastal buildings face the water by themselves.</span></div>`;
   if (cat.size) h += `<label class="size">Brush size <input type="range" id="brush" min="1" max="8" step="0.5" value="${UI.brush}" aria-label="Brush size"><output id="brushOut">${UI.brush}</output></label>`;
-  if (tray._h !== h) { tray.innerHTML = h; tray._h = h; }
+  if (tray._h !== h) { tray.innerHTML = eraH(h); tray._h = h; }
 }
 function statusOf(b) {
   const T = TYPES[b.type];
@@ -6501,7 +7059,7 @@ function renderAgent(el, a) {
     <div class="happy">${I.face(hh)}<div class="bar"><i style="width:${hh}%"></i></div></div>
     <div class="row2"><button class="btn" data-act="follow">${UI.follow === a ? 'Stop following' : 'Follow'}</button>${home && !a.temp ? '<button class="btn" data-act="showHome">Show home</button>' : ''}</div>`;
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderInsp() {
   const el = $('#insp');
@@ -6542,7 +7100,7 @@ function renderInsp() {
     h += `<button class="btn danger ${arm ? 'arm' : ''}" data-act="demolish">${arm ? 'Tap again to remove' + (refund ? ` (refund ${refund})` : '') : 'Remove building'}</button>`;
   }
   el.hidden = false;
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderHint() {
   const tool = UI.tool;
@@ -6593,8 +7151,8 @@ function renderChat() {
   const newest = last ? last.id : 0, fresh = el._last !== newest; el._last = newest;
   const line = c => `<button class="ln ${UI.selAgent === c.a ? 'sel' : ''} ${fresh && c.id === newest ? 'new' : ''}" data-chat="${c.id}" title="Find ${esc(c.name)}"><i style="background:rgb(${c.col.map(v => Math.round(v * 255)).join(',')})"></i><span><b>${esc(c.name.split(' ')[0])}</b><em>${esc(c.job)}</em> ${esc(c.text)}</span></button>`;
   const shown = mini ? (last ? [last] : []) : list.slice(-8);
-  el.innerHTML = `<div class="ch-head"><b>Island chatter</b><button data-act="chatToggle" aria-label="${mini ? 'Expand chat' : 'Collapse chat'}">${mini ? '▴' : '▾'}</button></div>
-    <div class="ch-list">${shown.length ? shown.map(line).join('') : '<p class="ch-empty">Settlers will chat here as they go about their day.</p>'}</div>`;
+  el.innerHTML = eraH(`<div class="ch-head"><b>Island chatter</b><button data-act="chatToggle" aria-label="${mini ? 'Expand chat' : 'Collapse chat'}">${mini ? '▴' : '▾'}</button></div>
+    <div class="ch-list">${shown.length ? shown.map(line).join('') : '<p class="ch-empty">Settlers will chat here as they go about their day.</p>'}</div>`);
   const box = el.querySelector('.ch-list'); box.scrollTop = box.scrollHeight;
 }
 function renderBubbles() {
@@ -6611,7 +7169,7 @@ function renderLabels() {
     if (!l.el) {
       const el = document.createElement('div'); el.className = 'fl';
       const icon = RES_ICON[l.kind];
-      el.innerHTML = (icon ? icon.replace(/width="22" height="22"/, 'width="18" height="18"') : '') + esc(l.text);
+      el.innerHTML = (icon ? icon.replace(/width="22" height="22"/, 'width="18" height="18"') : '') + esc(Sim.eraText(S, l.text));
       box.appendChild(el); l.el = el;
     }
     const p = project(l.x, l.y, l.z);
@@ -6881,6 +7439,8 @@ function bindInput() {
   $('#modal').addEventListener('click', e => {
     const mb = e.target.closest('[data-meet]');
     if (mb) { Sfx.init(); chooseMeeting(mb.dataset.meet); return; }
+    const eb = e.target.closest('[data-era]');
+    if (eb) { Sfx.init(); Sfx.play('click'); UI.eraPick = eb.dataset.era; showIntro(); const c2 = $('#modal .card'); if (c2) c2.style.animation = 'none'; return; }
     if (UI.meetingOpen) return;
     const ob = e.target.closest('[data-ol]');
     if (ob && !ob.disabled) { Sfx.init(); Sfx.play('click'); onlineAct(ob.dataset.ol); return; }
@@ -6888,7 +7448,8 @@ function bindInput() {
     if (!b) { if (e.target.id === 'modal' && !UI.introOpen && !Online.result) closeModal(); return; }
     Sfx.init(); Sfx.play('click');
     const m = b.dataset.m;
-    if (m === 'start' || m === 'close') closeModal();
+    if (m === 'start') { const intro = UI.introOpen; closeModal(); if (intro) startEra(); }
+    else if (m === 'close') closeModal();
     else if (m === 'save') { save(true); closeModal(); }
     else if (m === 'saves') { UI.fromIntro = UI.introOpen; UI.introOpen = false; openSaves(); }
     else if (m === 'sound') showSound();
@@ -6934,7 +7495,8 @@ function setSpeed(i) { if (i) UI.lastSpeed = i; UI.speed = i; renderClock(); }
 function resize() { cssW = $('#gl').clientWidth; cssH = $('#gl').clientHeight; R.resize(window.innerWidth < 700 ? 1.5 : 2); }
 
 /* ---------- Modals ---------- */
-function openModal(html) { const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
+function openModal(html) {
+  html = eraH(html); const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
 function closeModal() { $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
 function islandName() { const a = ['Gull', 'Saltmoss', 'Cinder', 'Bramble', 'Pebble', 'Hollow', 'Kelp', 'Juniper', 'Larkspur', 'Tidewell'], b = [' Isle', ' Cay', ' Island', ' Key']; return a[S.seed % a.length] + b[(S.seed >> 4) % b.length]; }
 function startMeeting() {
@@ -6950,7 +7512,7 @@ function showMeeting() {
   const stat = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
   openModal(`<div class="mt-head"><h2>Town meeting</h2><span class="sub">${Sim.WEEKDAYS[6]} · Day ${m.day + 1}</span></div>
     <p class="lead">The settlers have gathered at the Colony Hall. Here’s how the week went.</p>
-    <div class="week">${stat((r.newSettlers >= 0 ? '+' : '') + r.newSettlers, 'settlers')}${stat(r.food, 'food made')}${stat(r.wood, 'wood')}${stat(r.stone, 'stone')}${stat(r.gold, 'gold')}${stat((dh >= 0 ? '+' : '') + dh, 'happiness')}</div>
+    <div class="week">${stat((r.newSettlers >= 0 ? '+' : '') + r.newSettlers, Sim.eraText(S, 'settlers'))}${stat(r.food, 'food made')}${stat(r.wood, 'wood')}${stat(r.stone, 'stone')}${stat(r.gold, 'gold')}${stat((dh >= 0 ? '+' : '') + dh, 'happiness')}</div>
     <p class="lead"><b style="color:var(--ink)">What should the town do this week?</b></p>
     <div class="opts">${m.opts.map(o => `<button class="opt ${o.wish ? 'wish' : ''}" data-meet="${esc(o.id)}"><b>${esc(o.title)}</b><span>${esc(o.desc)}</span>${o.cost || o.gain ? `<span class="tr">${o.cost ? `<em class="down">${esc(o.cost)}</em>` : ''}${o.gain ? `<em class="up">${esc(o.gain)}</em>` : ''}</span>` : ''}</button>`).join('')}</div>`);
   $('#modal').classList.add('meet');
@@ -6960,18 +7522,33 @@ function chooseMeeting(id) {
   UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true;
   setSpeed(UI.preMeetSpeed || 1); Sfx.play('goal'); processEvents(); renderAll();
 }
+const ERA_CARDS = [
+  ['medieval', 'Medieval', 'Cottages, markets, taverns and lumber camps. Archers, cavalry and cannons.', '<path d="M5 21V9l2-2 2 2v3h2V7l1-3 1 3v5h2V9l2-2 2 2v12z" fill="#c9b99a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M10.5 21v-4a1.5 1.5 0 013 0v4" fill="#6b4a33"/>'],
+  ['modern', 'Modern', 'Family homes, apartments, offices, factories, fast food and cars. Riflemen and tanks.', '<path d="M3 21V11h5v10M8 21V4h7v17M15 21V9h6v12" fill="#9fb3c2" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7h3M10 10h3M10 13h3M17 12h2M17 15h2" stroke="#3a2e26" stroke-width="1.1"/>'],
+];
 function showIntro() {
   UI.introOpen = true;
+  if (!UI.eraPick) UI.eraPick = S.era || 'medieval';
+  const fresh = S.b.length <= 2 && S.t < 9 && !S.goals.road;
+  const mod = UI.eraPick === 'modern';
   openModal(`<h1>Drift<span>wood</span></h1>
-    <p class="lead">Your ship has docked at ${esc(islandName())} with four settlers. You have a Colony Hall and a Landing Pier where new settlers will arrive. Shape the land, lay roads and grow a town.</p>
+    ${fresh ? `<div class="eras" role="radiogroup" aria-label="Choose an era">${ERA_CARDS.map(([k, n, d, ic]) => `<button class="era ${UI.eraPick === k ? 'on' : ''}" data-era="${k}" role="radio" aria-checked="${UI.eraPick === k}"><svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">${ic}</svg><b>${n}</b><span>${d}</span></button>`).join('')}</div>` : ''}
+    <p class="lead">${mod ? `Your ferry has docked at ${esc(islandName())} with four residents. You have a Town Hall and a Ferry Landing where new residents will arrive. Shape the land, lay roads and grow a town.` : `Your ship has docked at ${esc(islandName())} with four settlers. You have a Colony Hall and a Landing Pier where new settlers will arrive. Shape the land, lay roads and grow a town.`}</p>
     <ul>
       <li><i>${I.road.replace(/26/g, '22')}</i><span><b>Roads first.</b> Everything must connect back to the Colony Hall by road.</span></li>
-      <li><i>${I.homes.replace(/26/g, '22')}</i><span><b>Build cottages</b> along your roads. Boats bring new settlers to fill them.</span></li>
-      <li><i>${I.work.replace(/26/g, '22')}</i><span><b>Give them work.</b> A lumber camp by the forest, and a farm, orchard or fishing dock for food. Tap the resource bar to see what you make each hour.</span></li>
+      <li><i>${I.homes.replace(/26/g, '22')}</i><span>${mod ? '<b>Build family homes</b> along your roads. Ferries bring new residents to fill them.' : '<b>Build cottages</b> along your roads. Boats bring new settlers to fill them.'}</span></li>
+      <li><i>${I.work.replace(/26/g, '22')}</i><span><b>Give them work.</b> ${mod ? 'A lumber yard by the forest, a farm or fishing pier for food, and later offices and factories.' : 'A lumber camp by the forest, and a farm, orchard or fishing dock for food.'} Tap the resource bar to see what you make each hour.</span></li>
       <li><i>${I.land.replace(/26/g, '22')}</i><span><b>Shape the island.</b> Raise hills, dig coves, plant forests. It’s your island.</span></li>
       <li><i>${I.town.replace(/26/g, '22')}</i><span><b>Every Sunday</b> the town meets at the hall and you decide what happens next.</span></li>
     </ul>
-    <div class="row2"><button class="btn primary" data-m="start">Start the colony</button><button class="btn" data-m="saves">Your islands</button></div>`);
+    <div class="row2"><button class="btn primary" data-m="start">${mod ? 'Start the town' : 'Start the colony'}</button><button class="btn" data-m="saves">Your islands</button></div>`);
+}
+// picking an era on a brand-new island regrows the same island in that era
+function startEra() {
+  const era = UI.eraPick || 'medieval'; UI.eraPick = null;
+  if (era === S.era || !(S.b.length <= 2 && S.t < 9)) return;
+  const old = S; S = Sim.newGame(old.seed, era); carryMp(old, S); if (old.mp && old.mp.name) S.mp.name = old.mp.name;
+  world.setState(S); Sim.applyEra(S); frameHall(); save(); renderAll(); publishIsland(true);
 }
 function showHelp() {
   openModal(`<h2>Controls</h2><div class="keys">
@@ -7042,7 +7619,11 @@ async function newIsland() {
 }
 
 /* ---------- Main loop ---------- */
+let uiEra = null;
 function frame(ts) {
+  Sim.applyEra(S);
+  // a different era (new island, a load, a visit): every panel redraws with the right words
+  if (Sim.eraOf(S) !== uiEra) { uiEra = Sim.eraOf(S); document.querySelectorAll('*').forEach(e => { if (e._h !== undefined) e._h = null; }); if (world.era !== uiEra) world.setEra(uiEra); try { renderThumbs(); } catch (e) {} renderAll(); }
   const dt = Math.min(0.1, (ts - (lastTs || ts)) / 1000); lastTs = ts;
   const hNow = S.t % 24, nightBoost = hNow >= 21 || hNow < 5.5 ? 2.5 : 1;
   const simH = UI.introOpen || UI.savesOpen || !$('#modal').hidden ? 0 : SPEEDS[UI.speed] * dt * nightBoost;
@@ -7090,7 +7671,7 @@ function start(data) {
   resize();
   if (data.cam) Object.assign(cam, data.cam); else frameHall();
   if (typeof data.speed === 'number') UI.speed = data.speed;
-  renderThumbs();
+  renderThumbs(); uiEra = Sim.eraOf(S);
   bindInput();
   setTool('select');
   if (!loaded) showIntro();
@@ -7192,7 +7773,7 @@ async function publishIsland(force) {
     const z = await packSave(save);
     await Online.db.doc('islands/' + Online.me).set({ v: 1, owner: Online.me, name: myName(), pop: Sim.pop(H), happy: H.happy, day: Math.floor(H.t / 24) + 1,
       gold: Math.floor(H.gold), wood: Math.floor(H.wood), stone: Math.floor(H.stone), towers: def.towers, guards: def.guards, troops: Sim.TROOP_KEYS.reduce((n, t) => n + (def.troops[t] || 0), 0), walls: def.walls,
-      shieldUntil: m.shieldUntil || 0, won: m.won || 0, lost: m.lost || 0, at: Date.now(), z });
+      shieldUntil: m.shieldUntil || 0, won: m.won || 0, lost: m.lost || 0, at: Date.now(), era: Sim.eraOf(H), z });
     Online.pubAt = performance.now(); Online.pubT = H.t;
   } catch (e) {
     if (e && e.code === 'invalid_argument') Online.can = false;
@@ -7245,6 +7826,7 @@ function shieldOf(id, data) {
 }
 function raidBlock(id, data) {
   if (id === Online.me) return 'That’s you';
+  if (data && (data.era || 'medieval') !== Sim.eraOf(homeS())) return data.era === 'modern' ? 'A modern island' : 'A medieval island';
   const sh = shieldOf(id, data); if (sh > Date.now()) return 'Shielded · ' + fmtLeft(sh - Date.now());
   if (!canShare()) { const g = ((mp().ghostAt || {})[id] || 0) + Sim.RAID.shieldH * HOUR; if (g > Date.now()) return 'Shielded · ' + fmtLeft(g - Date.now()); }
   return null;
@@ -7272,12 +7854,13 @@ function renderOnline() {
   h += `<h3 class="ol-h">Computer islands</h3>`;
   for (const R of RIVALS) {
     const wait = Math.max(0, ((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR - now);
-    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
+    h += `<div class="isl"><div class="isl-main"><b>${esc(rivalName(R))} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(rivalDesc(R))} Half loot.</span></div>
       <div class="isl-btns"><button class="btn primary" data-ol="rival:${R.id}" ${wait ? 'disabled' : ''}>${wait ? 'Ready in ' + fmtLeft(wait) : 'Raid'}</button></div></div>`;
   }
   // other players
   if (!Online.off) {
-    const others = Online.islands.filter(x => x.id !== Online.me).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
+    const myEra = Sim.eraOf(homeS());
+    const others = Online.islands.filter(x => x.id !== Online.me && (x.data.era || 'medieval') === myEra).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
     h += `<h3 class="ol-h">Players’ islands</h3>`;
     if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
@@ -7370,6 +7953,11 @@ function sailHome() {
 }
 
 /* --- computer islands: four rivals from sleepy to fortress, rebuilt every couple of hours --- */
+// what the computer islands are called in the modern era
+const RIVALS_MODERN = { cove: ['Rum Runner Bay', 'A sleepy harbour town with a couple of police officers and no walls.'], pirate: ['Cartel Key', 'Smugglers with a garrison that grows with your army.'],
+  iron: ['Fort Granite', 'A fenced town with guard towers, riflemen and marksmen.'], fort: ['Iron Citadel', 'A concrete fortress with tanks, armoured cars and towers. Bring a fleet.'] };
+const rivalName = R => Sim.eraOf(homeS()) === 'modern' ? RIVALS_MODERN[R.id][0] : R.name;
+const rivalDesc = R => Sim.eraOf(homeS()) === 'modern' ? RIVALS_MODERN[R.id][1] : R.desc;
 const RIVALS = [
   { id: 'cove', name: 'Smuggler’s Cove', stars: 1, cd: 0.5, desc: 'A sleepy fishing village with a couple of guards and no walls.', houses: 8, build: ['farm', 'market', 'lumber'], stores: [500, 250, 150] },
   { id: 'pirate', name: 'Pirate Cove', stars: 2, cd: 1, desc: 'Pirates with a garrison that grows with your army.', houses: 12, build: ['farm', 'market', 'lumber', 'tavern', 'orchard', 'barracks', 'quarry'], stores: [900, 400, 300], scale: true },
@@ -7378,7 +7966,7 @@ const RIVALS = [
 ];
 function makeRivalIsland(R) {
   const seed = ((Math.floor(Date.now() / (2 * HOUR)) * 7919) + R.stars * 104729) >>> 0;
-  const T = Sim.newGame(seed);
+  const T = Sim.newGame(seed, Sim.eraOf(homeS()));
   T.wood = T.gold = T.stone = T.food = 99999; for (const k of Sim.BUILDABLE) T.goals['unlock_' + k] = 1; T.goals.unlock_wall1 = T.goals.unlock_wall2 = 1;
   let s = seed % 2147483646 + 1; const rand = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
   const conn = () => { const o = []; for (let c = 0; c < N * N; c++) if (T._conn[c]) o.push([c % N, (c / N) | 0]); return o; };
@@ -7405,10 +7993,10 @@ function makeRivalIsland(R) {
 }
 function startRival(id) {
   const R = RIVALS.find(x => x.id === id); if (!R) return;
-  const m = mp(); if (((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR > Date.now()) { toast(`${R.name} is still rebuilding.`, 'bad'); return; }
-  Online.busy = true; toast(`Charting a course to ${R.name}…`);
+  const m = mp(); if (((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR > Date.now()) { toast(`${rivalName(R)} is still rebuilding.`, 'bad'); return; }
+  Online.busy = true; toast(`Charting a course to ${rivalName(R)}…`);
   setTimeout(() => {
-    try { const T = makeRivalIsland(R); leaveHome(T, 'raid', { id: null, name: R.name, practice: true, rival: R.id }); startRaid(); }
+    try { const T = makeRivalIsland(R); leaveHome(T, 'raid', { id: null, name: rivalName(R), practice: true, rival: R.id }); startRaid(); }
     finally { Online.busy = false; }
   }, 50);
 }
@@ -7433,7 +8021,8 @@ function startRaid() {
   renderAway();
 }
 const TROOP_ICON = { all: glyph('swords'), mil: glyph('axe'), inf: glyph('shield'), arc: glyph('bow'), cav: glyph('horse'), can: glyph('cannon') };
-const TROOP_LABEL = { all: 'All', mil: 'Volunteers', inf: 'Infantry', arc: 'Archers', cav: 'Cavalry', can: 'Cannons' };
+// group names follow the era: Sim.TROOPS is renamed when a modern island loads
+const TROOP_LABEL = new Proxy({ all: 'All', mil: 'Volunteers' }, { get: (o, k) => k in o ? o[k] : Sim.TROOPS[k] ? Sim.TROOPS[k].name : k });
 function showRaidResult(res) {
   if (!Online.raid) return;
   const l = res.loot, half = Online.target && (Online.target.practice || Online.target.ghost);
@@ -7493,9 +8082,9 @@ function renderAway() {
     h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>${glyph('swords')} ${r.raiders.length} · ${glyph('shield')} ${r.guards.length} · ${glyph('fire')} ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
       <div class="aw-loot">${['gold', 'wood', 'stone'].map(k => `<span>${ico(k, 18)}<b>${r.loot[k]}</b></span>`).join('')}</div></div>
       <div class="aw-groups" role="group" aria-label="Who to command">${groups.map(g => `<button class="grp ${r.sel === g ? 'on' : ''}" data-ol="sel:${g}" title="${TROOP_LABEL[g]}">${TROOP_ICON[g]}<span>${g === 'all' ? 'All ' + r.raiders.length : TROOP_LABEL[g] + ' ' + cnt[g]}</span></button>`).join('')}</div>
-      <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>To the ship</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
+      <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>${Sim.eraOf(S) === 'modern' ? 'To the boat' : 'To the ship'}</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
   }
-  if (el._h !== h) { el.innerHTML = h; el._h = h; }
+  if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 // health bars over fighters, damage bars over buildings
 const hpPool = [], stPool = [];
@@ -7718,7 +8307,7 @@ function renderSaves() {
     });
     h += `</div>`;
   }
-  page.innerHTML = h; page.hidden = false; hint(null);
+  page.innerHTML = eraH(h); page.hidden = false; hint(null);
   drawMinimap(page.querySelector('[data-mm=now]'), S);
   if (slots) slots.forEach((s, n) => { const cv = page.querySelector(`[data-mm="${n}"]`); if (!cv) return; (s.mini ? Promise.resolve(s.mini) : readSlot(s).then(o => (s.mini = Sim.deserialize(o)))).then(T => drawMinimap(cv, T)).catch(() => {}); });
 }
