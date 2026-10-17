@@ -121,7 +121,7 @@ class Raid {
     const W = this.W, r = side === 'r', T = Sim.TROOPS[kind] || BASE[kind], m = 1 + 0.25 * ((lv || 1) - 1);
     const a = W.newAgent({ id: (r ? 7000 : 8000) + k * 3 + this.units.length }, x, z, k);
     const tool = kind === 'arc' ? 'bow' : kind === 'can' ? null : kind === 'cav' ? 'sword' : r ? 'axe' : 'spear';
-    Object.assign(a, { temp: 'raid', hidden: false, kid: false, path: null, anim: 'idle', helm: r ? 'horn' : 'guard', tool, job: (T.name || 'Raider').replace(/s$/, '') + (lv > 1 ? ' ★' + lv : ''), pop: W.now, waitUntil: 0, mounted: kind === 'cav' });
+    Object.assign(a, { temp: 'raid', hidden: false, kid: false, path: null, anim: 'idle', helm: r ? 'horn' : 'guard', tool, job: (T.name || 'Raider').replace(/s$/, '') + (lv > 1 ? ' (level ' + lv + ')' : ''), pop: W.now, waitUntil: 0, mounted: kind === 'cav' });
     if (r) { a.color = kind === 'mil' ? [0.55, 0.3, 0.2] : [[0.62, 0.17, 0.14], [0.55, 0.22, 0.12], [0.5, 0.15, 0.18]][k % 3]; a.pants = [0.3, 0.24, 0.2]; a.name = NAMES[k % NAMES.length] + (kind === 'mil' ? ' the Bold' : ' of the ' + Sim.BOATS[this.boatLv].name); }
     else { a.color = kind === 'guard' ? [0.22, 0.34, 0.58] : [0.2, 0.42, 0.42]; a.pants = [0.25, 0.25, 0.3]; a.name = a.name.split(' ')[0] + ' the ' + (kind === 'guard' ? 'guard' : (Sim.TROOPS[kind].one)); }
     W.agents.push(a);

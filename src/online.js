@@ -107,7 +107,7 @@ function showRaidedReport() {
   Sfx.play('alarm');
   openModal(`<h2>You were raided!</h2>
     <p class="lead">${esc(names.join(' and '))} landed on ${esc(myName())} ${fmtAgo(Date.now() - r.at)} and ${lostTxt ? 'carried off ' + lostTxt : 'sailed away empty-handed'}.</p>
-    ${p.total.burnt ? `<p class="lead">🔥 ${p.total.burnt} ${p.total.burnt === 1 ? 'building was' : 'buildings were'} burned. Tap them to repair.</p>` : ''}
+    ${p.total.burnt ? `<p class="lead">${glyph('fire')} ${p.total.burnt} ${p.total.burnt === 1 ? 'building was' : 'buildings were'} burned. Tap them to repair.</p>` : ''}
     <p class="lead">Your defenders fought back: ${fell} ${fell === 1 ? 'raider' : 'raiders'} fell, and ${guards} of your ${guards === 1 ? 'guard was' : 'guards were'} knocked out (they’re fine now).</p>
     <p class="lead">Your island is shielded from raids for ${Sim.RAID.shieldH} hours. Watchtowers and guardhouses make the next raid harder.</p>
     <div class="row2"><button class="btn primary" data-ol="revenge:${esc(r.attacker)}">Raid them back</button><button class="btn" data-m="close">Fair enough</button></div>`);
@@ -146,14 +146,14 @@ function renderOnline() {
   // your island
   const sh = (m.shieldUntil || 0) > now;
   h += `<section class="ol-me"><div class="ol-row"><label class="ol-name"><span>Your island</span><input id="olName" maxlength="28" value="${esc(myName())}" aria-label="Island name"></label>
-    <div class="ol-stats"><span title="Watchtowers">🏹 ${def.towers}</span><span title="Guards">🛡️ ${def.guards}</span><span title="Raids won / lost">⚔️ ${m.won || 0}/${m.lost || 0}</span></div></div>
+    <div class="ol-stats"><span title="Watchtowers">${glyph('bow')} ${def.towers}</span><span title="Guards">${glyph('shield')} ${def.guards}</span><span title="Raids won / lost">${glyph('swords')} ${m.won || 0}/${m.lost || 0}</span></div></div>
     <p class="ol-sub">${sh ? `Shielded from raids for ${fmtLeft(m.shieldUntil - now)}.` : 'Open to raids.'} You sail with ${partyText()}.${canShare() ? ' Your island is shared automatically.' : ''}</p>
-    <button class="btn" data-ol="army">⚔️ Manage your army</button></section>`;
+    <button class="btn" data-ol="army">${glyph('swords')} Manage your army</button></section>`;
   // computer islands: always there, for everyone
   h += `<h3 class="ol-h">Computer islands</h3>`;
   for (const R of RIVALS) {
     const wait = Math.max(0, ((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR - now);
-    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${'★'.repeat(R.stars)}${'☆'.repeat(4 - R.stars)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
+    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
       <div class="isl-btns"><button class="btn primary" data-ol="rival:${R.id}" ${wait ? 'disabled' : ''}>${wait ? 'Ready in ' + fmtLeft(wait) : 'Raid'}</button></div></div>`;
   }
   // other players
@@ -163,7 +163,7 @@ function renderOnline() {
     if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
       const d = x.data, block = raidBlock(x.id, d);
-      h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · 🏹 ${safeInt(d.towers, 99)} 🛡️ ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ⚔️ ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' 🧱 ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>
+      h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · ${glyph('bow')} ${safeInt(d.towers, 99)} ${glyph('shield')} ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ' + glyph('swords') + ' ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' ' + glyph('wall') + ' ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>
         <div class="isl-btns"><button class="btn" data-ol="visit:${esc(x.id)}">Visit</button><button class="btn ${block ? '' : 'primary'}" data-ol="raid:${esc(x.id)}" ${block ? 'disabled' : ''} title="${esc(block || 'Raid this island')}">${esc(block && block.startsWith('Shielded') ? block : block ? 'Can’t raid' : 'Raid')}</button></div></div>`;
     }
     const mine = Online.raids.filter(r => r.attacker === Online.me || r.target === Online.me).slice(0, 6);
@@ -171,7 +171,7 @@ function renderOnline() {
       h += `<h3 class="ol-h">Recent raids</h3><div class="ol-log">`;
       for (const r of mine) {
         const l = r.loot || {}, got = ['gold', 'wood', 'stone'].map(k => safeInt(l[k], 1e5) ? safeInt(l[k], 1e5) + ' ' + k : '').filter(Boolean).join(', ') || 'nothing';
-        h += r.attacker === Online.me ? `<div>⚔️ You raided ${esc(who(r.target))} and took ${got} · ${fmtAgo(now - r.at)}</div>` : `<div>🔥 ${esc(who(r.attacker))} raided you and took ${got} · ${fmtAgo(now - r.at)}</div>`;
+        h += r.attacker === Online.me ? `<div>${glyph('swords')} You raided ${esc(who(r.target))} and took ${got} · ${fmtAgo(now - r.at)}</div>` : `<div>${glyph('fire')} ${esc(who(r.attacker))} raided you and took ${got} · ${fmtAgo(now - r.at)}</div>`;
       }
       h += `</div>`;
     }
@@ -209,7 +209,7 @@ function confirmRaid(id) {
   UI.onlineOpen = false;
   openModal(`<h2>Raid ${esc(String(x.data.name || 'this island').slice(0, 28))}?</h2>
     <p class="lead">Your ${esc(Sim.BOATS[landingParty().boat].name.toLowerCase())} lands ${partyText()}. Tap buildings to smash and burn them; loot spills out and has to be carried back to the ship before the 2½ minutes run out.</p>
-    <p class="lead">They have 🏹 ${safeInt(x.data.towers, 99)} watchtowers, 🛡️ ${safeInt(x.data.guards, 99)} guards${safeInt(x.data.troops, 999) ? `, ⚔️ ${safeInt(x.data.troops, 999)} troops` : ''}${safeInt(x.data.walls, 9999) ? ` and 🧱 ${safeInt(x.data.walls, 9999)} wall sections` : ''}.</p>
+    <p class="lead">They have ${glyph('bow')} ${safeInt(x.data.towers, 99)} watchtowers, ${glyph('shield')} ${safeInt(x.data.guards, 99)} guards${safeInt(x.data.troops, 999) ? `, ${glyph('swords')} ${safeInt(x.data.troops, 999)} troops` : ''}${safeInt(x.data.walls, 9999) ? ` and ${glyph('wall')} ${safeInt(x.data.walls, 9999)} wall sections` : ''}.</p>
     ${canShare() ? '' : '<p class="lead"><b>Ghost raid:</b> you joined through a public link, so their island won’t lose anything. You keep half the loot.</p>'}
     <div class="row2"><button class="btn primary" data-ol="go:${esc(id)}">Set sail</button><button class="btn" data-m="close">Not now</button></div>`);
 }
@@ -313,7 +313,7 @@ function startRaid() {
   cam.gyaw = Math.atan2(r.boat.x - r.bank[0], r.boat.z - r.bank[1]);
   renderAway();
 }
-const TROOP_ICON = { all: '⚔️', mil: '🪓', inf: '🛡️', arc: '🏹', cav: '🐎', can: '💣' };
+const TROOP_ICON = { all: glyph('swords'), mil: glyph('axe'), inf: glyph('shield'), arc: glyph('bow'), cav: glyph('horse'), can: glyph('cannon') };
 const TROOP_LABEL = { all: 'All', mil: 'Volunteers', inf: 'Infantry', arc: 'Archers', cav: 'Cavalry', can: 'Cannons' };
 function showRaidResult(res) {
   if (!Online.raid) return;
@@ -370,8 +370,8 @@ function renderAway() {
     const carry = r.raiders.reduce((a, u) => a + u.carryN, 0), cnt = r.counts(), over = r.phase === 'over';
     const groups = ['all', 'mil', 'inf', 'arc', 'cav', 'can'].filter(g => g === 'all' || cnt[g]);
     if (r.sel !== 'all' && !cnt[r.sel]) r.sel = 'all';
-    const gun = r.guns ? `<button class="btn gun ${Online.aim ? 'on' : ''}" data-ol="aim" ${over || r.gunCd > 0 ? 'disabled' : ''}>💥 ${r.gunCd > 0 ? 'Reloading ' + Math.ceil(r.gunCd) : Online.aim ? 'Tap a target' : 'Broadside'}</button>` : '';
-    h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>⚔️ ${r.raiders.length} · 🛡️ ${r.guards.length} · 🔥 ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
+    const gun = r.guns ? `<button class="btn gun ${Online.aim ? 'on' : ''}" data-ol="aim" ${over || r.gunCd > 0 ? 'disabled' : ''}>${glyph('cannon')} ${r.gunCd > 0 ? 'Reloading ' + Math.ceil(r.gunCd) : Online.aim ? 'Tap a target' : 'Broadside'}</button>` : '';
+    h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>${glyph('swords')} ${r.raiders.length} · ${glyph('shield')} ${r.guards.length} · ${glyph('fire')} ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
       <div class="aw-loot">${['gold', 'wood', 'stone'].map(k => `<span>${ico(k, 18)}<b>${r.loot[k]}</b></span>`).join('')}</div></div>
       <div class="aw-groups" role="group" aria-label="Who to command">${groups.map(g => `<button class="grp ${r.sel === g ? 'on' : ''}" data-ol="sel:${g}" title="${TROOP_LABEL[g]}">${TROOP_ICON[g]}<span>${g === 'all' ? 'All ' + r.raiders.length : TROOP_LABEL[g] + ' ' + cnt[g]}</span></button>`).join('')}</div>
       <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>To the ship</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
@@ -475,11 +475,11 @@ function renderArmy() {
     const T = Sim.TROOPS[t], n = A.n[t], atk = A.atk[t], cap = Sim.armyCap(H, t), q = Sim.queued(H, t), lv = A.lv[t];
     const home = TYPES[T.home], has = cap > 0, rc = lv < 3 ? Sim.RESEARCH[lv + 1] : null;
     const next = A.q.filter(x => x.type === t).reduce((m, x) => Math.min(m, x.end), 1e9);
-    h += `<div class="trp"><div class="trp-ico">${TROOP_ICON[t]}</div><div class="trp-main"><b>${T.name} <em>${'★'.repeat(lv)}</em></b>
-      <span>${has ? `${n}/${cap} trained${q ? ` · ${q} in training, next in ${fmtHours(next - H.t)}` : ''}` : `Build a ${esc(home.name)} to train ${T.name.toLowerCase()}.`}</span>
+    h += `<div class="trp"><div class="trp-ico">${TROOP_ICON[t]}</div><div class="trp-main"><b>${T.name} <em>${stars(lv)}</em></b>
+      <span>${has ? `${n}/${cap} trained${q ? ` · ${q} in training, next in ${fmtHours(next - H.t)}` : ''}` : `Build ${/^[AEIOU]/.test(home.name) ? 'an' : 'a'} ${esc(home.name)} to train ${T.name.toLowerCase()}.`}</span>
       ${n ? `<div class="split"><button data-ol="atk:${t}:-1" aria-label="Fewer attacking" ${atk ? '' : 'disabled'}>−</button><span><b>${atk}</b> attack · <b>${n - atk}</b> defend</span><button data-ol="atk:${t}:1" aria-label="More attacking" ${atk < n ? '' : 'disabled'}>+</button></div>` : ''}</div>
       <div class="trp-btns">${has ? `<button class="btn" data-ol="train:${t}:1">Train 1<small>${esc(Sim.costText(T.cost))}</small></button><button class="btn" data-ol="train:${t}:5">×5</button>` : ''}
-      ${rc ? `<button class="btn" data-ol="research:${t}" ${school ? '' : 'disabled'} title="${school ? '' : 'Needs a Military School with workers'}">★ Level ${lv + 1}<small>${esc(Sim.costText(rc))}</small></button>` : ''}</div></div>`;
+      ${rc ? `<button class="btn" data-ol="research:${t}" ${school ? '' : 'disabled'} title="${school ? '' : 'Needs a Military School with workers'}">${glyph('star', 14)} Level ${lv + 1}<small>${esc(Sim.costText(rc))}</small></button>` : ''}</div></div>`;
   }
   if (!school) h += `<p class="ol-sub">Build a <b>Military School</b> to research stronger troops (+25% health and damage per level).</p>`;
   openModal(h); $('#modal').classList.add('ol');

@@ -90,23 +90,25 @@
 </script></head><body style="margin:0"><title>Driftwood</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..800&family=Figtree:wght@500;600;700;800;900&display=swap">
 <style>
-/* Layout: the island fills the screen; driftwood-and-paper panels float at the corners, the build dock sits at the bottom like a toybox. */
+/* Layout: the island fills the screen; panels like pages from a harbourmaster's almanac float at the corners, the build dock sits at the bottom. */
 :root {
-  --paper: #fbf4e6;
-  --paper-2: #f3e6cc;
-  --ink: #3b2f2a;
-  --ink-soft: #7a6a5f;
-  --coral: #e76f51;
-  --sea: #2a9d8f;
-  --sun: #f4c95d;
-  --leaf: #6aa84f;
-  --line: #e2d2b2;
-  --bad: #d64545;
-  --f-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
-  --f-body: "Nunito", "Segoe UI", system-ui, sans-serif;
-  --shadow: 0 6px 0 rgba(59, 47, 42, 0.14), 0 12px 28px rgba(30, 40, 60, 0.18);
+  --paper: #f7efde;
+  --paper-2: #ecdfc5;
+  --ink: #3a2e26;
+  --ink-soft: #76685b;
+  --coral: #b5523b;
+  --sea: #2f7c78;
+  --sun: #d9a441;
+  --leaf: #6c8f45;
+  --line: #dccaa6;
+  --bad: #b8402f;
+  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-num: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .23 0 0 0 0 .18 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px rgba(58, 46, 38, 0.11), 0 2px 0 rgba(58, 46, 38, 0.1), 0 14px 30px -10px rgba(25, 35, 45, 0.35);
   color-scheme: light;
 }
 html, body { height: 100%; }
@@ -120,7 +122,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #gl.paint { cursor: crosshair; }
 #gl.grab { cursor: grabbing; }
 
-.panel { background: var(--paper); border-radius: 18px; box-shadow: var(--shadow); border: 2px solid #fffaf0; }
+.panel { background: var(--paper) var(--grain); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid rgba(58, 46, 38, 0.2); }
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes jelly { 0% { transform: scale(1); } 30% { transform: scale(1.18, 0.86); } 55% { transform: scale(0.92, 1.1); } 75% { transform: scale(1.04, 0.97); } 100% { transform: scale(1); } }
 @keyframes rise { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -46px); opacity: 0; } }
@@ -129,7 +131,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #res { position: absolute; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 12px); left: max(12px, env(safe-area-inset-left, 0px)); display: flex; gap: 4px; padding: 6px 8px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 24px - 230px); }
 .r { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 12px; min-width: 0; }
 .r svg { flex: none; }
-.r b { font-family: var(--f-display); font-weight: 800; font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; padding-top: 3px; }
+.r b { font-family: var(--f-num); font-weight: 800; font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; padding-top: 3px; }
 .r small { display: block; font-size: 10px; font-weight: 800; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; }
 #res { cursor: pointer; }
 .r .rate { text-transform: none; letter-spacing: 0; font-size: 11px; margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -223,9 +225,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 /* dock */
 #dock { position: absolute; z-index: 6; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; max-width: calc(100% - 24px); overflow-x: auto; scrollbar-width: none; }
 #dock::-webkit-scrollbar { display: none; }
-.cat { border: 0; background: none; border-radius: 13px; width: 66px; height: 62px; flex: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.15s; }
-.cat span { font-size: 11px; font-weight: 900; }
-.cat:hover { background: var(--paper-2); transform: translateY(-3px); }
+.cat { border: 0; background: none; border-radius: 10px; width: 66px; height: 62px; flex: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.15s; }
+.cat span { font-size: 11px; font-weight: 700; letter-spacing: 0.01em; }
+.cat:hover { background: var(--paper-2); transform: translateY(-2px); }
 .cat:active { transform: scale(0.9); }
 .cat.on { background: var(--ink); color: var(--paper); }
 .cat .k { position: absolute; }
@@ -264,11 +266,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .dot { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 10px; font-weight: 900; color: #fff; }
 .dot.y { background: var(--leaf); } .dot.n { background: #cbb99a; }
 .desc { font-size: 13px; line-height: 1.45; color: var(--ink-soft); margin: 0; }
-.btn { border: 0; border-radius: 12px; padding: 10px 14px; font-weight: 900; font-size: 14px; cursor: pointer; background: var(--paper-2); transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
-.btn:hover { transform: translateY(-2px); }
-.btn:active { transform: scale(0.95); }
-.btn.primary { background: var(--coral); color: #fff; box-shadow: 0 4px 0 #b9533a; }
-.btn.danger { background: #fadcd6; color: #8f2a1d; }
+.btn { border: 1px solid rgba(58, 46, 38, 0.18); border-radius: 10px; padding: 10px 14px; font-weight: 800; font-size: 14px; cursor: pointer; background: var(--paper-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 0 rgba(58, 46, 38, 0.13); transition: transform 0.15s ease, background 0.15s ease; }
+.btn:hover { transform: translateY(-1px); background: #e6d6b8; }
+.btn:active { transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(58, 46, 38, 0.2); }
+.btn.primary { background: var(--coral); color: #fff8ee; border-color: #8a3a28; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 3px 0 #7c3324; }
+.btn.primary:hover { background: #a94a34; }
+.btn.danger { background: #f1d7cc; color: #8a2e1f; }
 .btn[disabled] { opacity: 0.5; cursor: default; transform: none; }
 .item .ico .sw { display: block; width: 46px; height: 34px; border-radius: 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.12); transform: perspective(80px) rotateX(35deg); }
 .btn.danger.arm { background: var(--bad); color: #fff; }
@@ -318,6 +321,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .fc b { display: block; font-weight: 900; font-size: 14.5px; } .fc span { display: block; font-size: 13px; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
 .fc svg { flex: none; margin-top: 2px; }
 #clock .time { cursor: pointer; }
+.gl { display: inline-block; vertical-align: -3px; flex: none; }
+.stars .gl { vertical-align: -2px; margin-right: 1px; }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
@@ -426,7 +431,8 @@ body.raiding #res, body.raiding .speeds, body.raiding #chat { display: none !imp
 .ship-main span { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
 .ship .btn small, .trp-btns .btn small { display: block; font-size: 10.5px; font-weight: 800; opacity: .8; }
 .trp { display: flex; gap: 10px; align-items: center; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 9px 10px; flex-wrap: wrap; }
-.trp-ico { font-size: 24px; width: 34px; text-align: center; flex: none; }
+.trp-ico { font-size: 24px; width: 40px; text-align: center; flex: none; }
+.trp-ico .gl { width: 30px; height: 30px; }
 .trp-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 170px; }
 .trp-main b { font-size: 15px; font-weight: 900; } .trp-main em { font-style: normal; color: #d4a537; letter-spacing: -1px; }
 .trp-main > span { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
@@ -2086,7 +2092,7 @@ layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(locatio
 layout(location=3) in vec4 iM0; layout(location=4) in vec4 iM1; layout(location=5) in vec4 iM2; layout(location=6) in vec4 iM3;
 layout(location=7) in vec4 iCol;
 uniform mat4 uVP; uniform mat4 uLightVP; uniform float uTime; uniform float uSway; uniform float uSwayY; uniform float uWind;
-out vec3 vCol; out vec3 vNor; out vec3 vWorld; out vec4 vLight; out float vEmis;
+out vec3 vCol; out vec3 vNor; out vec3 vWorld; out vec4 vLight; out float vEmis; out float vLY;
 void main() {
   mat4 M = mat4(iM0, iM1, iM2, iM3);
   vec4 w = M * vec4(aPos, 1.0);
@@ -2100,16 +2106,16 @@ void main() {
   }
   vWorld = w.xyz;
   vNor = normalize(mat3(M) * aNor);
-  vCol = aCol * iCol.rgb; vEmis = iCol.a;
+  vCol = aCol * iCol.rgb; vEmis = iCol.a; vLY = aPos.y * length(M[1].xyz);
   vLight = uLightVP * w;
   gl_Position = uVP * w;
 }`;
 const FS_MAIN = `#version 300 es
 precision highp float; precision highp sampler2DShadow;
-in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis;
+in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -2129,6 +2135,32 @@ void main() {
     float w = texture(uWear, (vWorld.xz + 48.0) / 96.0).r;
     vec3 trod = mix(vec3(0.69, 0.59, 0.42), alb, 0.3);
     alb = mix(alb, trod, smoothstep(0.14, 0.72, w) * 0.85 * smoothstep(0.55, 0.85, n.y));
+    // the ground itself: a soft grain so flat areas never look like plastic
+    alb *= 0.93 + 0.1 * vnoise(vWorld.xz * 2.3) + 0.04 * vnoise(vWorld.xz * 9.0);
+    // roads painted into the ground, with soft, slightly ragged edges
+    vec4 rd = texture(uRoads, (vWorld.xz + 48.0) / 96.0);
+    float rn = vnoise(vWorld.xz * 3.1) - 0.5;
+    float dirt = smoothstep(0.33, 0.43, rd.r + rn * 0.1);
+    float dirtEdge = smoothstep(0.24, 0.34, rd.r + rn * 0.1) - dirt;
+    vec3 dirtC = vec3(0.73, 0.6, 0.43) * (0.9 + 0.16 * vnoise(vWorld.xz * 6.0)) * (0.95 + 0.08 * vnoise(vWorld.xz * 1.3));
+    alb = mix(alb, alb * 0.82, dirtEdge * 0.7);
+    alb = mix(alb, dirtC, dirt);
+    float path = smoothstep(0.56, 0.64, rd.g + rn * 0.12);
+    alb = mix(alb, vec3(0.79, 0.71, 0.55) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
+    float cob = smoothstep(0.34, 0.4, rd.b + rn * 0.03);
+    if (cob > 0.0) {
+      // setts in running bond, each its own shade, with dark joints
+      vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
+      vec2 f = fract(p), id = floor(p);
+      float joint = min(min(f.x, 1.0 - f.x) * 0.55, min(f.y, 1.0 - f.y));
+      vec3 sett = vec3(0.64, 0.61, 0.57) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
+      vec3 cobC = mix(vec3(0.36, 0.34, 0.31), sett, smoothstep(0.03, 0.09, joint));
+      float kerb = smoothstep(0.24, 0.3, rd.b) - smoothstep(0.34, 0.4, rd.b);
+      alb = mix(alb, vec3(0.8, 0.77, 0.71), kerb * 0.8);
+      alb = mix(alb, cobC, cob);
+    }
+    // roads not yet joined to the hall show up rusty
+    alb = mix(alb, alb * vec3(1.08, 0.86, 0.78), rd.a * max(max(dirt, path), cob) * 0.8);
   }
   // rain darkens everything that faces the sky
   alb *= 1.0 - uWet * 0.16 * smoothstep(0.5, 0.95, n.y);
@@ -2140,8 +2172,14 @@ void main() {
     sh *= 1.0 - smoothstep(0.66 - uCloud * 0.5, 0.84 - uCloud * 0.45, cn) * 0.6 * min(1.0, uCloud * 1.6);
   }
   vec3 hemi = mix(uGround, uSky, n.y * 0.5 + 0.5);
+  // walls, trunks and legs darken a little where they meet the ground
+  if (uTerrain < 0.5) hemi *= mix(0.68, 1.0, smoothstep(0.0, 0.32, vLY));
   vec3 c = alb * (hemi + uSunCol * ndl * sh);
   c += alb * vEmis + uFlat * step(0.5, vEmis);
+  // grade: a touch less saturated, warm in the light and cool in the shade
+  float lum = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(vec3(lum), c, 0.9);
+  c *= mix(vec3(0.97, 0.98, 1.04), vec3(1.03, 1.0, 0.95), smoothstep(0.15, 0.75, lum));
   float f = smoothstep(uFogR.x, uFogR.y, length(vWorld - uEye));
   o = vec4(mix(c, uFog, f), uAlpha);
 }`;
@@ -2174,11 +2212,16 @@ void main() {
   float ground = -4.0;
   if (vUV.x > 0.0 && vUV.x < 1.0 && vUV.y > 0.0 && vUV.y < 1.0) ground = texture(uH, vUV).r;
   float depth = vWorld.y - ground;
-  vec3 nrm = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
-  if (nrm.y < 0.0) nrm = -nrm;
-  float n1 = noise(vWorld.xz * 1.6 + vec2(uTime * 0.25, uTime * 0.18));
-  float n2 = noise(vWorld.xz * 3.1 - vec2(uTime * 0.2, -uTime * 0.31));
-  nrm = normalize(nrm + vec3(n1 - 0.5, 0.0, n2 - 0.5) * 0.12);
+  // the swell's slope worked out exactly (no mesh facets), plus fine ripples
+  float x = vWorld.x, z = vWorld.z, off = smoothstep(34.0, 70.0, length(vWorld.xz));
+  float dx = cos(x * 0.35 + uTime * 1.1) * 0.014 + cos((x + z) * 0.9 + uTime * 1.7) * 0.0135 + off * (cos(x * 0.11 + z * 0.07 + uTime * 0.7) * 0.0242 - cos(z * 0.16 - x * 0.05 + uTime * 0.9) * 0.006);
+  float dz = cos(z * 0.42 - uTime * 0.9) * 0.0168 + cos((x + z) * 0.9 + uTime * 1.7) * 0.0135 + off * (cos(x * 0.11 + z * 0.07 + uTime * 0.7) * 0.0154 + cos(z * 0.16 - x * 0.05 + uTime * 0.9) * 0.0192);
+  vec3 nrm = normalize(vec3(-dx, 1.0, -dz));
+  // ripples from rotated, layered noise so no grid shows through
+  mat2 rA = mat2(0.8, -0.6, 0.6, 0.8), rB = mat2(0.36, 0.93, -0.93, 0.36);
+  float n1 = noise(rA * vWorld.xz * 1.3 + vec2(uTime * 0.25, uTime * 0.18)) * 0.6 + noise(rB * vWorld.xz * 2.9 + vec2(-uTime * 0.21, uTime * 0.14)) * 0.4;
+  float n2 = noise(rB * vWorld.xz * 1.7 - vec2(uTime * 0.2, -uTime * 0.31)) * 0.6 + noise(rA * vWorld.xz * 3.7 + vec2(uTime * 0.17, uTime * 0.23)) * 0.4;
+  nrm = normalize(nrm + vec3(n1 - 0.5, 0.0, n2 - 0.5) * 0.07 + vec3(sin(dot(vWorld.xz, vec2(2.1, 1.3)) + uTime * 2.0), 0.0, sin(dot(vWorld.xz, vec2(-1.2, 2.4)) + uTime * 1.7)) * 0.012);
   vec3 col = mix(uShallow, uDeep, smoothstep(0.05, 2.6, depth));
   float diff = max(dot(nrm, uSunDir), 0.0);
   col *= (0.55 + 0.45 * diff) * (uSky * 0.6 + uSunCol * 0.5 + 0.15);
@@ -2329,6 +2372,17 @@ class Renderer {
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, m.inst, 0, m.n * 20);
   }
   draw(m) { if (!m.n || !m.count) return; const gl = this.gl; gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.count, m.n); }
+  setRoads(px, n) {
+    const gl = this.gl;
+    if (!this.rTex) this.rTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.rTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
   // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
   setWear(w, n) {
     const gl = this.gl;
@@ -2394,9 +2448,11 @@ function hash(i) { let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); h ^= h >>> 13;
 function elastic(t) { if (t <= 0) return 0; if (t >= 1) return 1; return Math.pow(2, -9 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI) / 3.2) + 1; }
 function backOut(t) { const c = 2.2; t = clamp(t, 0, 1) - 1; return 1 + (c + 1) * t * t * t + c * t * t; }
 
-const WALLS = ['#f3e3c3', '#f6d58e', '#cfe3c1', '#f2c4b5', '#cfe0ea', '#efe9df', '#e8d1f0'];
-const ROOFS = ['#c8553d', '#3d6b8c', '#7a4b3a', '#5b8c5a', '#a63d40', '#33415c'];
-const SHIRTS = ['#e76f51', '#2a9d8f', '#e9c46a', '#264653', '#f4a261', '#8ab17d', '#b5838d', '#457b9d', '#f6bd60', '#6d597a'];
+// lime-washed plaster, ochre, sage, rose, pale blue, cream, heather; terracotta, slate, old brick, moss, oxblood, charcoal
+const WALLS = ['#eee2c8', '#e6c88a', '#cdd6b8', '#e8c6b2', '#d2dde0', '#efe7d6', '#ddd2dc'];
+const ROOFS = ['#b65a40', '#4e6576', '#7d4f3c', '#68804f', '#923f35', '#3f4652'];
+// homespun dyes: madder, woad, weld, moss, undyed linen, walnut, rust, slate, sloe, verdigris
+const SHIRTS = ['#a8513f', '#4f6d8a', '#c9a54a', '#6d7f48', '#d9cdb4', '#7b5a42', '#b06a3f', '#55606b', '#7a5468', '#4c7c74'];
 const WIN = '#fff1c4';
 const HAIR = [[0.17, 0.11, 0.08], [0.29, 0.18, 0.1], [0.48, 0.29, 0.15], [0.72, 0.53, 0.24], [0.85, 0.75, 0.54], [0.55, 0.55, 0.55], [0.1, 0.1, 0.1], [0.63, 0.26, 0.16]];
 const PANTS = [[0.23, 0.23, 0.28], [0.35, 0.27, 0.2], [0.18, 0.28, 0.35], [0.42, 0.36, 0.27], [0.27, 0.27, 0.27], [0.46, 0.3, 0.3]];
@@ -2432,7 +2488,7 @@ function logX(B, x, y, z, len, r, col) {
     B.tri([x + len / 2, y, z], p(x + len / 2, b), p(x + len / 2, a), hex('#d9b38c'), cen);
   }
 }
-function plinth(B, w, d) { B.box(0, -0.03, 0, w, 0.07, d, '#b3a999'); }
+function plinth(B, w, d) { B.box(0, -0.04, 0, w * 0.97, 0.07, d * 0.97, '#9b8f7e'); B.box(0, 0.025, 0, w * 0.97 + 0.02, 0.012, d * 0.97 + 0.02, '#a99c89'); }
 
 function model(type, level, variant) {
   const B = new Builder(), W = new Builder();
@@ -3155,17 +3211,32 @@ function yard(B, variant, level) {
 // where smoke leaves each house shape [x, z, top]
 const CHIMNEY = [[[0.17, -0.1, 0.78], [-0.15, -0.17, 0.86], [0.31, -0.08, 0.82]], [[-0.2, -0.12, 1.22], [0.2, -0.16, 1.26], [0.18, -0.16, 1.11]], [[-0.32, -0.22, 1.56], [0.3, -0.25, 1.22], [-0.3, -0.24, 1.26]]];
 
-function treeModel(kind) {
+// Conifers (kind 1) and broadleaf trees (kind 2), each in a few shapes so a forest never looks stamped out
+function treeModel(kind, v) {
   const B = new Builder();
   if (kind === 1) {
-    B.cyl(0, -0.1, 0, 0.06, 0.05, 0.4, 5, '#6b4a33');
-    B.cyl(0, 0.22, 0, 0.36, 0, 0.55, 7, '#3f7d4e');
-    B.cyl(0, 0.48, 0, 0.29, 0, 0.5, 7, '#468a55');
-    B.cyl(0, 0.74, 0, 0.21, 0, 0.45, 7, '#4f975d');
+    if (v === 0) { // classic spruce
+      B.cyl(0, -0.1, 0, 0.06, 0.05, 0.4, 6, '#6b4a33');
+      B.cyl(0, 0.2, 0, 0.37, 0, 0.55, 8, '#3d7550'); B.cyl(0, 0.46, 0, 0.3, 0, 0.5, 8, '#44805a'); B.cyl(0, 0.72, 0, 0.21, 0, 0.45, 8, '#4c8b60');
+    } else if (v === 1) { // tall, thin fir
+      B.cyl(0, -0.1, 0, 0.05, 0.04, 0.5, 6, '#5f4230');
+      for (let k = 0; k < 5; k++) B.cyl(0, 0.2 + k * 0.22, 0, 0.26 - k * 0.04, 0, 0.36, 7, ['#35694a', '#3b7350', '#417c56', '#3a704e', '#467f58'][k]);
+    } else { // short, broad pine with a leaning crown
+      B.cyl(0, -0.1, 0, 0.07, 0.06, 0.35, 6, '#6e4c35');
+      B.cyl(0.02, 0.16, 0, 0.44, 0, 0.42, 8, '#4a7d52'); B.cyl(0.05, 0.38, 0.02, 0.33, 0, 0.42, 8, '#52885a'); B.cyl(0.07, 0.6, 0.03, 0.2, 0, 0.36, 7, '#5a9061');
+    }
   } else {
-    B.cyl(0, -0.1, 0, 0.07, 0.05, 0.55, 5, '#7a5236');
-    B.blob(0, 0.68, 0, 0.36, 0.32, 0.36, '#6aa84f', 0.35, 3);
-    B.blob(0.12, 0.88, 0.05, 0.2, 0.18, 0.2, '#77b55a', 0.3, 8);
+    if (v === 0) { // round oak
+      B.cyl(0, -0.1, 0, 0.07, 0.05, 0.55, 6, '#7a5236');
+      smoothBlob(B, 0, 0.68, 0, 0.36, 0.3, 0.35, '#5f9a4b', 0); smoothBlob(B, 0.15, 0.86, 0.06, 0.22, 0.19, 0.21, '#6aa553', 0); smoothBlob(B, -0.14, 0.8, -0.08, 0.2, 0.17, 0.2, '#578f45', 0);
+    } else if (v === 1) { // birch: pale trunk, airy crown
+      B.cyl(0, -0.1, 0, 0.045, 0.035, 0.75, 6, '#e8e2d4'); B.box(0, 0.25, 0.035, 0.05, 0.02, 0.01, '#3b3530'); B.box(0, 0.45, -0.035, 0.05, 0.02, 0.01, '#3b3530');
+      smoothBlob(B, 0, 0.86, 0, 0.24, 0.32, 0.24, '#8cb35a', 0); smoothBlob(B, 0.09, 0.7, 0.05, 0.16, 0.18, 0.16, '#97bc62', 0);
+    } else { // bushy, many-lobed crown
+      B.cyl(0, -0.1, 0, 0.08, 0.06, 0.42, 6, '#6a4630');
+      for (let k = 0; k < 5; k++) { const a = k * 1.26 + 0.4, r = 0.2; smoothBlob(B, Math.cos(a) * r, 0.55 + (k % 2) * 0.12, Math.sin(a) * r, 0.22, 0.2, 0.22, ['#5a944a', '#669f50', '#4f8a42', '#6aa555', '#5c9648'][k], 0); }
+      smoothBlob(B, 0, 0.78, 0, 0.24, 0.2, 0.24, '#71ab58', 0);
+    }
   }
   return B;
 }
@@ -3373,11 +3444,30 @@ function scaffoldModel() {
   for (const y of [0.33, 0.66, 0.98]) { B.box(0, y, -0.48, 0.98, 0.025, 0.07, plank); B.box(0, y, 0.48, 0.98, 0.025, 0.07, plank); B.box(-0.48, y, 0, 0.07, 0.025, 0.98, plank); B.box(0.48, y, 0, 0.07, 0.025, 0.98, plank); }
   return B;
 }
+// a smooth, softly shaded ball (subdivided icosahedron with per-vertex normals), squashed flat underneath when asked
+function smoothBlob(B, x, y, z, rx, ry, rz, col, sub, flatBottom) {
+  col = Array.isArray(col) ? col : hex(col);
+  const t = (1 + Math.sqrt(5)) / 2;
+  let vs = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(v => { const l = Math.hypot(...v); return v.map(a => a / l); });
+  let fs = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  for (let k = 0; k < (sub === undefined ? 2 : sub); k++) {
+    const mid = {}, nf = [];
+    const m = (a, b) => { const key = a < b ? a + ',' + b : b + ',' + a; if (mid[key] !== undefined) return mid[key]; const v = [vs[a][0] + vs[b][0], vs[a][1] + vs[b][1], vs[a][2] + vs[b][2]], l = Math.hypot(...v); vs.push(v.map(q => q / l)); return (mid[key] = vs.length - 1); };
+    for (const [a, b, c] of fs) { const ab = m(a, b), bc = m(b, c), ca = m(c, a); nf.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]); }
+    fs = nf;
+  }
+  const P = v => [x + v[0] * rx, y + (flatBottom && v[1] < -0.3 ? -0.3 + (v[1] + 0.3) * 0.25 : v[1]) * ry, z + v[2] * rz];
+  const Nn = v => { const nx = v[0] / rx, ny = (flatBottom && v[1] < -0.3 ? v[1] * 2.5 : v[1]) / ry, nz = v[2] / rz, l = Math.hypot(nx, ny, nz); return [nx / l, ny / l, nz / l]; };
+  for (const f of fs) for (const k of f) { const p = B._tx ? B._tx(P(vs[k])) : P(vs[k]); B.p.push(...p); B.n.push(...Nn(vs[k])); B.c.push(...col); }
+  return B;
+}
 function cloudModel(seed) {
   const B = new Builder();
-  for (let k = 0; k < 5; k++) {
-    const r = hash(seed * 13 + k);
-    B.blob((k - 2) * 1.1 + r * 0.5, r * 0.4, (hash(seed + k * 7) - 0.5) * 1.2, 1.1 + r * 0.6, 0.7 + r * 0.3, 1.0 + r * 0.4, '#ffffff', 0.25, seed + k);
+  const n = 6 + Math.floor(hash(seed * 3) * 4);
+  for (let k = 0; k < n; k++) {
+    const r = hash(seed * 13 + k), u = (k / (n - 1) - 0.5) * 2;
+    const big = 1 - Math.abs(u) * 0.55;
+    smoothBlob(B, u * 2.4 + (r - 0.5) * 0.6, big * 0.45 + r * 0.25, (hash(seed + k * 7) - 0.5) * 1.3, (0.9 + r * 0.5) * big, (0.8 + r * 0.35) * big, (0.9 + r * 0.4) * big, '#ffffff', 2, true);
   }
   return B;
 }
@@ -3414,7 +3504,8 @@ class World {
   constructor(R) {
     this.R = R; this.models = {}; this.now = 0;
     this.water = R.waterMesh(N * 0.75, 110);
-    this.trees = [R.mesh(treeModel(1)), R.mesh(treeModel(2))];
+    this.trees = [R.mesh(treeModel(1, 0)), R.mesh(treeModel(2, 0))];
+    this.treeV = [[0, 1, 2].map(v => R.mesh(treeModel(1, v))), [0, 1, 2].map(v => R.mesh(treeModel(2, v)))];
     const pm = personModel(); this.torso = R.mesh(pm.T); this.head = R.mesh(pm.H);
     this.hairs = [0, 1, 2].map(k => R.mesh(hairModel(k))); this.leg = R.mesh(legModel()); this.arm = R.mesh(armModel());
     this.hleg = R.mesh(horseLegModel()); this.saddle = R.mesh(saddleModel()); this.wheel = R.mesh(wheelModel());
@@ -3441,7 +3532,7 @@ class World {
     this.terrain = null; this.roads = null; this.overlay = null; this.ring = null;
     this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = [];
     this.pscale = 1.4; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.cloudPos = []; this.carts = []; this.bubbles = []; this.replies = []; this.rain = []; this.chat = []; this.chatSeq = 0; this.agentSeq = 0; this.bubbleTimer = 1; this.pois = null; this.focus = [0, 0];
-    for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283 + hash(k) * 0.5, r = 62 + hash(k + 50) * 26; this.cloudPos.push({ a, r, y: 9 + hash(k + 9) * 7, s: 0.9 + hash(k + 3) * 0.9, m: k % 3, v: 0.012 + hash(k + 7) * 0.01 }); }
+    for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283 + hash(k) * 0.5, r = 58 + hash(k + 50) * 34; this.cloudPos.push({ a, r, y: 17 + hash(k + 9) * 9, s: 1.1 + hash(k + 3) * 1.1, m: k % 3, v: 0.008 + hash(k + 7) * 0.008 }); }
   }
   setState(S) {
     this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
@@ -3461,41 +3552,66 @@ class World {
     const S = this.S, h = S.h, data = new Float32Array(N * N * 6 * 9);
     let o = 0;
     const byId = {}; for (const b of S.b) byId[b.id] = b;
-    const put = (x, y, z, nx, ny, nz, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = nx; data[o++] = ny; data[o++] = nz; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
-    const STONE = [hex('#b3ac9e'), hex('#a7a093'), hex('#98918a'), hex('#8c867e')];
-    const GR = [hex('#80b25a'), hex('#92bd5d'), hex('#75a753')], SAND = hex('#ecd9a3'), WET = hex('#cdb98a'), DEEP = hex('#8c9a86'), ROCK = [hex('#a39d93'), hex('#8e887f')], SNOW = hex('#f2f2ee'), DIRT = hex('#9b7653');
-    const YARD = [hex('#8cbb60'), hex('#96c063')], QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
+    const put = (x, y, z, n, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = n[0]; data[o++] = n[1]; data[o++] = n[2]; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
+    // palette: soft, slightly dusty colours rather than bright lime
+    const LUSH = hex('#6f9a55'), FRESH = hex('#85ad5c'), DRY = hex('#a2b267'), OLIVE = hex('#7d9550'), FLOOR = hex('#5c8247'), HIGH = hex('#7c9659');
+    const SAND = hex('#e4d1a0'), WETS = hex('#c9b38a'), DEEP = hex('#8c9a86'), ROCKA = hex('#a39d92'), ROCKB = hex('#8d877d'), SNOW = hex('#eeeeea');
+    const GRAVEL = hex('#aca596'), GRAVEL2 = hex('#99928a'), DIRT = hex('#9d7b58'), YARDC = hex('#8fa95f'), QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
+    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const H = (a, b) => hash(((a * 73856093) ^ (b * 19349663)) >>> 0); const A = H(xi, yi), B = H(xi + 1, yi), C = H(xi, yi + 1), D = H(xi + 1, yi + 1);
+      return A + (B - A) * u + (C - A) * v + (A - B - C + D) * u * v; };
+    // 1. a colour for every cell, from its ground, height, slope, trees and stone
+    const cellCol = new Array(N * N);
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-      let h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
+      const c = j * N + i, h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
       const avg = (h00 + h10 + h01 + h11) / 4, slope = Math.max(h00, h10, h01, h11) - Math.min(h00, h10, h01, h11);
-      const r = hash(j * N + i);
-      const pb = S.occ[j * N + i] ? byId[S.occ[j * N + i]] : null;
-      let c;
-      if (!pb && S.road[j * N + i] === 4) { h00 = h10 = h01 = h11 = Sim.QUAY_Y; c = QUAYC[r < 0.5 ? 0 : 1]; }
-      else if (pb) {
-        // the building's terrace: flat at floor level
-        h00 = h10 = h01 = h11 = pb.y;
-        c = pb.type === 'farm' || pb.type === 'market' || pb.type === 'quarry' ? DIRT : avg < 0.5 ? SAND : YARD[r < 0.5 ? 0 : 1];
+      const pb = S.occ[c] ? byId[S.occ[c]] : null;
+      const n1 = vn(i * 0.07 + 13, j * 0.07 + 7), n2 = vn(i * 0.19 + 3, j * 0.19 + 41), n3 = vn(i * 0.45, j * 0.45);
+      let col = mix3(mix3(LUSH, FRESH, n1), mix3(DRY, OLIVE, n3), clamp((n2 - 0.35) * 1.4, 0, 0.75));
+      let trees = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const x = i + di, y = j + dj; if (Sim.inB(x, y) && S.tree[y * N + x]) trees++; }
+      col = mix3(col, FLOOR, Math.min(1, trees / 6) * 0.6);
+      col = mix3(col, HIGH, clamp((avg - 3) / 3, 0, 0.7));
+      if (pb) col = pb.type === 'farm' || pb.type === 'market' || pb.type === 'quarry' || pb.type === 'mine' ? DIRT : avg < 0.5 ? SAND : mix3(YARDC, col, 0.4);
+      else if (S.road[c] === 4) col = QUAYC[hash(c) < 0.5 ? 0 : 1];
+      else {
+        if (S.rock && S.rock[c]) col = mix3(S.rock[c] === 2 ? GRAVEL2 : GRAVEL, col, 0.12 + n3 * 0.12);
+        const rocky = Math.max(clamp((slope - 1.2) / 0.8, 0, 1), clamp((avg - 5) / 1.4, 0, 1));
+        if (rocky > 0) col = mix3(col, mix3(ROCKA, ROCKB, n3), rocky);
+        if (avg > 8) col = mix3(col, SNOW, clamp((avg - 8) / 1, 0, 1));
+        // beaches: sand fades into grass, darker where the sea wets it, and deepens underwater
+        const sand = 1 - clamp((avg - 0.35) / 0.45, 0, 1);
+        if (sand > 0) col = mix3(col, avg < 0.06 ? WETS : SAND, sand);
+        if (avg < -0.6) col = mix3(WETS, DEEP, clamp((-avg - 0.6) / 2.5, 0, 1));
       }
-      else if (avg < -0.6) c = mix3(WET, DEEP, clamp((-avg - 0.6) / 2.5, 0, 1));
-      else if (avg < 0.5) c = avg < 0.05 ? WET : SAND;
-      else if (avg > 8.5) c = SNOW;
-      else if (avg > 5.5 || slope > 1.7) c = ROCK[r < 0.5 ? 0 : 1];
-      else if (S.rock && S.rock[j * N + i]) c = S.rock[j * N + i] === 2 ? STONE[2 + (r < 0.5 ? 0 : 1)] : STONE[r < 0.5 ? 0 : 1];
-      else { c = GR[Math.floor(r * 3)]; if (avg > 3.5) c = mix3(c, hex('#6f9a52'), (avg - 3.5) / 2); }
-      const sh = 0.96 + r * 0.08;
-      const cc = [c[0] * sh, c[1] * sh, c[2] * sh];
+      const sh = 0.975 + hash(c) * 0.05;
+      cellCol[c] = [col[0] * sh, col[1] * sh, col[2] * sh];
+    }
+    // 2. every grid vertex takes the average of the cells around it, so ground types fade into each other
+    const VC = new Array(V * V), VN = new Array(V * V);
+    for (let j = 0; j < V; j++) for (let i = 0; i < V; i++) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const [di, dj] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const x = i + di, y = j + dj; if (!Sim.inB(x, y)) continue; const cc = cellCol[y * N + x]; r += cc[0]; g += cc[1]; b += cc[2]; n++; }
+      VC[j * V + i] = [r / n, g / n, b / n];
+      const hl = h[j * V + Math.max(0, i - 1)], hr = h[j * V + Math.min(V - 1, i + 1)], hu = h[Math.max(0, j - 1) * V + i], hd = h[Math.min(V - 1, j + 1) * V + i];
+      const nx = hl - hr, nz = hu - hd, l = Math.hypot(nx, 2, nz);
+      VN[j * V + i] = [nx / l, 2 / l, nz / l];
+    }
+    // 3. two triangles per cell; building terraces and quays stay flat and keep their own colour
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const c = j * N + i, pb = S.occ[c] ? byId[S.occ[c]] : null, quay = !pb && S.road[c] === 4;
+      let h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
+      const flat = pb || quay;
+      if (pb) h00 = h10 = h01 = h11 = pb.y;
+      if (quay) h00 = h10 = h01 = h11 = Sim.QUAY_Y;
       const x0 = i - N / 2, z0 = j - N / 2, x1 = x0 + 1, z1 = z0 + 1;
-      // tri A: 00,10,11  tri B: 00,11,01  (matches Sim.heightAt)
-      const tri = (ax, ay, az, bx, by, bz, cx, cy, cz, col) => {
-        let ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
-        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1;
-        nx /= l; ny /= l; nz /= l; if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
-        put(ax, ay, az, nx, ny, nz, col); put(bx, by, bz, nx, ny, nz, col); put(cx, cy, cz, nx, ny, nz, col);
-      };
-      tri(x0, h00, z0, x1, h10, z0, x1, h11, z1, cc);
-      const sh2 = 0.97;
-      tri(x0, h00, z0, x1, h11, z1, x0, h01, z1, [cc[0] * sh2, cc[1] * sh2, cc[2] * sh2]);
+      const v00 = j * V + i, v10 = v00 + 1, v01 = v00 + V, v11 = v01 + 1;
+      // a little of the flat face normal keeps a hint of the low-poly facets
+      const face = (ax, ay, az, bx, by, bz, cx, cy, cz) => { let ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az; let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1; if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; } return [nx / l, ny / l, nz / l]; };
+      const nrm = (v, f) => { if (flat) return [0, 1, 0]; const a = VN[v]; const x = a[0] * 0.7 + f[0] * 0.3, y = a[1] * 0.7 + f[1] * 0.3, z = a[2] * 0.7 + f[2] * 0.3, l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; };
+      const col = v => flat ? cellCol[c] : VC[v];
+      const fA = face(x0, h00, z0, x1, h10, z0, x1, h11, z1), fB = face(x0, h00, z0, x1, h11, z1, x0, h01, z1);
+      put(x0, h00, z0, nrm(v00, fA), col(v00)); put(x1, h10, z0, nrm(v10, fA), col(v10)); put(x1, h11, z1, nrm(v11, fA), col(v11));
+      put(x0, h00, z0, nrm(v00, fB), col(v00)); put(x1, h11, z1, nrm(v11, fB), col(v11)); put(x0, h01, z1, nrm(v01, fB), col(v01));
     }
     const walls = this.buildWalls(byId);
     const all = new Float32Array(data.length + walls.length);
@@ -3508,7 +3624,7 @@ class World {
   // Stone foundations (where the ground falls away) and retaining walls (where the hill rises above the terrace)
   buildWalls(byId) {
     const S = this.S, h = S.h, out = [];
-    const STONE = [hex('#bdb3a3'), hex('#aaa192'), hex('#c8c0b1'), hex('#a0978a'), hex('#b4ab9c')], CAP = hex('#ddd6c9');
+    const STONE = [hex('#a89d8c'), hex('#9a8f7f'), hex('#b0a593'), hex('#918675'), hex('#a39886')], CAP = hex('#bdb2a0');
     const put = (p, n, c) => out.push(p[0], p[1], p[2], n[0], n[1], n[2], c[0], c[1], c[2]);
     const quad = (a, b, c, d, n, col) => { put(a, n, col); put(b, n, col); put(c, n, col); put(a, n, col); put(c, n, col); put(d, n, col); };
     const COURSE = 0.24;
@@ -3669,6 +3785,7 @@ class World {
       const P = (fx, fz) => [x0 + fx, hx(fx, fz), z0 + fz];
       const rect = (l, tp, r, bt, col, dy) => { out.push([P(l, tp), P(r, tp), P(r, bt), col, dy], [P(l, tp), P(r, bt), P(l, bt), col, dy]); };
       const conn = S._conn[c];
+      if (t !== 4) continue; // dirt roads, footpaths and cobbles are painted into the terrain (see paintRoads)
       if (t === 2) {
         // a narrow gravel footpath: a hub in the middle and an arm towards each neighbour
         const a = 0.31, b = 0.69, e = 0.05;
@@ -3721,11 +3838,22 @@ class World {
     let o = 0;
     for (const [a, b, c, col, dy] of out) for (const p of [a, b, c]) { data.set([p[0], p[1] + (dy || 0), p[2], 0, 1, 0, col[0], col[1], col[2]], o); o += 9; }
     this.roads = this.R.meshFromData(out.length ? data : new Float32Array(9), true, this.roads);
+    this.paintRoads();
     this.quayProps = props;
     this.grassDirty = true;
     this.waterGrid = null;
   }
 
+  // one texel per cell: r dirt road, g footpath, b cobbles, a marks roads that don't reach the hall yet
+  paintRoads() {
+    const S = this.S, px = new Uint8Array(N * N * 4);
+    for (let c = 0; c < N * N; c++) {
+      const t = S.road[c]; if (!t || t === 4) continue;
+      px[c * 4 + (t === 1 ? 0 : t === 2 ? 1 : 2)] = 255;
+      if (!S._conn[c]) px[c * 4 + 3] = 255;
+    }
+    if (this.R.setRoads) this.R.setRoads(px, N);
+  }
   // a few of your troops drill outside their barracks, range and yard
   drillers(t) {
     const S = this.S, out = [];
@@ -4847,14 +4975,17 @@ class World {
     }
     // trees
     const T1 = B(this.trees[0]), T2 = B(this.trees[1]);
+    const TV = this.treeV.map(l => l.map(m => B(m)));
+    this.treeSet = new Set([T1, T2, ...TV[0], ...TV[1]]);
     for (let c = 0; c < N * N; c++) {
       const k = S.tree[c]; if (!k) continue;
-      const i = c % N, j = (c / N) | 0, r = hash(c), r2 = hash(c + 7919);
-      const x = i - N / 2 + 0.5 + (r - 0.5) * 0.35, z = j - N / 2 + 0.5 + (r2 - 0.5) * 0.35;
-      let s = (0.35 + 0.65 * S.treeG[c] / 255) * (0.85 + r * 0.35);
+      const i = c % N, j = (c / N) | 0, r = hash(c), r2 = hash(c + 7919), r3 = hash(c * 3 + 11);
+      const x = i - N / 2 + 0.5 + (r - 0.5) * 0.45, z = j - N / 2 + 0.5 + (r2 - 0.5) * 0.45;
+      let s = (0.35 + 0.65 * S.treeG[c] / 255) * (0.8 + r * 0.45);
       const sp = this.sprout[c]; if (sp !== undefined) s *= elastic((t - sp) / 0.8);
-      const sh = 0.85 + r2 * 0.25;
-      R.push(k === 1 ? T1 : T2, x, Sim.heightAt(S, x, z), z, r * 6.28, s, s * (0.9 + r2 * 0.25), s, sh, sh * (0.95 + r * 0.1), sh, 0);
+      // each tree its own green: some cooler, some warmer and a few going olive
+      const sh = 0.84 + r2 * 0.26, warm = (r3 - 0.5) * 0.12;
+      R.push(TV[k - 1][Math.floor(r3 * 2.999)], x, Sim.heightAt(S, x, z), z, r * 6.28, s, s * (0.88 + r2 * 0.3), s, sh + warm, sh * (0.96 + r * 0.08), sh - warm * 0.6, 0, (r2 - 0.5) * 0.08, (r - 0.5) * 0.08);
     }
     for (const f of this.falling) {
       const u = (t - f.t0), i = f.c % N, j = (f.c / N) | 0;
@@ -5043,7 +5174,13 @@ class World {
     // clouds
     const CL = this.clouds.map(m => B(m));
     const cov = this.wxv ? this.wxv.cloud : 0, cg = 1 - cov * 0.3 - (this.wxv ? this.wxv.storm * 0.35 : 0);
-    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - cov * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - cov * 0.4), cl.a, cl.s * 1.6 * (1 + cov * 0.6), cl.s * (1 + cov * 0.3), cl.s * 1.4 * (1 + cov * 0.6), cg, cg, cg * 1.02, 0.35 - night * 0.28);
+    // more clouds as the sky closes over; none right in front of the camera
+    const showN = Math.round(5 + cov * 7);
+    for (let ci2 = 0; ci2 < this.cloudPos.length; ci2++) { const cl = this.cloudPos[ci2]; if (ci2 >= showN) break;
+      const cx = Math.cos(cl.a) * cl.r * (1 - cov * 0.25), cz = Math.sin(cl.a) * cl.r * (1 - cov * 0.25);
+      if (Math.hypot(cx - cam.eye[0], cl.y - cam.eye[1], cz - cam.eye[2]) < 34) continue;
+      if (cam.eye[1] > cl.y + 4 && Math.hypot(cx - cam.eye[0], cz - cam.eye[2]) < (cam.eye[1] - cl.y) * 1.9 + 14) continue;
+      R.push(CL[cl.m], cx, cl.y, cz, cl.a, cl.s * 1.5 * (1 + cov * 0.5), cl.s * (1 + cov * 0.25), cl.s * 1.3 * (1 + cov * 0.5), cg, cg, cg * 1.02, 0.35 - night * 0.28); }
     this.cloudSet = new Set(CL);
     const opaque = [...batches];
     for (const m of opaque) R.upload(m);
@@ -5063,7 +5200,7 @@ class World {
     gl.uniformMatrix4fv(R.depth.u.uVP, false, lightVP);
     gl.uniform1f(R.depth.u.uTime, t);
     gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0);
-    for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain); R.draw(this.boulder); R.draw(this.slab);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -5097,10 +5234,12 @@ class World {
     gl.uniform1f(P.u.uAlpha, 1);
     gl.uniform1f(P.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0); gl.uniform1f(P.u.uSwayY, 0.2);
     if (!R.wTex) R.setWear(S.wear || new Uint8Array(N * N), N);
-    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2); gl.activeTexture(gl.TEXTURE0);
+    if (!R.rTex) this.paintRoads();
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
-    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);
     // swaying meadow
     gl.uniform1f(P.u.uSwayY, 0.0);
@@ -5279,7 +5418,7 @@ class Raid {
     const W = this.W, r = side === 'r', T = Sim.TROOPS[kind] || BASE[kind], m = 1 + 0.25 * ((lv || 1) - 1);
     const a = W.newAgent({ id: (r ? 7000 : 8000) + k * 3 + this.units.length }, x, z, k);
     const tool = kind === 'arc' ? 'bow' : kind === 'can' ? null : kind === 'cav' ? 'sword' : r ? 'axe' : 'spear';
-    Object.assign(a, { temp: 'raid', hidden: false, kid: false, path: null, anim: 'idle', helm: r ? 'horn' : 'guard', tool, job: (T.name || 'Raider').replace(/s$/, '') + (lv > 1 ? ' ★' + lv : ''), pop: W.now, waitUntil: 0, mounted: kind === 'cav' });
+    Object.assign(a, { temp: 'raid', hidden: false, kid: false, path: null, anim: 'idle', helm: r ? 'horn' : 'guard', tool, job: (T.name || 'Raider').replace(/s$/, '') + (lv > 1 ? ' (level ' + lv + ')' : ''), pop: W.now, waitUntil: 0, mounted: kind === 'cav' });
     if (r) { a.color = kind === 'mil' ? [0.55, 0.3, 0.2] : [[0.62, 0.17, 0.14], [0.55, 0.22, 0.12], [0.5, 0.15, 0.18]][k % 3]; a.pants = [0.3, 0.24, 0.2]; a.name = NAMES[k % NAMES.length] + (kind === 'mil' ? ' the Bold' : ' of the ' + Sim.BOATS[this.boatLv].name); }
     else { a.color = kind === 'guard' ? [0.22, 0.34, 0.58] : [0.2, 0.42, 0.42]; a.pants = [0.25, 0.25, 0.3]; a.name = a.name.split(' ')[0] + ' the ' + (kind === 'guard' ? 'guard' : (Sim.TROOPS[kind].one)); }
     W.agents.push(a);
@@ -5725,6 +5864,22 @@ const SAVE_KEY = 'driftwood.save.v1', PREF_KEY = 'driftwood.prefs.v1';
 const SPEEDS = [0, 0.1, 0.3, 0.8];
 
 /* ---------- Icons ---------- */
+/* Drawn icons used in panels instead of emoji: one stroke weight, ink outlines, flat fills */
+const GLYPH = {
+  swords: '<path d="M4 4l10.5 10.5M20 4L9.5 14.5" stroke="#8d969e" stroke-width="2.6" stroke-linecap="round"/><path d="M4 4l10.5 10.5M20 4L9.5 14.5" stroke="#3a2e26" stroke-width="1" stroke-linecap="round" opacity=".55"/><path d="M12.5 15.5l4 4M11.5 15.5l-4 4" stroke="#8a5a3a" stroke-width="2.6" stroke-linecap="round"/><path d="M15 13l3 3M9 13l-3 3" stroke="#3a2e26" stroke-width="1.8" stroke-linecap="round"/>',
+  shield: '<path d="M12 3l7 2.5v5.5c0 4.7-3 8-7 10-4-2-7-5.3-7-10V5.5z" fill="#4f6d8a" stroke="#3a2e26" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 3.5v17M5.3 10h13.4" stroke="#d9c38a" stroke-width="1.6"/>',
+  bow: '<path d="M7 3c7 3 7 15 0 18" fill="none" stroke="#8a5a3a" stroke-width="2.2" stroke-linecap="round"/><path d="M7 3v18" stroke="#3a2e26" stroke-width="1" stroke-dasharray="1.6 .8"/><path d="M5 12h15" stroke="#3a2e26" stroke-width="1.5" stroke-linecap="round"/><path d="M20 12l-3-2v4zM5 12l-1.5-1.5M5 12l-1.5 1.5" fill="#8d969e" stroke="#3a2e26" stroke-width="1.1" stroke-linejoin="round"/>',
+  wall: '<path d="M3 8h18v12H3z" fill="#b8ad9b" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 12h18M3 16h18M8 8v4M15 8v4M11 12v4M18 12v4M8 16v4M15 16v4" stroke="#3a2e26" stroke-width="1" opacity=".7"/><path d="M3 8V5h3v3M9.5 8V5h5v3M18 8V5h3v3" fill="#b8ad9b" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/>',
+  fire: '<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.6 3.2-5.4 3.6-9.5 2.6 1.4 3.6 3.6 3.4 5.6 1-1 1.6-2.2 1.6-3.6 2.6 2 4.4 4.6 4.4 7.6 0 3.3-2.5 5.9-6.5 5.9z" fill="#d9783a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c-1.8 0-3-1.2-3-2.9 0-1.8 1.6-2.6 2.2-4.4 1.6 1 3.8 2.4 3.8 4.4 0 1.7-1.2 2.9-3 2.9z" fill="#f0c55a"/>',
+  axe: '<path d="M7 21L17 6" stroke="#8a5a3a" stroke-width="2.4" stroke-linecap="round"/><path d="M13.5 4.5c2.5-1.6 5.6-.8 6.5 1.2l-3.2 4.8c-2-.9-3.8-3.4-3.3-6z" fill="#8d969e" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/>',
+  horse: '<path d="M6 21v-5.5c0-2.4 1.2-4.2 3-5.2L8 6.5 10.6 8c.6-1.6 1.8-3 3.6-3.5l.4 2c2.6.8 4.8 3.2 5.4 6l-2 1.2-2.4-1.4c-.4 2.2-1.8 3.8-3.6 4.6V21z" fill="#8a5a3a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><circle cx="15.2" cy="9.4" r=".9" fill="#3a2e26"/>',
+  cannon: '<path d="M3.5 9.5l13-3.5 1.4 5.4-13 3.5z" fill="#5d646c" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="16" r="3.6" fill="#8a5a3a" stroke="#3a2e26" stroke-width="1.4"/><circle cx="9" cy="16" r="1" fill="#3a2e26"/><path d="M18 7l2.5-.7" stroke="#3a2e26" stroke-width="1.6" stroke-linecap="round"/>',
+  star: '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z" fill="#d9a441" stroke="#3a2e26" stroke-width="1.3" stroke-linejoin="round"/>',
+  starOff: '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z" fill="none" stroke="#a8977f" stroke-width="1.3" stroke-linejoin="round"/>',
+  check: '<path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+const glyph = (k, px) => `<svg class="gl" width="${px || 16}" height="${px || 16}" viewBox="0 0 24 24" aria-hidden="true">${GLYPH[k]}</svg>`;
+const stars = (n, of) => glyph('star', 13).repeat(n) + (of ? glyph('starOff', 13).repeat(Math.max(0, of - n)) : '');
 const I = {
   gold: '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#f4c95d" stroke="#c9952b" stroke-width="2"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3h4" stroke="#a8761b" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>',
   wood: '<svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="11" width="16" height="7" rx="3.5" fill="#a06a43"/><ellipse cx="19" cy="14.5" rx="2.6" ry="3.5" fill="#e3bc8d" stroke="#a06a43" stroke-width="1.4"/><rect x="5" y="5" width="13" height="6.5" rx="3.2" fill="#8b5a3c"/><ellipse cx="18" cy="8.25" rx="2.4" ry="3.2" fill="#e3bc8d" stroke="#8b5a3c" stroke-width="1.4"/></svg>',
@@ -6365,7 +6520,7 @@ function renderInsp() {
   h += '</div>';
   if (T.home) {
     const c = b.cov || {};
-    const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? '✓' : ''}</span>${txt}</div>`;
+    const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? glyph('check', 12) : ''}</span>${txt}</div>`;
     const extra = (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
     if (b.type === 'villa') h += `<div class="checks">${row(c.garden || c.plaza, 'Garden or plaza nearby (villas insist)')}</div>`;
     if (b.type === 'apartment') h += `<div class="checks">${row(c.market, 'Market nearby (tenants insist)')}</div>`;
@@ -6375,8 +6530,8 @@ function renderInsp() {
     if (b.type === 'house' && b.level < 2) h += `<p class="desc">${b.level === 0 ? 'Grows into a townhouse when full, happy (55+) and near a market.' : 'Grows into a manor when full, very happy (66+) and near a market, a well and a chapel.'} Costs ${Sim.costText(Sim.UPGRADE[b.level + 1])}, and only while you’d still have ${Sim.RESERVE.wood} wood and ${Sim.RESERVE.stone} stone left.</p>`;
   } else h += `<p class="desc">${esc(T.desc)}</p>`;
   if (b.burnt && !Online.mode) { const rc = Sim.repairCost(b), can = Sim.affordable(S, rc); h += `<button class="btn ${can ? 'primary' : ''}" data-act="repair" style="width:100%">Repair · ${esc(Sim.costText(rc))}</button>`; }
-  if (T.army && Sim.done(b) && !b.burnt && !Online.mode) { const k = T.army, TR = Sim.TROOPS[k]; h += `<div class="row2"><button class="btn primary" data-act="train1">Train 1 ${esc(TR.one)}<br><small>${esc(Sim.costText(TR.cost))}</small></button><button class="btn" data-act="train5">Train 5</button></div><button class="btn" data-act="army">⚔️ Army panel</button>`; }
-  if (b.type === 'warschool' && Sim.done(b) && !Online.mode) h += `<button class="btn primary" data-act="army">⚔️ Research in the Army panel</button>`;
+  if (T.army && Sim.done(b) && !b.burnt && !Online.mode) { const k = T.army, TR = Sim.TROOPS[k]; h += `<div class="row2"><button class="btn primary" data-act="train1">Train 1 ${esc(TR.one)}<br><small>${esc(Sim.costText(TR.cost))}</small></button><button class="btn" data-act="train5">Train 5</button></div><button class="btn" data-act="army">${glyph('swords')} Army panel</button>`; }
+  if (b.type === 'warschool' && Sim.done(b) && !Online.mode) h += `<button class="btn primary" data-act="army">${glyph('swords')} Research in the Army panel</button>`;
   if (b.type === 'pier' && b.level < 1 && !Online.mode) {
     const can = Sim.affordable(S, Sim.HARBOUR);
     h += `<p class="desc">Rebuild in stone: ships carry 60% more settlers and call more often.</p><button class="btn ${can ? "primary" : ""}" data-act="harbour" style="width:100%;margin-bottom:6px" ${can ? '' : 'disabled'}>Upgrade to harbour · ${Sim.costText(Sim.HARBOUR)}</button>`;
@@ -6465,7 +6620,7 @@ function renderLabels() {
   for (const el of [...box.querySelectorAll('.fl')]) if (!world.labels.some(l => l.el === el)) el.remove();
   // status badges
   let k = 0;
-  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: '🔥 Repair' };
+  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: glyph('fire', 13) + ' Repair' };
   if (cam.dist < 75 && !Online.mode) for (const b of S.b) {
     let st = b.burnt ? 'burnt' : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : null;
     if (!st) continue;
@@ -7071,7 +7226,7 @@ function showRaidedReport() {
   Sfx.play('alarm');
   openModal(`<h2>You were raided!</h2>
     <p class="lead">${esc(names.join(' and '))} landed on ${esc(myName())} ${fmtAgo(Date.now() - r.at)} and ${lostTxt ? 'carried off ' + lostTxt : 'sailed away empty-handed'}.</p>
-    ${p.total.burnt ? `<p class="lead">🔥 ${p.total.burnt} ${p.total.burnt === 1 ? 'building was' : 'buildings were'} burned. Tap them to repair.</p>` : ''}
+    ${p.total.burnt ? `<p class="lead">${glyph('fire')} ${p.total.burnt} ${p.total.burnt === 1 ? 'building was' : 'buildings were'} burned. Tap them to repair.</p>` : ''}
     <p class="lead">Your defenders fought back: ${fell} ${fell === 1 ? 'raider' : 'raiders'} fell, and ${guards} of your ${guards === 1 ? 'guard was' : 'guards were'} knocked out (they’re fine now).</p>
     <p class="lead">Your island is shielded from raids for ${Sim.RAID.shieldH} hours. Watchtowers and guardhouses make the next raid harder.</p>
     <div class="row2"><button class="btn primary" data-ol="revenge:${esc(r.attacker)}">Raid them back</button><button class="btn" data-m="close">Fair enough</button></div>`);
@@ -7110,14 +7265,14 @@ function renderOnline() {
   // your island
   const sh = (m.shieldUntil || 0) > now;
   h += `<section class="ol-me"><div class="ol-row"><label class="ol-name"><span>Your island</span><input id="olName" maxlength="28" value="${esc(myName())}" aria-label="Island name"></label>
-    <div class="ol-stats"><span title="Watchtowers">🏹 ${def.towers}</span><span title="Guards">🛡️ ${def.guards}</span><span title="Raids won / lost">⚔️ ${m.won || 0}/${m.lost || 0}</span></div></div>
+    <div class="ol-stats"><span title="Watchtowers">${glyph('bow')} ${def.towers}</span><span title="Guards">${glyph('shield')} ${def.guards}</span><span title="Raids won / lost">${glyph('swords')} ${m.won || 0}/${m.lost || 0}</span></div></div>
     <p class="ol-sub">${sh ? `Shielded from raids for ${fmtLeft(m.shieldUntil - now)}.` : 'Open to raids.'} You sail with ${partyText()}.${canShare() ? ' Your island is shared automatically.' : ''}</p>
-    <button class="btn" data-ol="army">⚔️ Manage your army</button></section>`;
+    <button class="btn" data-ol="army">${glyph('swords')} Manage your army</button></section>`;
   // computer islands: always there, for everyone
   h += `<h3 class="ol-h">Computer islands</h3>`;
   for (const R of RIVALS) {
     const wait = Math.max(0, ((m.rivalAt || {})[R.id] || 0) + R.cd * HOUR - now);
-    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${'★'.repeat(R.stars)}${'☆'.repeat(4 - R.stars)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
+    h += `<div class="isl"><div class="isl-main"><b>${esc(R.name)} <em class="stars">${stars(R.stars, 4)}</em></b><span>${esc(R.desc)} Half loot.</span></div>
       <div class="isl-btns"><button class="btn primary" data-ol="rival:${R.id}" ${wait ? 'disabled' : ''}>${wait ? 'Ready in ' + fmtLeft(wait) : 'Raid'}</button></div></div>`;
   }
   // other players
@@ -7127,7 +7282,7 @@ function renderOnline() {
     if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
       const d = x.data, block = raidBlock(x.id, d);
-      h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · 🏹 ${safeInt(d.towers, 99)} 🛡️ ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ⚔️ ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' 🧱 ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>
+      h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · ${glyph('bow')} ${safeInt(d.towers, 99)} ${glyph('shield')} ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ' + glyph('swords') + ' ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' ' + glyph('wall') + ' ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>
         <div class="isl-btns"><button class="btn" data-ol="visit:${esc(x.id)}">Visit</button><button class="btn ${block ? '' : 'primary'}" data-ol="raid:${esc(x.id)}" ${block ? 'disabled' : ''} title="${esc(block || 'Raid this island')}">${esc(block && block.startsWith('Shielded') ? block : block ? 'Can’t raid' : 'Raid')}</button></div></div>`;
     }
     const mine = Online.raids.filter(r => r.attacker === Online.me || r.target === Online.me).slice(0, 6);
@@ -7135,7 +7290,7 @@ function renderOnline() {
       h += `<h3 class="ol-h">Recent raids</h3><div class="ol-log">`;
       for (const r of mine) {
         const l = r.loot || {}, got = ['gold', 'wood', 'stone'].map(k => safeInt(l[k], 1e5) ? safeInt(l[k], 1e5) + ' ' + k : '').filter(Boolean).join(', ') || 'nothing';
-        h += r.attacker === Online.me ? `<div>⚔️ You raided ${esc(who(r.target))} and took ${got} · ${fmtAgo(now - r.at)}</div>` : `<div>🔥 ${esc(who(r.attacker))} raided you and took ${got} · ${fmtAgo(now - r.at)}</div>`;
+        h += r.attacker === Online.me ? `<div>${glyph('swords')} You raided ${esc(who(r.target))} and took ${got} · ${fmtAgo(now - r.at)}</div>` : `<div>${glyph('fire')} ${esc(who(r.attacker))} raided you and took ${got} · ${fmtAgo(now - r.at)}</div>`;
       }
       h += `</div>`;
     }
@@ -7173,7 +7328,7 @@ function confirmRaid(id) {
   UI.onlineOpen = false;
   openModal(`<h2>Raid ${esc(String(x.data.name || 'this island').slice(0, 28))}?</h2>
     <p class="lead">Your ${esc(Sim.BOATS[landingParty().boat].name.toLowerCase())} lands ${partyText()}. Tap buildings to smash and burn them; loot spills out and has to be carried back to the ship before the 2½ minutes run out.</p>
-    <p class="lead">They have 🏹 ${safeInt(x.data.towers, 99)} watchtowers, 🛡️ ${safeInt(x.data.guards, 99)} guards${safeInt(x.data.troops, 999) ? `, ⚔️ ${safeInt(x.data.troops, 999)} troops` : ''}${safeInt(x.data.walls, 9999) ? ` and 🧱 ${safeInt(x.data.walls, 9999)} wall sections` : ''}.</p>
+    <p class="lead">They have ${glyph('bow')} ${safeInt(x.data.towers, 99)} watchtowers, ${glyph('shield')} ${safeInt(x.data.guards, 99)} guards${safeInt(x.data.troops, 999) ? `, ${glyph('swords')} ${safeInt(x.data.troops, 999)} troops` : ''}${safeInt(x.data.walls, 9999) ? ` and ${glyph('wall')} ${safeInt(x.data.walls, 9999)} wall sections` : ''}.</p>
     ${canShare() ? '' : '<p class="lead"><b>Ghost raid:</b> you joined through a public link, so their island won’t lose anything. You keep half the loot.</p>'}
     <div class="row2"><button class="btn primary" data-ol="go:${esc(id)}">Set sail</button><button class="btn" data-m="close">Not now</button></div>`);
 }
@@ -7277,7 +7432,7 @@ function startRaid() {
   cam.gyaw = Math.atan2(r.boat.x - r.bank[0], r.boat.z - r.bank[1]);
   renderAway();
 }
-const TROOP_ICON = { all: '⚔️', mil: '🪓', inf: '🛡️', arc: '🏹', cav: '🐎', can: '💣' };
+const TROOP_ICON = { all: glyph('swords'), mil: glyph('axe'), inf: glyph('shield'), arc: glyph('bow'), cav: glyph('horse'), can: glyph('cannon') };
 const TROOP_LABEL = { all: 'All', mil: 'Volunteers', inf: 'Infantry', arc: 'Archers', cav: 'Cavalry', can: 'Cannons' };
 function showRaidResult(res) {
   if (!Online.raid) return;
@@ -7334,8 +7489,8 @@ function renderAway() {
     const carry = r.raiders.reduce((a, u) => a + u.carryN, 0), cnt = r.counts(), over = r.phase === 'over';
     const groups = ['all', 'mil', 'inf', 'arc', 'cav', 'can'].filter(g => g === 'all' || cnt[g]);
     if (r.sel !== 'all' && !cnt[r.sel]) r.sel = 'all';
-    const gun = r.guns ? `<button class="btn gun ${Online.aim ? 'on' : ''}" data-ol="aim" ${over || r.gunCd > 0 ? 'disabled' : ''}>💥 ${r.gunCd > 0 ? 'Reloading ' + Math.ceil(r.gunCd) : Online.aim ? 'Tap a target' : 'Broadside'}</button>` : '';
-    h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>⚔️ ${r.raiders.length} · 🛡️ ${r.guards.length} · 🔥 ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
+    const gun = r.guns ? `<button class="btn gun ${Online.aim ? 'on' : ''}" data-ol="aim" ${over || r.gunCd > 0 ? 'disabled' : ''}>${glyph('cannon')} ${r.gunCd > 0 ? 'Reloading ' + Math.ceil(r.gunCd) : Online.aim ? 'Tap a target' : 'Broadside'}</button>` : '';
+    h = `<div class="aw-row"><div class="aw-t"><small>Raiding ${esc(Online.target ? Online.target.name : '')}</small><b class="${r.left < 20 && r.phase === 'go' ? 'hot' : ''}">${mm}:${ss}</b><span>${glyph('swords')} ${r.raiders.length} · ${glyph('shield')} ${r.guards.length} · ${glyph('fire')} ${r.destroyed.length}${carry ? ` · carrying ${Math.round(carry)}` : ''}</span></div>
       <div class="aw-loot">${['gold', 'wood', 'stone'].map(k => `<span>${ico(k, 18)}<b>${r.loot[k]}</b></span>`).join('')}</div></div>
       <div class="aw-groups" role="group" aria-label="Who to command">${groups.map(g => `<button class="grp ${r.sel === g ? 'on' : ''}" data-ol="sel:${g}" title="${TROOP_LABEL[g]}">${TROOP_ICON[g]}<span>${g === 'all' ? 'All ' + r.raiders.length : TROOP_LABEL[g] + ' ' + cnt[g]}</span></button>`).join('')}</div>
       <div class="aw-b">${gun}<button class="btn" data-ol="bank" ${over ? 'disabled' : ''}>To the ship</button><button class="btn danger" data-ol="endRaid" ${over ? 'disabled' : ''}>Sail home</button></div>`;
@@ -7439,11 +7594,11 @@ function renderArmy() {
     const T = Sim.TROOPS[t], n = A.n[t], atk = A.atk[t], cap = Sim.armyCap(H, t), q = Sim.queued(H, t), lv = A.lv[t];
     const home = TYPES[T.home], has = cap > 0, rc = lv < 3 ? Sim.RESEARCH[lv + 1] : null;
     const next = A.q.filter(x => x.type === t).reduce((m, x) => Math.min(m, x.end), 1e9);
-    h += `<div class="trp"><div class="trp-ico">${TROOP_ICON[t]}</div><div class="trp-main"><b>${T.name} <em>${'★'.repeat(lv)}</em></b>
-      <span>${has ? `${n}/${cap} trained${q ? ` · ${q} in training, next in ${fmtHours(next - H.t)}` : ''}` : `Build a ${esc(home.name)} to train ${T.name.toLowerCase()}.`}</span>
+    h += `<div class="trp"><div class="trp-ico">${TROOP_ICON[t]}</div><div class="trp-main"><b>${T.name} <em>${stars(lv)}</em></b>
+      <span>${has ? `${n}/${cap} trained${q ? ` · ${q} in training, next in ${fmtHours(next - H.t)}` : ''}` : `Build ${/^[AEIOU]/.test(home.name) ? 'an' : 'a'} ${esc(home.name)} to train ${T.name.toLowerCase()}.`}</span>
       ${n ? `<div class="split"><button data-ol="atk:${t}:-1" aria-label="Fewer attacking" ${atk ? '' : 'disabled'}>−</button><span><b>${atk}</b> attack · <b>${n - atk}</b> defend</span><button data-ol="atk:${t}:1" aria-label="More attacking" ${atk < n ? '' : 'disabled'}>+</button></div>` : ''}</div>
       <div class="trp-btns">${has ? `<button class="btn" data-ol="train:${t}:1">Train 1<small>${esc(Sim.costText(T.cost))}</small></button><button class="btn" data-ol="train:${t}:5">×5</button>` : ''}
-      ${rc ? `<button class="btn" data-ol="research:${t}" ${school ? '' : 'disabled'} title="${school ? '' : 'Needs a Military School with workers'}">★ Level ${lv + 1}<small>${esc(Sim.costText(rc))}</small></button>` : ''}</div></div>`;
+      ${rc ? `<button class="btn" data-ol="research:${t}" ${school ? '' : 'disabled'} title="${school ? '' : 'Needs a Military School with workers'}">${glyph('star', 14)} Level ${lv + 1}<small>${esc(Sim.costText(rc))}</small></button>` : ''}</div></div>`;
   }
   if (!school) h += `<p class="ol-sub">Build a <b>Military School</b> to research stronger troops (+25% health and damage per level).</p>`;
   openModal(h); $('#modal').classList.add('ol');

@@ -12,9 +12,11 @@ function hash(i) { let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); h ^= h >>> 13;
 function elastic(t) { if (t <= 0) return 0; if (t >= 1) return 1; return Math.pow(2, -9 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI) / 3.2) + 1; }
 function backOut(t) { const c = 2.2; t = clamp(t, 0, 1) - 1; return 1 + (c + 1) * t * t * t + c * t * t; }
 
-const WALLS = ['#f3e3c3', '#f6d58e', '#cfe3c1', '#f2c4b5', '#cfe0ea', '#efe9df', '#e8d1f0'];
-const ROOFS = ['#c8553d', '#3d6b8c', '#7a4b3a', '#5b8c5a', '#a63d40', '#33415c'];
-const SHIRTS = ['#e76f51', '#2a9d8f', '#e9c46a', '#264653', '#f4a261', '#8ab17d', '#b5838d', '#457b9d', '#f6bd60', '#6d597a'];
+// lime-washed plaster, ochre, sage, rose, pale blue, cream, heather; terracotta, slate, old brick, moss, oxblood, charcoal
+const WALLS = ['#eee2c8', '#e6c88a', '#cdd6b8', '#e8c6b2', '#d2dde0', '#efe7d6', '#ddd2dc'];
+const ROOFS = ['#b65a40', '#4e6576', '#7d4f3c', '#68804f', '#923f35', '#3f4652'];
+// homespun dyes: madder, woad, weld, moss, undyed linen, walnut, rust, slate, sloe, verdigris
+const SHIRTS = ['#a8513f', '#4f6d8a', '#c9a54a', '#6d7f48', '#d9cdb4', '#7b5a42', '#b06a3f', '#55606b', '#7a5468', '#4c7c74'];
 const WIN = '#fff1c4';
 const HAIR = [[0.17, 0.11, 0.08], [0.29, 0.18, 0.1], [0.48, 0.29, 0.15], [0.72, 0.53, 0.24], [0.85, 0.75, 0.54], [0.55, 0.55, 0.55], [0.1, 0.1, 0.1], [0.63, 0.26, 0.16]];
 const PANTS = [[0.23, 0.23, 0.28], [0.35, 0.27, 0.2], [0.18, 0.28, 0.35], [0.42, 0.36, 0.27], [0.27, 0.27, 0.27], [0.46, 0.3, 0.3]];
@@ -50,7 +52,7 @@ function logX(B, x, y, z, len, r, col) {
     B.tri([x + len / 2, y, z], p(x + len / 2, b), p(x + len / 2, a), hex('#d9b38c'), cen);
   }
 }
-function plinth(B, w, d) { B.box(0, -0.03, 0, w, 0.07, d, '#b3a999'); }
+function plinth(B, w, d) { B.box(0, -0.04, 0, w * 0.97, 0.07, d * 0.97, '#9b8f7e'); B.box(0, 0.025, 0, w * 0.97 + 0.02, 0.012, d * 0.97 + 0.02, '#a99c89'); }
 
 function model(type, level, variant) {
   const B = new Builder(), W = new Builder();
@@ -773,17 +775,32 @@ function yard(B, variant, level) {
 // where smoke leaves each house shape [x, z, top]
 const CHIMNEY = [[[0.17, -0.1, 0.78], [-0.15, -0.17, 0.86], [0.31, -0.08, 0.82]], [[-0.2, -0.12, 1.22], [0.2, -0.16, 1.26], [0.18, -0.16, 1.11]], [[-0.32, -0.22, 1.56], [0.3, -0.25, 1.22], [-0.3, -0.24, 1.26]]];
 
-function treeModel(kind) {
+// Conifers (kind 1) and broadleaf trees (kind 2), each in a few shapes so a forest never looks stamped out
+function treeModel(kind, v) {
   const B = new Builder();
   if (kind === 1) {
-    B.cyl(0, -0.1, 0, 0.06, 0.05, 0.4, 5, '#6b4a33');
-    B.cyl(0, 0.22, 0, 0.36, 0, 0.55, 7, '#3f7d4e');
-    B.cyl(0, 0.48, 0, 0.29, 0, 0.5, 7, '#468a55');
-    B.cyl(0, 0.74, 0, 0.21, 0, 0.45, 7, '#4f975d');
+    if (v === 0) { // classic spruce
+      B.cyl(0, -0.1, 0, 0.06, 0.05, 0.4, 6, '#6b4a33');
+      B.cyl(0, 0.2, 0, 0.37, 0, 0.55, 8, '#3d7550'); B.cyl(0, 0.46, 0, 0.3, 0, 0.5, 8, '#44805a'); B.cyl(0, 0.72, 0, 0.21, 0, 0.45, 8, '#4c8b60');
+    } else if (v === 1) { // tall, thin fir
+      B.cyl(0, -0.1, 0, 0.05, 0.04, 0.5, 6, '#5f4230');
+      for (let k = 0; k < 5; k++) B.cyl(0, 0.2 + k * 0.22, 0, 0.26 - k * 0.04, 0, 0.36, 7, ['#35694a', '#3b7350', '#417c56', '#3a704e', '#467f58'][k]);
+    } else { // short, broad pine with a leaning crown
+      B.cyl(0, -0.1, 0, 0.07, 0.06, 0.35, 6, '#6e4c35');
+      B.cyl(0.02, 0.16, 0, 0.44, 0, 0.42, 8, '#4a7d52'); B.cyl(0.05, 0.38, 0.02, 0.33, 0, 0.42, 8, '#52885a'); B.cyl(0.07, 0.6, 0.03, 0.2, 0, 0.36, 7, '#5a9061');
+    }
   } else {
-    B.cyl(0, -0.1, 0, 0.07, 0.05, 0.55, 5, '#7a5236');
-    B.blob(0, 0.68, 0, 0.36, 0.32, 0.36, '#6aa84f', 0.35, 3);
-    B.blob(0.12, 0.88, 0.05, 0.2, 0.18, 0.2, '#77b55a', 0.3, 8);
+    if (v === 0) { // round oak
+      B.cyl(0, -0.1, 0, 0.07, 0.05, 0.55, 6, '#7a5236');
+      smoothBlob(B, 0, 0.68, 0, 0.36, 0.3, 0.35, '#5f9a4b', 0); smoothBlob(B, 0.15, 0.86, 0.06, 0.22, 0.19, 0.21, '#6aa553', 0); smoothBlob(B, -0.14, 0.8, -0.08, 0.2, 0.17, 0.2, '#578f45', 0);
+    } else if (v === 1) { // birch: pale trunk, airy crown
+      B.cyl(0, -0.1, 0, 0.045, 0.035, 0.75, 6, '#e8e2d4'); B.box(0, 0.25, 0.035, 0.05, 0.02, 0.01, '#3b3530'); B.box(0, 0.45, -0.035, 0.05, 0.02, 0.01, '#3b3530');
+      smoothBlob(B, 0, 0.86, 0, 0.24, 0.32, 0.24, '#8cb35a', 0); smoothBlob(B, 0.09, 0.7, 0.05, 0.16, 0.18, 0.16, '#97bc62', 0);
+    } else { // bushy, many-lobed crown
+      B.cyl(0, -0.1, 0, 0.08, 0.06, 0.42, 6, '#6a4630');
+      for (let k = 0; k < 5; k++) { const a = k * 1.26 + 0.4, r = 0.2; smoothBlob(B, Math.cos(a) * r, 0.55 + (k % 2) * 0.12, Math.sin(a) * r, 0.22, 0.2, 0.22, ['#5a944a', '#669f50', '#4f8a42', '#6aa555', '#5c9648'][k], 0); }
+      smoothBlob(B, 0, 0.78, 0, 0.24, 0.2, 0.24, '#71ab58', 0);
+    }
   }
   return B;
 }
@@ -991,11 +1008,30 @@ function scaffoldModel() {
   for (const y of [0.33, 0.66, 0.98]) { B.box(0, y, -0.48, 0.98, 0.025, 0.07, plank); B.box(0, y, 0.48, 0.98, 0.025, 0.07, plank); B.box(-0.48, y, 0, 0.07, 0.025, 0.98, plank); B.box(0.48, y, 0, 0.07, 0.025, 0.98, plank); }
   return B;
 }
+// a smooth, softly shaded ball (subdivided icosahedron with per-vertex normals), squashed flat underneath when asked
+function smoothBlob(B, x, y, z, rx, ry, rz, col, sub, flatBottom) {
+  col = Array.isArray(col) ? col : hex(col);
+  const t = (1 + Math.sqrt(5)) / 2;
+  let vs = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map(v => { const l = Math.hypot(...v); return v.map(a => a / l); });
+  let fs = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+  for (let k = 0; k < (sub === undefined ? 2 : sub); k++) {
+    const mid = {}, nf = [];
+    const m = (a, b) => { const key = a < b ? a + ',' + b : b + ',' + a; if (mid[key] !== undefined) return mid[key]; const v = [vs[a][0] + vs[b][0], vs[a][1] + vs[b][1], vs[a][2] + vs[b][2]], l = Math.hypot(...v); vs.push(v.map(q => q / l)); return (mid[key] = vs.length - 1); };
+    for (const [a, b, c] of fs) { const ab = m(a, b), bc = m(b, c), ca = m(c, a); nf.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]); }
+    fs = nf;
+  }
+  const P = v => [x + v[0] * rx, y + (flatBottom && v[1] < -0.3 ? -0.3 + (v[1] + 0.3) * 0.25 : v[1]) * ry, z + v[2] * rz];
+  const Nn = v => { const nx = v[0] / rx, ny = (flatBottom && v[1] < -0.3 ? v[1] * 2.5 : v[1]) / ry, nz = v[2] / rz, l = Math.hypot(nx, ny, nz); return [nx / l, ny / l, nz / l]; };
+  for (const f of fs) for (const k of f) { const p = B._tx ? B._tx(P(vs[k])) : P(vs[k]); B.p.push(...p); B.n.push(...Nn(vs[k])); B.c.push(...col); }
+  return B;
+}
 function cloudModel(seed) {
   const B = new Builder();
-  for (let k = 0; k < 5; k++) {
-    const r = hash(seed * 13 + k);
-    B.blob((k - 2) * 1.1 + r * 0.5, r * 0.4, (hash(seed + k * 7) - 0.5) * 1.2, 1.1 + r * 0.6, 0.7 + r * 0.3, 1.0 + r * 0.4, '#ffffff', 0.25, seed + k);
+  const n = 6 + Math.floor(hash(seed * 3) * 4);
+  for (let k = 0; k < n; k++) {
+    const r = hash(seed * 13 + k), u = (k / (n - 1) - 0.5) * 2;
+    const big = 1 - Math.abs(u) * 0.55;
+    smoothBlob(B, u * 2.4 + (r - 0.5) * 0.6, big * 0.45 + r * 0.25, (hash(seed + k * 7) - 0.5) * 1.3, (0.9 + r * 0.5) * big, (0.8 + r * 0.35) * big, (0.9 + r * 0.4) * big, '#ffffff', 2, true);
   }
   return B;
 }
@@ -1032,7 +1068,8 @@ class World {
   constructor(R) {
     this.R = R; this.models = {}; this.now = 0;
     this.water = R.waterMesh(N * 0.75, 110);
-    this.trees = [R.mesh(treeModel(1)), R.mesh(treeModel(2))];
+    this.trees = [R.mesh(treeModel(1, 0)), R.mesh(treeModel(2, 0))];
+    this.treeV = [[0, 1, 2].map(v => R.mesh(treeModel(1, v))), [0, 1, 2].map(v => R.mesh(treeModel(2, v)))];
     const pm = personModel(); this.torso = R.mesh(pm.T); this.head = R.mesh(pm.H);
     this.hairs = [0, 1, 2].map(k => R.mesh(hairModel(k))); this.leg = R.mesh(legModel()); this.arm = R.mesh(armModel());
     this.hleg = R.mesh(horseLegModel()); this.saddle = R.mesh(saddleModel()); this.wheel = R.mesh(wheelModel());
@@ -1059,7 +1096,7 @@ class World {
     this.terrain = null; this.roads = null; this.overlay = null; this.ring = null;
     this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = [];
     this.pscale = 1.4; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.cloudPos = []; this.carts = []; this.bubbles = []; this.replies = []; this.rain = []; this.chat = []; this.chatSeq = 0; this.agentSeq = 0; this.bubbleTimer = 1; this.pois = null; this.focus = [0, 0];
-    for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283 + hash(k) * 0.5, r = 62 + hash(k + 50) * 26; this.cloudPos.push({ a, r, y: 9 + hash(k + 9) * 7, s: 0.9 + hash(k + 3) * 0.9, m: k % 3, v: 0.012 + hash(k + 7) * 0.01 }); }
+    for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283 + hash(k) * 0.5, r = 58 + hash(k + 50) * 34; this.cloudPos.push({ a, r, y: 17 + hash(k + 9) * 9, s: 1.1 + hash(k + 3) * 1.1, m: k % 3, v: 0.008 + hash(k + 7) * 0.008 }); }
   }
   setState(S) {
     this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
@@ -1079,41 +1116,66 @@ class World {
     const S = this.S, h = S.h, data = new Float32Array(N * N * 6 * 9);
     let o = 0;
     const byId = {}; for (const b of S.b) byId[b.id] = b;
-    const put = (x, y, z, nx, ny, nz, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = nx; data[o++] = ny; data[o++] = nz; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
-    const STONE = [hex('#b3ac9e'), hex('#a7a093'), hex('#98918a'), hex('#8c867e')];
-    const GR = [hex('#80b25a'), hex('#92bd5d'), hex('#75a753')], SAND = hex('#ecd9a3'), WET = hex('#cdb98a'), DEEP = hex('#8c9a86'), ROCK = [hex('#a39d93'), hex('#8e887f')], SNOW = hex('#f2f2ee'), DIRT = hex('#9b7653');
-    const YARD = [hex('#8cbb60'), hex('#96c063')], QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
+    const put = (x, y, z, n, c) => { data[o++] = x; data[o++] = y; data[o++] = z; data[o++] = n[0]; data[o++] = n[1]; data[o++] = n[2]; data[o++] = c[0]; data[o++] = c[1]; data[o++] = c[2]; };
+    // palette: soft, slightly dusty colours rather than bright lime
+    const LUSH = hex('#6f9a55'), FRESH = hex('#85ad5c'), DRY = hex('#a2b267'), OLIVE = hex('#7d9550'), FLOOR = hex('#5c8247'), HIGH = hex('#7c9659');
+    const SAND = hex('#e4d1a0'), WETS = hex('#c9b38a'), DEEP = hex('#8c9a86'), ROCKA = hex('#a39d92'), ROCKB = hex('#8d877d'), SNOW = hex('#eeeeea');
+    const GRAVEL = hex('#aca596'), GRAVEL2 = hex('#99928a'), DIRT = hex('#9d7b58'), YARDC = hex('#8fa95f'), QUAYC = [hex('#bdb3a3'), hex('#b4ab9c')];
+    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const H = (a, b) => hash(((a * 73856093) ^ (b * 19349663)) >>> 0); const A = H(xi, yi), B = H(xi + 1, yi), C = H(xi, yi + 1), D = H(xi + 1, yi + 1);
+      return A + (B - A) * u + (C - A) * v + (A - B - C + D) * u * v; };
+    // 1. a colour for every cell, from its ground, height, slope, trees and stone
+    const cellCol = new Array(N * N);
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-      let h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
+      const c = j * N + i, h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
       const avg = (h00 + h10 + h01 + h11) / 4, slope = Math.max(h00, h10, h01, h11) - Math.min(h00, h10, h01, h11);
-      const r = hash(j * N + i);
-      const pb = S.occ[j * N + i] ? byId[S.occ[j * N + i]] : null;
-      let c;
-      if (!pb && S.road[j * N + i] === 4) { h00 = h10 = h01 = h11 = Sim.QUAY_Y; c = QUAYC[r < 0.5 ? 0 : 1]; }
-      else if (pb) {
-        // the building's terrace: flat at floor level
-        h00 = h10 = h01 = h11 = pb.y;
-        c = pb.type === 'farm' || pb.type === 'market' || pb.type === 'quarry' ? DIRT : avg < 0.5 ? SAND : YARD[r < 0.5 ? 0 : 1];
+      const pb = S.occ[c] ? byId[S.occ[c]] : null;
+      const n1 = vn(i * 0.07 + 13, j * 0.07 + 7), n2 = vn(i * 0.19 + 3, j * 0.19 + 41), n3 = vn(i * 0.45, j * 0.45);
+      let col = mix3(mix3(LUSH, FRESH, n1), mix3(DRY, OLIVE, n3), clamp((n2 - 0.35) * 1.4, 0, 0.75));
+      let trees = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const x = i + di, y = j + dj; if (Sim.inB(x, y) && S.tree[y * N + x]) trees++; }
+      col = mix3(col, FLOOR, Math.min(1, trees / 6) * 0.6);
+      col = mix3(col, HIGH, clamp((avg - 3) / 3, 0, 0.7));
+      if (pb) col = pb.type === 'farm' || pb.type === 'market' || pb.type === 'quarry' || pb.type === 'mine' ? DIRT : avg < 0.5 ? SAND : mix3(YARDC, col, 0.4);
+      else if (S.road[c] === 4) col = QUAYC[hash(c) < 0.5 ? 0 : 1];
+      else {
+        if (S.rock && S.rock[c]) col = mix3(S.rock[c] === 2 ? GRAVEL2 : GRAVEL, col, 0.12 + n3 * 0.12);
+        const rocky = Math.max(clamp((slope - 1.2) / 0.8, 0, 1), clamp((avg - 5) / 1.4, 0, 1));
+        if (rocky > 0) col = mix3(col, mix3(ROCKA, ROCKB, n3), rocky);
+        if (avg > 8) col = mix3(col, SNOW, clamp((avg - 8) / 1, 0, 1));
+        // beaches: sand fades into grass, darker where the sea wets it, and deepens underwater
+        const sand = 1 - clamp((avg - 0.35) / 0.45, 0, 1);
+        if (sand > 0) col = mix3(col, avg < 0.06 ? WETS : SAND, sand);
+        if (avg < -0.6) col = mix3(WETS, DEEP, clamp((-avg - 0.6) / 2.5, 0, 1));
       }
-      else if (avg < -0.6) c = mix3(WET, DEEP, clamp((-avg - 0.6) / 2.5, 0, 1));
-      else if (avg < 0.5) c = avg < 0.05 ? WET : SAND;
-      else if (avg > 8.5) c = SNOW;
-      else if (avg > 5.5 || slope > 1.7) c = ROCK[r < 0.5 ? 0 : 1];
-      else if (S.rock && S.rock[j * N + i]) c = S.rock[j * N + i] === 2 ? STONE[2 + (r < 0.5 ? 0 : 1)] : STONE[r < 0.5 ? 0 : 1];
-      else { c = GR[Math.floor(r * 3)]; if (avg > 3.5) c = mix3(c, hex('#6f9a52'), (avg - 3.5) / 2); }
-      const sh = 0.96 + r * 0.08;
-      const cc = [c[0] * sh, c[1] * sh, c[2] * sh];
+      const sh = 0.975 + hash(c) * 0.05;
+      cellCol[c] = [col[0] * sh, col[1] * sh, col[2] * sh];
+    }
+    // 2. every grid vertex takes the average of the cells around it, so ground types fade into each other
+    const VC = new Array(V * V), VN = new Array(V * V);
+    for (let j = 0; j < V; j++) for (let i = 0; i < V; i++) {
+      let r = 0, g = 0, b = 0, n = 0;
+      for (const [di, dj] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) { const x = i + di, y = j + dj; if (!Sim.inB(x, y)) continue; const cc = cellCol[y * N + x]; r += cc[0]; g += cc[1]; b += cc[2]; n++; }
+      VC[j * V + i] = [r / n, g / n, b / n];
+      const hl = h[j * V + Math.max(0, i - 1)], hr = h[j * V + Math.min(V - 1, i + 1)], hu = h[Math.max(0, j - 1) * V + i], hd = h[Math.min(V - 1, j + 1) * V + i];
+      const nx = hl - hr, nz = hu - hd, l = Math.hypot(nx, 2, nz);
+      VN[j * V + i] = [nx / l, 2 / l, nz / l];
+    }
+    // 3. two triangles per cell; building terraces and quays stay flat and keep their own colour
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const c = j * N + i, pb = S.occ[c] ? byId[S.occ[c]] : null, quay = !pb && S.road[c] === 4;
+      let h00 = h[j * V + i], h10 = h[j * V + i + 1], h01 = h[(j + 1) * V + i], h11 = h[(j + 1) * V + i + 1];
+      const flat = pb || quay;
+      if (pb) h00 = h10 = h01 = h11 = pb.y;
+      if (quay) h00 = h10 = h01 = h11 = Sim.QUAY_Y;
       const x0 = i - N / 2, z0 = j - N / 2, x1 = x0 + 1, z1 = z0 + 1;
-      // tri A: 00,10,11  tri B: 00,11,01  (matches Sim.heightAt)
-      const tri = (ax, ay, az, bx, by, bz, cx, cy, cz, col) => {
-        let ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
-        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1;
-        nx /= l; ny /= l; nz /= l; if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; }
-        put(ax, ay, az, nx, ny, nz, col); put(bx, by, bz, nx, ny, nz, col); put(cx, cy, cz, nx, ny, nz, col);
-      };
-      tri(x0, h00, z0, x1, h10, z0, x1, h11, z1, cc);
-      const sh2 = 0.97;
-      tri(x0, h00, z0, x1, h11, z1, x0, h01, z1, [cc[0] * sh2, cc[1] * sh2, cc[2] * sh2]);
+      const v00 = j * V + i, v10 = v00 + 1, v01 = v00 + V, v11 = v01 + 1;
+      // a little of the flat face normal keeps a hint of the low-poly facets
+      const face = (ax, ay, az, bx, by, bz, cx, cy, cz) => { let ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az; let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1; if (ny < 0) { nx = -nx; ny = -ny; nz = -nz; } return [nx / l, ny / l, nz / l]; };
+      const nrm = (v, f) => { if (flat) return [0, 1, 0]; const a = VN[v]; const x = a[0] * 0.7 + f[0] * 0.3, y = a[1] * 0.7 + f[1] * 0.3, z = a[2] * 0.7 + f[2] * 0.3, l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; };
+      const col = v => flat ? cellCol[c] : VC[v];
+      const fA = face(x0, h00, z0, x1, h10, z0, x1, h11, z1), fB = face(x0, h00, z0, x1, h11, z1, x0, h01, z1);
+      put(x0, h00, z0, nrm(v00, fA), col(v00)); put(x1, h10, z0, nrm(v10, fA), col(v10)); put(x1, h11, z1, nrm(v11, fA), col(v11));
+      put(x0, h00, z0, nrm(v00, fB), col(v00)); put(x1, h11, z1, nrm(v11, fB), col(v11)); put(x0, h01, z1, nrm(v01, fB), col(v01));
     }
     const walls = this.buildWalls(byId);
     const all = new Float32Array(data.length + walls.length);
@@ -1126,7 +1188,7 @@ class World {
   // Stone foundations (where the ground falls away) and retaining walls (where the hill rises above the terrace)
   buildWalls(byId) {
     const S = this.S, h = S.h, out = [];
-    const STONE = [hex('#bdb3a3'), hex('#aaa192'), hex('#c8c0b1'), hex('#a0978a'), hex('#b4ab9c')], CAP = hex('#ddd6c9');
+    const STONE = [hex('#a89d8c'), hex('#9a8f7f'), hex('#b0a593'), hex('#918675'), hex('#a39886')], CAP = hex('#bdb2a0');
     const put = (p, n, c) => out.push(p[0], p[1], p[2], n[0], n[1], n[2], c[0], c[1], c[2]);
     const quad = (a, b, c, d, n, col) => { put(a, n, col); put(b, n, col); put(c, n, col); put(a, n, col); put(c, n, col); put(d, n, col); };
     const COURSE = 0.24;
@@ -1287,6 +1349,7 @@ class World {
       const P = (fx, fz) => [x0 + fx, hx(fx, fz), z0 + fz];
       const rect = (l, tp, r, bt, col, dy) => { out.push([P(l, tp), P(r, tp), P(r, bt), col, dy], [P(l, tp), P(r, bt), P(l, bt), col, dy]); };
       const conn = S._conn[c];
+      if (t !== 4) continue; // dirt roads, footpaths and cobbles are painted into the terrain (see paintRoads)
       if (t === 2) {
         // a narrow gravel footpath: a hub in the middle and an arm towards each neighbour
         const a = 0.31, b = 0.69, e = 0.05;
@@ -1339,11 +1402,22 @@ class World {
     let o = 0;
     for (const [a, b, c, col, dy] of out) for (const p of [a, b, c]) { data.set([p[0], p[1] + (dy || 0), p[2], 0, 1, 0, col[0], col[1], col[2]], o); o += 9; }
     this.roads = this.R.meshFromData(out.length ? data : new Float32Array(9), true, this.roads);
+    this.paintRoads();
     this.quayProps = props;
     this.grassDirty = true;
     this.waterGrid = null;
   }
 
+  // one texel per cell: r dirt road, g footpath, b cobbles, a marks roads that don't reach the hall yet
+  paintRoads() {
+    const S = this.S, px = new Uint8Array(N * N * 4);
+    for (let c = 0; c < N * N; c++) {
+      const t = S.road[c]; if (!t || t === 4) continue;
+      px[c * 4 + (t === 1 ? 0 : t === 2 ? 1 : 2)] = 255;
+      if (!S._conn[c]) px[c * 4 + 3] = 255;
+    }
+    if (this.R.setRoads) this.R.setRoads(px, N);
+  }
   // a few of your troops drill outside their barracks, range and yard
   drillers(t) {
     const S = this.S, out = [];
@@ -2465,14 +2539,17 @@ class World {
     }
     // trees
     const T1 = B(this.trees[0]), T2 = B(this.trees[1]);
+    const TV = this.treeV.map(l => l.map(m => B(m)));
+    this.treeSet = new Set([T1, T2, ...TV[0], ...TV[1]]);
     for (let c = 0; c < N * N; c++) {
       const k = S.tree[c]; if (!k) continue;
-      const i = c % N, j = (c / N) | 0, r = hash(c), r2 = hash(c + 7919);
-      const x = i - N / 2 + 0.5 + (r - 0.5) * 0.35, z = j - N / 2 + 0.5 + (r2 - 0.5) * 0.35;
-      let s = (0.35 + 0.65 * S.treeG[c] / 255) * (0.85 + r * 0.35);
+      const i = c % N, j = (c / N) | 0, r = hash(c), r2 = hash(c + 7919), r3 = hash(c * 3 + 11);
+      const x = i - N / 2 + 0.5 + (r - 0.5) * 0.45, z = j - N / 2 + 0.5 + (r2 - 0.5) * 0.45;
+      let s = (0.35 + 0.65 * S.treeG[c] / 255) * (0.8 + r * 0.45);
       const sp = this.sprout[c]; if (sp !== undefined) s *= elastic((t - sp) / 0.8);
-      const sh = 0.85 + r2 * 0.25;
-      R.push(k === 1 ? T1 : T2, x, Sim.heightAt(S, x, z), z, r * 6.28, s, s * (0.9 + r2 * 0.25), s, sh, sh * (0.95 + r * 0.1), sh, 0);
+      // each tree its own green: some cooler, some warmer and a few going olive
+      const sh = 0.84 + r2 * 0.26, warm = (r3 - 0.5) * 0.12;
+      R.push(TV[k - 1][Math.floor(r3 * 2.999)], x, Sim.heightAt(S, x, z), z, r * 6.28, s, s * (0.88 + r2 * 0.3), s, sh + warm, sh * (0.96 + r * 0.08), sh - warm * 0.6, 0, (r2 - 0.5) * 0.08, (r - 0.5) * 0.08);
     }
     for (const f of this.falling) {
       const u = (t - f.t0), i = f.c % N, j = (f.c / N) | 0;
@@ -2661,7 +2738,13 @@ class World {
     // clouds
     const CL = this.clouds.map(m => B(m));
     const cov = this.wxv ? this.wxv.cloud : 0, cg = 1 - cov * 0.3 - (this.wxv ? this.wxv.storm * 0.35 : 0);
-    for (const cl of this.cloudPos) R.push(CL[cl.m], Math.cos(cl.a) * cl.r * (1 - cov * 0.4), cl.y, Math.sin(cl.a) * cl.r * (1 - cov * 0.4), cl.a, cl.s * 1.6 * (1 + cov * 0.6), cl.s * (1 + cov * 0.3), cl.s * 1.4 * (1 + cov * 0.6), cg, cg, cg * 1.02, 0.35 - night * 0.28);
+    // more clouds as the sky closes over; none right in front of the camera
+    const showN = Math.round(5 + cov * 7);
+    for (let ci2 = 0; ci2 < this.cloudPos.length; ci2++) { const cl = this.cloudPos[ci2]; if (ci2 >= showN) break;
+      const cx = Math.cos(cl.a) * cl.r * (1 - cov * 0.25), cz = Math.sin(cl.a) * cl.r * (1 - cov * 0.25);
+      if (Math.hypot(cx - cam.eye[0], cl.y - cam.eye[1], cz - cam.eye[2]) < 34) continue;
+      if (cam.eye[1] > cl.y + 4 && Math.hypot(cx - cam.eye[0], cz - cam.eye[2]) < (cam.eye[1] - cl.y) * 1.9 + 14) continue;
+      R.push(CL[cl.m], cx, cl.y, cz, cl.a, cl.s * 1.5 * (1 + cov * 0.5), cl.s * (1 + cov * 0.25), cl.s * 1.3 * (1 + cov * 0.5), cg, cg, cg * 1.02, 0.35 - night * 0.28); }
     this.cloudSet = new Set(CL);
     const opaque = [...batches];
     for (const m of opaque) R.upload(m);
@@ -2681,7 +2764,7 @@ class World {
     gl.uniformMatrix4fv(R.depth.u.uVP, false, lightVP);
     gl.uniform1f(R.depth.u.uTime, t);
     gl.uniform1f(R.depth.u.uSwayY, 0.2); gl.uniform1f(R.depth.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0);
-    for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    for (const m of opaque) { if (m === this.terrain || m === this.roads || this.cloudSet.has(m) || m === this.bird || m === this.wing) continue; gl.uniform1f(R.depth.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(R.depth.u.uSway, 0); R.draw(this.terrain); R.draw(this.boulder); R.draw(this.slab);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -2715,10 +2798,12 @@ class World {
     gl.uniform1f(P.u.uAlpha, 1);
     gl.uniform1f(P.u.uWind, this.wxv ? this.wxv.wind * 1.6 : 0); gl.uniform1f(P.u.uSwayY, 0.2);
     if (!R.wTex) R.setWear(S.wear || new Uint8Array(N * N), N);
-    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2); gl.activeTexture(gl.TEXTURE0);
+    if (!R.rTex) this.paintRoads();
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, R.wTex); gl.uniform1i(P.u.uWear, 2);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
-    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, m === T1 || m === T2 ? 1 : 0); R.draw(m); }
+    for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);
     // swaying meadow
     gl.uniform1f(P.u.uSwayY, 0.0);

@@ -194,7 +194,7 @@ layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(locatio
 layout(location=3) in vec4 iM0; layout(location=4) in vec4 iM1; layout(location=5) in vec4 iM2; layout(location=6) in vec4 iM3;
 layout(location=7) in vec4 iCol;
 uniform mat4 uVP; uniform mat4 uLightVP; uniform float uTime; uniform float uSway; uniform float uSwayY; uniform float uWind;
-out vec3 vCol; out vec3 vNor; out vec3 vWorld; out vec4 vLight; out float vEmis;
+out vec3 vCol; out vec3 vNor; out vec3 vWorld; out vec4 vLight; out float vEmis; out float vLY;
 void main() {
   mat4 M = mat4(iM0, iM1, iM2, iM3);
   vec4 w = M * vec4(aPos, 1.0);
@@ -208,16 +208,16 @@ void main() {
   }
   vWorld = w.xyz;
   vNor = normalize(mat3(M) * aNor);
-  vCol = aCol * iCol.rgb; vEmis = iCol.a;
+  vCol = aCol * iCol.rgb; vEmis = iCol.a; vLY = aPos.y * length(M[1].xyz);
   vLight = uLightVP * w;
   gl_Position = uVP * w;
 }`;
 const FS_MAIN = `#version 300 es
 precision highp float; precision highp sampler2DShadow;
-in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis;
+in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -237,6 +237,32 @@ void main() {
     float w = texture(uWear, (vWorld.xz + 48.0) / 96.0).r;
     vec3 trod = mix(vec3(0.69, 0.59, 0.42), alb, 0.3);
     alb = mix(alb, trod, smoothstep(0.14, 0.72, w) * 0.85 * smoothstep(0.55, 0.85, n.y));
+    // the ground itself: a soft grain so flat areas never look like plastic
+    alb *= 0.93 + 0.1 * vnoise(vWorld.xz * 2.3) + 0.04 * vnoise(vWorld.xz * 9.0);
+    // roads painted into the ground, with soft, slightly ragged edges
+    vec4 rd = texture(uRoads, (vWorld.xz + 48.0) / 96.0);
+    float rn = vnoise(vWorld.xz * 3.1) - 0.5;
+    float dirt = smoothstep(0.33, 0.43, rd.r + rn * 0.1);
+    float dirtEdge = smoothstep(0.24, 0.34, rd.r + rn * 0.1) - dirt;
+    vec3 dirtC = vec3(0.73, 0.6, 0.43) * (0.9 + 0.16 * vnoise(vWorld.xz * 6.0)) * (0.95 + 0.08 * vnoise(vWorld.xz * 1.3));
+    alb = mix(alb, alb * 0.82, dirtEdge * 0.7);
+    alb = mix(alb, dirtC, dirt);
+    float path = smoothstep(0.56, 0.64, rd.g + rn * 0.12);
+    alb = mix(alb, vec3(0.79, 0.71, 0.55) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)), path * 0.92);
+    float cob = smoothstep(0.34, 0.4, rd.b + rn * 0.03);
+    if (cob > 0.0) {
+      // setts in running bond, each its own shade, with dark joints
+      vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
+      vec2 f = fract(p), id = floor(p);
+      float joint = min(min(f.x, 1.0 - f.x) * 0.55, min(f.y, 1.0 - f.y));
+      vec3 sett = vec3(0.64, 0.61, 0.57) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0));
+      vec3 cobC = mix(vec3(0.36, 0.34, 0.31), sett, smoothstep(0.03, 0.09, joint));
+      float kerb = smoothstep(0.24, 0.3, rd.b) - smoothstep(0.34, 0.4, rd.b);
+      alb = mix(alb, vec3(0.8, 0.77, 0.71), kerb * 0.8);
+      alb = mix(alb, cobC, cob);
+    }
+    // roads not yet joined to the hall show up rusty
+    alb = mix(alb, alb * vec3(1.08, 0.86, 0.78), rd.a * max(max(dirt, path), cob) * 0.8);
   }
   // rain darkens everything that faces the sky
   alb *= 1.0 - uWet * 0.16 * smoothstep(0.5, 0.95, n.y);
@@ -248,8 +274,14 @@ void main() {
     sh *= 1.0 - smoothstep(0.66 - uCloud * 0.5, 0.84 - uCloud * 0.45, cn) * 0.6 * min(1.0, uCloud * 1.6);
   }
   vec3 hemi = mix(uGround, uSky, n.y * 0.5 + 0.5);
+  // walls, trunks and legs darken a little where they meet the ground
+  if (uTerrain < 0.5) hemi *= mix(0.68, 1.0, smoothstep(0.0, 0.32, vLY));
   vec3 c = alb * (hemi + uSunCol * ndl * sh);
   c += alb * vEmis + uFlat * step(0.5, vEmis);
+  // grade: a touch less saturated, warm in the light and cool in the shade
+  float lum = dot(c, vec3(0.299, 0.587, 0.114));
+  c = mix(vec3(lum), c, 0.9);
+  c *= mix(vec3(0.97, 0.98, 1.04), vec3(1.03, 1.0, 0.95), smoothstep(0.15, 0.75, lum));
   float f = smoothstep(uFogR.x, uFogR.y, length(vWorld - uEye));
   o = vec4(mix(c, uFog, f), uAlpha);
 }`;
@@ -282,11 +314,16 @@ void main() {
   float ground = -4.0;
   if (vUV.x > 0.0 && vUV.x < 1.0 && vUV.y > 0.0 && vUV.y < 1.0) ground = texture(uH, vUV).r;
   float depth = vWorld.y - ground;
-  vec3 nrm = normalize(cross(dFdx(vWorld), dFdy(vWorld)));
-  if (nrm.y < 0.0) nrm = -nrm;
-  float n1 = noise(vWorld.xz * 1.6 + vec2(uTime * 0.25, uTime * 0.18));
-  float n2 = noise(vWorld.xz * 3.1 - vec2(uTime * 0.2, -uTime * 0.31));
-  nrm = normalize(nrm + vec3(n1 - 0.5, 0.0, n2 - 0.5) * 0.12);
+  // the swell's slope worked out exactly (no mesh facets), plus fine ripples
+  float x = vWorld.x, z = vWorld.z, off = smoothstep(34.0, 70.0, length(vWorld.xz));
+  float dx = cos(x * 0.35 + uTime * 1.1) * 0.014 + cos((x + z) * 0.9 + uTime * 1.7) * 0.0135 + off * (cos(x * 0.11 + z * 0.07 + uTime * 0.7) * 0.0242 - cos(z * 0.16 - x * 0.05 + uTime * 0.9) * 0.006);
+  float dz = cos(z * 0.42 - uTime * 0.9) * 0.0168 + cos((x + z) * 0.9 + uTime * 1.7) * 0.0135 + off * (cos(x * 0.11 + z * 0.07 + uTime * 0.7) * 0.0154 + cos(z * 0.16 - x * 0.05 + uTime * 0.9) * 0.0192);
+  vec3 nrm = normalize(vec3(-dx, 1.0, -dz));
+  // ripples from rotated, layered noise so no grid shows through
+  mat2 rA = mat2(0.8, -0.6, 0.6, 0.8), rB = mat2(0.36, 0.93, -0.93, 0.36);
+  float n1 = noise(rA * vWorld.xz * 1.3 + vec2(uTime * 0.25, uTime * 0.18)) * 0.6 + noise(rB * vWorld.xz * 2.9 + vec2(-uTime * 0.21, uTime * 0.14)) * 0.4;
+  float n2 = noise(rB * vWorld.xz * 1.7 - vec2(uTime * 0.2, -uTime * 0.31)) * 0.6 + noise(rA * vWorld.xz * 3.7 + vec2(uTime * 0.17, uTime * 0.23)) * 0.4;
+  nrm = normalize(nrm + vec3(n1 - 0.5, 0.0, n2 - 0.5) * 0.07 + vec3(sin(dot(vWorld.xz, vec2(2.1, 1.3)) + uTime * 2.0), 0.0, sin(dot(vWorld.xz, vec2(-1.2, 2.4)) + uTime * 1.7)) * 0.012);
   vec3 col = mix(uShallow, uDeep, smoothstep(0.05, 2.6, depth));
   float diff = max(dot(nrm, uSunDir), 0.0);
   col *= (0.55 + 0.45 * diff) * (uSky * 0.6 + uSunCol * 0.5 + 0.15);
@@ -437,6 +474,17 @@ class Renderer {
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, m.inst, 0, m.n * 20);
   }
   draw(m) { if (!m.n || !m.count) return; const gl = this.gl; gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.count, m.n); }
+  setRoads(px, n) {
+    const gl = this.gl;
+    if (!this.rTex) this.rTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.rTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
   // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
   setWear(w, n) {
     const gl = this.gl;

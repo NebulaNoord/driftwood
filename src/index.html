@@ -1,23 +1,25 @@
 <title>Driftwood</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..800&family=Figtree:wght@500;600;700;800;900&display=swap">
 <style>
-/* Layout: the island fills the screen; driftwood-and-paper panels float at the corners, the build dock sits at the bottom like a toybox. */
+/* Layout: the island fills the screen; panels like pages from a harbourmaster's almanac float at the corners, the build dock sits at the bottom. */
 :root {
-  --paper: #fbf4e6;
-  --paper-2: #f3e6cc;
-  --ink: #3b2f2a;
-  --ink-soft: #7a6a5f;
-  --coral: #e76f51;
-  --sea: #2a9d8f;
-  --sun: #f4c95d;
-  --leaf: #6aa84f;
-  --line: #e2d2b2;
-  --bad: #d64545;
-  --f-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
-  --f-body: "Nunito", "Segoe UI", system-ui, sans-serif;
-  --shadow: 0 6px 0 rgba(59, 47, 42, 0.14), 0 12px 28px rgba(30, 40, 60, 0.18);
+  --paper: #f7efde;
+  --paper-2: #ecdfc5;
+  --ink: #3a2e26;
+  --ink-soft: #76685b;
+  --coral: #b5523b;
+  --sea: #2f7c78;
+  --sun: #d9a441;
+  --leaf: #6c8f45;
+  --line: #dccaa6;
+  --bad: #b8402f;
+  --f-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-num: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .23 0 0 0 0 .18 0 0 0 0 .15 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px rgba(58, 46, 38, 0.11), 0 2px 0 rgba(58, 46, 38, 0.1), 0 14px 30px -10px rgba(25, 35, 45, 0.35);
   color-scheme: light;
 }
 html, body { height: 100%; }
@@ -31,7 +33,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #gl.paint { cursor: crosshair; }
 #gl.grab { cursor: grabbing; }
 
-.panel { background: var(--paper); border-radius: 18px; box-shadow: var(--shadow); border: 2px solid #fffaf0; }
+.panel { background: var(--paper) var(--grain); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid rgba(58, 46, 38, 0.2); }
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes jelly { 0% { transform: scale(1); } 30% { transform: scale(1.18, 0.86); } 55% { transform: scale(0.92, 1.1); } 75% { transform: scale(1.04, 0.97); } 100% { transform: scale(1); } }
 @keyframes rise { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -46px); opacity: 0; } }
@@ -40,7 +42,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 #res { position: absolute; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 12px); left: max(12px, env(safe-area-inset-left, 0px)); display: flex; gap: 4px; padding: 6px 8px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 24px - 230px); }
 .r { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 12px; min-width: 0; }
 .r svg { flex: none; }
-.r b { font-family: var(--f-display); font-weight: 800; font-size: 18px; line-height: 1; font-variant-numeric: tabular-nums; padding-top: 3px; }
+.r b { font-family: var(--f-num); font-weight: 800; font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; padding-top: 3px; }
 .r small { display: block; font-size: 10px; font-weight: 800; color: var(--ink-soft); letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; }
 #res { cursor: pointer; }
 .r .rate { text-transform: none; letter-spacing: 0; font-size: 11px; margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -134,9 +136,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 /* dock */
 #dock { position: absolute; z-index: 6; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; max-width: calc(100% - 24px); overflow-x: auto; scrollbar-width: none; }
 #dock::-webkit-scrollbar { display: none; }
-.cat { border: 0; background: none; border-radius: 13px; width: 66px; height: 62px; flex: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.15s; }
-.cat span { font-size: 11px; font-weight: 900; }
-.cat:hover { background: var(--paper-2); transform: translateY(-3px); }
+.cat { border: 0; background: none; border-radius: 10px; width: 66px; height: 62px; flex: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.15s; }
+.cat span { font-size: 11px; font-weight: 700; letter-spacing: 0.01em; }
+.cat:hover { background: var(--paper-2); transform: translateY(-2px); }
 .cat:active { transform: scale(0.9); }
 .cat.on { background: var(--ink); color: var(--paper); }
 .cat .k { position: absolute; }
@@ -175,11 +177,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .dot { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 10px; font-weight: 900; color: #fff; }
 .dot.y { background: var(--leaf); } .dot.n { background: #cbb99a; }
 .desc { font-size: 13px; line-height: 1.45; color: var(--ink-soft); margin: 0; }
-.btn { border: 0; border-radius: 12px; padding: 10px 14px; font-weight: 900; font-size: 14px; cursor: pointer; background: var(--paper-2); transition: transform 0.15s cubic-bezier(.34,1.56,.64,1); }
-.btn:hover { transform: translateY(-2px); }
-.btn:active { transform: scale(0.95); }
-.btn.primary { background: var(--coral); color: #fff; box-shadow: 0 4px 0 #b9533a; }
-.btn.danger { background: #fadcd6; color: #8f2a1d; }
+.btn { border: 1px solid rgba(58, 46, 38, 0.18); border-radius: 10px; padding: 10px 14px; font-weight: 800; font-size: 14px; cursor: pointer; background: var(--paper-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 0 rgba(58, 46, 38, 0.13); transition: transform 0.15s ease, background 0.15s ease; }
+.btn:hover { transform: translateY(-1px); background: #e6d6b8; }
+.btn:active { transform: translateY(1px); box-shadow: inset 0 1px 2px rgba(58, 46, 38, 0.2); }
+.btn.primary { background: var(--coral); color: #fff8ee; border-color: #8a3a28; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 3px 0 #7c3324; }
+.btn.primary:hover { background: #a94a34; }
+.btn.danger { background: #f1d7cc; color: #8a2e1f; }
 .btn[disabled] { opacity: 0.5; cursor: default; transform: none; }
 .item .ico .sw { display: block; width: 46px; height: 34px; border-radius: 8px; box-shadow: inset 0 0 0 2px rgba(0,0,0,0.12); transform: perspective(80px) rotateX(35deg); }
 .btn.danger.arm { background: var(--bad); color: #fff; }
@@ -229,6 +232,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .fc b { display: block; font-weight: 900; font-size: 14.5px; } .fc span { display: block; font-size: 13px; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
 .fc svg { flex: none; margin-top: 2px; }
 #clock .time { cursor: pointer; }
+.gl { display: inline-block; vertical-align: -3px; flex: none; }
+.stars .gl { vertical-align: -2px; margin-right: 1px; }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
@@ -337,7 +342,8 @@ body.raiding #res, body.raiding .speeds, body.raiding #chat { display: none !imp
 .ship-main span { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }
 .ship .btn small, .trp-btns .btn small { display: block; font-size: 10.5px; font-weight: 800; opacity: .8; }
 .trp { display: flex; gap: 10px; align-items: center; border: 2px solid var(--line); background: #fff; border-radius: 14px; padding: 9px 10px; flex-wrap: wrap; }
-.trp-ico { font-size: 24px; width: 34px; text-align: center; flex: none; }
+.trp-ico { font-size: 24px; width: 40px; text-align: center; flex: none; }
+.trp-ico .gl { width: 30px; height: 30px; }
 .trp-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 170px; }
 .trp-main b { font-size: 15px; font-weight: 900; } .trp-main em { font-style: normal; color: #d4a537; letter-spacing: -1px; }
 .trp-main > span { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; }

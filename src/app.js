@@ -11,6 +11,22 @@ const SAVE_KEY = 'driftwood.save.v1', PREF_KEY = 'driftwood.prefs.v1';
 const SPEEDS = [0, 0.1, 0.3, 0.8];
 
 /* ---------- Icons ---------- */
+/* Drawn icons used in panels instead of emoji: one stroke weight, ink outlines, flat fills */
+const GLYPH = {
+  swords: '<path d="M4 4l10.5 10.5M20 4L9.5 14.5" stroke="#8d969e" stroke-width="2.6" stroke-linecap="round"/><path d="M4 4l10.5 10.5M20 4L9.5 14.5" stroke="#3a2e26" stroke-width="1" stroke-linecap="round" opacity=".55"/><path d="M12.5 15.5l4 4M11.5 15.5l-4 4" stroke="#8a5a3a" stroke-width="2.6" stroke-linecap="round"/><path d="M15 13l3 3M9 13l-3 3" stroke="#3a2e26" stroke-width="1.8" stroke-linecap="round"/>',
+  shield: '<path d="M12 3l7 2.5v5.5c0 4.7-3 8-7 10-4-2-7-5.3-7-10V5.5z" fill="#4f6d8a" stroke="#3a2e26" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 3.5v17M5.3 10h13.4" stroke="#d9c38a" stroke-width="1.6"/>',
+  bow: '<path d="M7 3c7 3 7 15 0 18" fill="none" stroke="#8a5a3a" stroke-width="2.2" stroke-linecap="round"/><path d="M7 3v18" stroke="#3a2e26" stroke-width="1" stroke-dasharray="1.6 .8"/><path d="M5 12h15" stroke="#3a2e26" stroke-width="1.5" stroke-linecap="round"/><path d="M20 12l-3-2v4zM5 12l-1.5-1.5M5 12l-1.5 1.5" fill="#8d969e" stroke="#3a2e26" stroke-width="1.1" stroke-linejoin="round"/>',
+  wall: '<path d="M3 8h18v12H3z" fill="#b8ad9b" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M3 12h18M3 16h18M8 8v4M15 8v4M11 12v4M18 12v4M8 16v4M15 16v4" stroke="#3a2e26" stroke-width="1" opacity=".7"/><path d="M3 8V5h3v3M9.5 8V5h5v3M18 8V5h3v3" fill="#b8ad9b" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/>',
+  fire: '<path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.6 3.2-5.4 3.6-9.5 2.6 1.4 3.6 3.6 3.4 5.6 1-1 1.6-2.2 1.6-3.6 2.6 2 4.4 4.6 4.4 7.6 0 3.3-2.5 5.9-6.5 5.9z" fill="#d9783a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 21c-1.8 0-3-1.2-3-2.9 0-1.8 1.6-2.6 2.2-4.4 1.6 1 3.8 2.4 3.8 4.4 0 1.7-1.2 2.9-3 2.9z" fill="#f0c55a"/>',
+  axe: '<path d="M7 21L17 6" stroke="#8a5a3a" stroke-width="2.4" stroke-linecap="round"/><path d="M13.5 4.5c2.5-1.6 5.6-.8 6.5 1.2l-3.2 4.8c-2-.9-3.8-3.4-3.3-6z" fill="#8d969e" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/>',
+  horse: '<path d="M6 21v-5.5c0-2.4 1.2-4.2 3-5.2L8 6.5 10.6 8c.6-1.6 1.8-3 3.6-3.5l.4 2c2.6.8 4.8 3.2 5.4 6l-2 1.2-2.4-1.4c-.4 2.2-1.8 3.8-3.6 4.6V21z" fill="#8a5a3a" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><circle cx="15.2" cy="9.4" r=".9" fill="#3a2e26"/>',
+  cannon: '<path d="M3.5 9.5l13-3.5 1.4 5.4-13 3.5z" fill="#5d646c" stroke="#3a2e26" stroke-width="1.4" stroke-linejoin="round"/><circle cx="9" cy="16" r="3.6" fill="#8a5a3a" stroke="#3a2e26" stroke-width="1.4"/><circle cx="9" cy="16" r="1" fill="#3a2e26"/><path d="M18 7l2.5-.7" stroke="#3a2e26" stroke-width="1.6" stroke-linecap="round"/>',
+  star: '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z" fill="#d9a441" stroke="#3a2e26" stroke-width="1.3" stroke-linejoin="round"/>',
+  starOff: '<path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.6l5.8-.8z" fill="none" stroke="#a8977f" stroke-width="1.3" stroke-linejoin="round"/>',
+  check: '<path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+const glyph = (k, px) => `<svg class="gl" width="${px || 16}" height="${px || 16}" viewBox="0 0 24 24" aria-hidden="true">${GLYPH[k]}</svg>`;
+const stars = (n, of) => glyph('star', 13).repeat(n) + (of ? glyph('starOff', 13).repeat(Math.max(0, of - n)) : '');
 const I = {
   gold: '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#f4c95d" stroke="#c9952b" stroke-width="2"/><path d="M12 7v10M9.5 9.5h4a1.5 1.5 0 010 3h-3a1.5 1.5 0 000 3h4" stroke="#a8761b" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>',
   wood: '<svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="11" width="16" height="7" rx="3.5" fill="#a06a43"/><ellipse cx="19" cy="14.5" rx="2.6" ry="3.5" fill="#e3bc8d" stroke="#a06a43" stroke-width="1.4"/><rect x="5" y="5" width="13" height="6.5" rx="3.2" fill="#8b5a3c"/><ellipse cx="18" cy="8.25" rx="2.4" ry="3.2" fill="#e3bc8d" stroke="#8b5a3c" stroke-width="1.4"/></svg>',
@@ -651,7 +667,7 @@ function renderInsp() {
   h += '</div>';
   if (T.home) {
     const c = b.cov || {};
-    const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? '✓' : ''}</span>${txt}</div>`;
+    const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? glyph('check', 12) : ''}</span>${txt}</div>`;
     const extra = (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
     if (b.type === 'villa') h += `<div class="checks">${row(c.garden || c.plaza, 'Garden or plaza nearby (villas insist)')}</div>`;
     if (b.type === 'apartment') h += `<div class="checks">${row(c.market, 'Market nearby (tenants insist)')}</div>`;
@@ -661,8 +677,8 @@ function renderInsp() {
     if (b.type === 'house' && b.level < 2) h += `<p class="desc">${b.level === 0 ? 'Grows into a townhouse when full, happy (55+) and near a market.' : 'Grows into a manor when full, very happy (66+) and near a market, a well and a chapel.'} Costs ${Sim.costText(Sim.UPGRADE[b.level + 1])}, and only while you’d still have ${Sim.RESERVE.wood} wood and ${Sim.RESERVE.stone} stone left.</p>`;
   } else h += `<p class="desc">${esc(T.desc)}</p>`;
   if (b.burnt && !Online.mode) { const rc = Sim.repairCost(b), can = Sim.affordable(S, rc); h += `<button class="btn ${can ? 'primary' : ''}" data-act="repair" style="width:100%">Repair · ${esc(Sim.costText(rc))}</button>`; }
-  if (T.army && Sim.done(b) && !b.burnt && !Online.mode) { const k = T.army, TR = Sim.TROOPS[k]; h += `<div class="row2"><button class="btn primary" data-act="train1">Train 1 ${esc(TR.one)}<br><small>${esc(Sim.costText(TR.cost))}</small></button><button class="btn" data-act="train5">Train 5</button></div><button class="btn" data-act="army">⚔️ Army panel</button>`; }
-  if (b.type === 'warschool' && Sim.done(b) && !Online.mode) h += `<button class="btn primary" data-act="army">⚔️ Research in the Army panel</button>`;
+  if (T.army && Sim.done(b) && !b.burnt && !Online.mode) { const k = T.army, TR = Sim.TROOPS[k]; h += `<div class="row2"><button class="btn primary" data-act="train1">Train 1 ${esc(TR.one)}<br><small>${esc(Sim.costText(TR.cost))}</small></button><button class="btn" data-act="train5">Train 5</button></div><button class="btn" data-act="army">${glyph('swords')} Army panel</button>`; }
+  if (b.type === 'warschool' && Sim.done(b) && !Online.mode) h += `<button class="btn primary" data-act="army">${glyph('swords')} Research in the Army panel</button>`;
   if (b.type === 'pier' && b.level < 1 && !Online.mode) {
     const can = Sim.affordable(S, Sim.HARBOUR);
     h += `<p class="desc">Rebuild in stone: ships carry 60% more settlers and call more often.</p><button class="btn ${can ? "primary" : ""}" data-act="harbour" style="width:100%;margin-bottom:6px" ${can ? '' : 'disabled'}>Upgrade to harbour · ${Sim.costText(Sim.HARBOUR)}</button>`;
@@ -751,7 +767,7 @@ function renderLabels() {
   for (const el of [...box.querySelectorAll('.fl')]) if (!world.labels.some(l => l.el === el)) el.remove();
   // status badges
   let k = 0;
-  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: '🔥 Repair' };
+  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: glyph('fire', 13) + ' Repair' };
   if (cam.dist < 75 && !Online.mode) for (const b of S.b) {
     let st = b.burnt ? 'burnt' : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : null;
     if (!st) continue;
