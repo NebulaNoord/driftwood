@@ -1,0 +1,10 @@
+{
+  "name": "driftwood",
+  "private": true,
+  "description": "Build an island colony, raise an army and raid other players' islands. No account needed.",
+  "scripts": {
+    "build:game": "python3 build.py",
+    "dev": "python3 build.py && node tests/webserver.js 8787",
+    "test": "node tests/sim.test.js"
+  }
+}

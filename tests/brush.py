@@ -1,0 +1,25 @@
+from playwright.sync_api import sync_playwright
+URL = 'file:///home/claude/colony/dist/test.html'
+errs = []
+with sync_playwright() as p:
+    b = p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+    pg = b.new_page(viewport={'width': 1280, 'height': 800})
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.goto(URL); pg.wait_for_timeout(2500); pg.click('[data-m=start]'); pg.evaluate("window.__dw.setSpeed(0)")
+    pg.click('[data-cat=land]'); pg.wait_for_timeout(300)
+    pt = (520, 260)
+    h = pg.evaluate(f"(() => {{ const h = window.__dw.pick({pt[0]},{pt[1]}); return [h.x, h.z, Sim.heightAt(window.__dw.S, h.x, h.z), window.__dw.S.gold]; }})()")
+    pg.mouse.move(*pt); pg.mouse.down(); pg.wait_for_timeout(3500)
+    pg.screenshot(path='shots/40_raise.png'); pg.mouse.up()
+    h2 = pg.evaluate(f"[Sim.heightAt(window.__dw.S, {h[0]}, {h[1]}), window.__dw.S.gold]")
+    print('height', round(h[2],2), '->', round(h2[0],2), 'gold', round(h[3]), '->', round(h2[1]))
+    pg.click('[data-tool=lower]')
+    pt2 = (800, 300); pg.mouse.move(*pt2); pg.mouse.down(); pg.wait_for_timeout(4000); pg.mouse.up()
+    pg.click('[data-cat=nature]'); pg.wait_for_timeout(200)
+    pg.mouse.move(650, 380); pg.mouse.down()
+    for k in range(10): pg.mouse.move(650 + k * 12, 380 + k * 3); pg.wait_for_timeout(120)
+    pg.mouse.up(); pg.wait_for_timeout(400)
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(1500)
+    pg.screenshot(path='shots/41_after.png')
+    b.close()
+print('ERR', errs)

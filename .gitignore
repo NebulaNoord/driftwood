@@ -1,0 +1,6 @@
+dist/
+shots/
+src_v3_backup/
+node_modules/
+__pycache__/
+.vercel
