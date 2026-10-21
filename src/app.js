@@ -32,6 +32,8 @@ const I = {
   wood: '<svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="11" width="16" height="7" rx="3.5" fill="#a06a43"/><ellipse cx="19" cy="14.5" rx="2.6" ry="3.5" fill="#e3bc8d" stroke="#a06a43" stroke-width="1.4"/><rect x="5" y="5" width="13" height="6.5" rx="3.2" fill="#8b5a3c"/><ellipse cx="18" cy="8.25" rx="2.4" ry="3.2" fill="#e3bc8d" stroke="#8b5a3c" stroke-width="1.4"/></svg>',
   stone: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 17l3-8 5-3 6 2 3 7-3 4H7z" fill="#a8a29a" stroke="#7d776f" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 10l3 3 4-2" stroke="#7d776f" stroke-width="1.4" fill="none"/></svg>',
   food: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21V9" stroke="#b7862c" stroke-width="2" stroke-linecap="round"/><g fill="#e9b949" stroke="#b7862c" stroke-width="1.2"><ellipse cx="9.5" cy="9" rx="2" ry="3" transform="rotate(-25 9.5 9)"/><ellipse cx="14.5" cy="9" rx="2" ry="3" transform="rotate(25 14.5 9)"/><ellipse cx="9.5" cy="14" rx="2" ry="3" transform="rotate(-25 9.5 14)"/><ellipse cx="14.5" cy="14" rx="2" ry="3" transform="rotate(25 14.5 14)"/><ellipse cx="12" cy="5" rx="1.8" ry="2.8"/></g></svg>',
+  bolt: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M13.5 2.5L5 13.5h6l-1.5 8 8.5-11h-6z" fill="#f2c14e" stroke="#a8761b" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  crown: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 18l-1-10 5 4 4-7 4 7 5-4-1 10z" fill="#f2c14e" stroke="#a8761b" stroke-width="1.5" stroke-linejoin="round"/><path d="M4 18h16" stroke="#a8761b" stroke-width="1.8"/></svg>',
   pop: '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5" fill="#f1c9a5" stroke="#b98a68" stroke-width="1.4"/><path d="M5 20c0-4 3-7 7-7s7 3 7 7z" fill="#2a9d8f"/></svg>',
   face(h) { const c = h >= 70 ? '#8ac06a' : h >= 45 ? '#f4c95d' : '#f08a6c', m = h >= 70 ? 'M8 13.5q4 4 8 0' : h >= 45 ? 'M8.5 14.5h7' : 'M8 16q4-3.5 8 0'; return `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="${c}" stroke="rgba(0,0,0,.18)" stroke-width="1.5"/><circle cx="9" cy="10" r="1.3" fill="#3b2f2a"/><circle cx="15" cy="10" r="1.3" fill="#3b2f2a"/><path d="${m}" stroke="#3b2f2a" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>`; },
   sun: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#f4c95d"/><g stroke="#f4a261" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></g></svg>',
@@ -56,6 +58,8 @@ const I = {
   homes: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="M6 10v10h12V10" fill="#f3e3c3" stroke="currentColor" stroke-width="2"/><rect x="10" y="14" width="4" height="6" fill="#c8553d"/></svg>',
   work: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M14 4l6 6-3 1-4-4z" fill="#a8a29a" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 8L4 19" stroke="#8b5a3c" stroke-width="3" stroke-linecap="round"/></svg>',
   services: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5z" fill="#f5f1e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 10v8M10 10v8M14 10v8M18 10v8" stroke="currentColor" stroke-width="2"/><path d="M3 20h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="6.8" r="1" fill="#c8553d"/></svg>',
+  shops: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 10v10h16V10" fill="#f5f1e8" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 10l2-6h14l2 6z" fill="#c8553d" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 10V4M12 10V4M17 10V4" stroke="#f5f1e8" stroke-width="1.4"/><rect x="7" y="13" width="4" height="7" fill="#3e5c76"/><rect x="13" y="13" width="4" height="3.5" fill="#bcd3e0" stroke="currentColor" stroke-width="1.2"/></svg>',
+  power: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 3v18M12 3l-5 5M12 3l5 5M7 8h10M8.5 13h7M6 21l6-13 6 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M18.5 2.5l-2.5 4h2.4l-2 4" fill="none" stroke="#f2b33d" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
   town: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 21V8l6-5 6 5v13z" fill="#f5f1e8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 3v-1" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="#3e5c76"/><rect x="10" y="15" width="4" height="6" fill="#8b5a3c"/></svg>',
   demolish: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 20l9-9" stroke="#8b5a3c" stroke-width="3" stroke-linecap="round"/><path d="M11 5l4-2 6 6-2 4z" fill="#a8a29a" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 18l2 2M19 15l2 1M13 21l1 1" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"/></svg>',
   raise: '<svg width="56" height="48" viewBox="0 0 56 48"><path d="M4 40l18-22 10 12 6-6 14 16z" fill="#8ac06a" stroke="#3b2f2a" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 4v14M22 10l6-6 6 6" stroke="#2a9d8f" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -92,6 +96,28 @@ const CATS = [
   { id: 'army', label: 'Army', items: ['barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'watchtower', 'guardhouse', { wall: 1, name: 'Palisade', note: '3 wood a tile', sw: 'repeating-linear-gradient(90deg,#7b5235 0 5px,#5e3b28 5px 7px)' }, { wall: 2, name: 'Stone wall', note: '4 stone, 2 gold a tile', sw: 'repeating-linear-gradient(0deg,#c9c0b0 0 6px,#a39d93 6px 8px)' }] },
   { id: 'demolish', label: 'Remove', tool: 'demolish' },
 ];
+// a modern island sorts its buildings the way a city builder does: industry, shops, leisure, services and utilities
+const MODERN_ITEMS = {
+  work: ['lumber', 'sawmill', 'quarry', 'mine', 'factory', 'blacksmith', 'stable', 'shipyard'],
+  shops: ['store', 'market', 'supermarket', 'cafe', 'tavern', 'gasstation', 'hotel', 'office', 'skyscraper'],
+  town: ['garden', 'plaza', 'sportsfield', 'cinema', 'stadium', 'port', 'lighthouse', 'airfield'],
+  services: ['chapel', 'clinic', 'school', 'library', 'academy', 'firestation', 'busdepot'],
+  power: ['well', 'windturbine', 'solarfarm', 'powerplant'],
+};
+let catsModern = null;
+function cats() {
+  if (Sim.eraOf(S) !== 'modern') return CATS;
+  if (!catsModern) {
+    const label = { work: 'Industry', town: 'Leisure', services: 'Services' };
+    catsModern = [];
+    for (const c of CATS) {
+      catsModern.push(MODERN_ITEMS[c.id] ? Object.assign({}, c, { items: MODERN_ITEMS[c.id], label: label[c.id] || c.label }) : c);
+      if (c.id === 'work') catsModern.push({ id: 'shops', label: 'Shops', items: MODERN_ITEMS.shops });
+      if (c.id === 'services') catsModern.push({ id: 'power', label: 'Utilities', items: MODERN_ITEMS.power });
+    }
+  }
+  return catsModern;
+}
 const BRUSH_TOOLS = ['raise', 'lower', 'flatten', 'smooth', 'plant', 'clear'];
 const HOUSE_NAMES = ['Cottage', 'Townhouse', 'Manor'];
 
@@ -189,7 +215,7 @@ const Amb = {
       wind: this.layer(white, 'bandpass', 520, 0.9), rain: this.layer(white, 'highpass', 2600, 0.5),
       hum: this.layer(white, 'bandpass', 620, 1.4),
     };
-    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 };
+    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 , siren: 1, crowd: 2, prop: 3 };
   },
   set(l, v, k) { l.g.gain.setTargetAtTime(Math.max(0, v), Sfx.ctx.currentTime, k || 0.6); },
   update(dt) {
@@ -222,6 +248,7 @@ const Amb = {
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
     if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
+    this.city(dt, near);
     if (due('cart')) {
       const modern = Sim.eraOf(S) === 'modern';
       this.next.cart = (modern ? 5 : 10) + Math.random() * (modern ? 9 : 18);
@@ -232,6 +259,26 @@ const Amb = {
           if (Math.random() < 0.12) { const d = 0.4 + Math.random(); Sfx.tone(392, 390, 0.22, 'square', 0.008 * near, d, W); Sfx.tone(494, 492, 0.22, 'square', 0.006 * near, d, W); }
         } else for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W);
       }
+    }
+  },
+  // city sounds: sirens going by, a roar from the stadium on match days, a light plane droning overhead
+  city(dt, near) {
+    if (Sim.eraOf(S) !== 'modern' || !world) return;
+    const W = Sfx.world, due = k => (this.next[k] -= dt) <= 0, dist = (x, z) => Math.hypot(x - cam.tx, z - cam.tz);
+    if (due('siren')) {
+      this.next.siren = 1.6;
+      const v = (world.vehicles || []).filter(v => v.siren && !v.parked).sort((a, b) => dist(a.x, a.z) - dist(b.x, b.z))[0];
+      if (v && dist(v.x, v.z) < 22) { const k = (1 - dist(v.x, v.z) / 22) * 0.03, hi = v.kind === 'ambulance' ? 960 : 860; Sfx.tone(hi * 0.72, hi, 0.75, 'triangle', k, 0, W); Sfx.tone(hi, hi * 0.72, 0.75, 'triangle', k, 0.8, W); }
+    }
+    if (due('crowd')) {
+      this.next.crowd = 1.4 + Math.random() * 1.6;
+      const st = S.b.find(b => b.type === 'stadium' && b.staff > 0 && Sim.done(b));
+      if (st && world.crowdOn(S)) { const [x, z] = Sim.center(st), k = Math.max(0, 1 - dist(x, z) / 30); if (k > 0) { Sfx.noise(2.4, 700 + Math.random() * 300, 0.05 * k, 0, W); if (Math.random() < 0.25) Sfx.noise(1.4, 1200, 0.09 * k, 0.3, W); } }
+    }
+    if (due('prop')) {
+      this.next.prop = 0.9;
+      const af = S.b.find(b => b.type === 'airfield' && b.staff > 0 && Sim.done(b)); const P = af && world.planePose(world.now + af.id * 7);
+      if (P) { const wp = world.local(af, 0.35 + P[1], P[0]), k = Math.max(0, 1 - Math.hypot(wp[0] - cam.tx, wp[1] - cam.tz) / 26) * (P[2] > 0.2 || P[0] > -1.2 ? 1 : 0); if (k > 0) Sfx.tone(92 + P[2] * 2, 96 + P[2] * 2, 0.95, 'sawtooth', 0.008 * k, 0, W); }
     }
   },
   gull(v) {
@@ -535,6 +582,9 @@ function renderRes() {
   }
   h += `<div class="sep"></div><div class="r" data-r="pop" title="${Sim.eraText(S, 'Settlers')} / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">${Sim.eraText(S, 'settlers')}</small></div></div>`;
   h += `<div class="r" title="Happiness">${I.face(S.happy)}<div><b>${S.happy}</b><small class="rate">happy</small></div></div>`;
+  const pw = S.power;
+  if (pw) h += `<div class="r ${pw.ratio < 1 ? 'low' : ''}" data-r="power" title="Power: ${Math.round(pw.supply)} MW made, ${Math.round(pw.demand)} MW used">${I.bolt}<div><b>${Math.round(pw.supply)}<span style="font-size:13px;color:var(--ink-soft)">/${Math.round(pw.demand)}</span></b><small class="rate">MW</small></div></div>`;
+  h += rankBadge(p);
   const el = $('#res');
   if (el._h !== h) {
     el.innerHTML = eraH(h); el._h = h;
@@ -544,6 +594,29 @@ function renderRes() {
     }
   }
   renderStock();
+}
+// the city's rank, with progress toward the next one; tap for the full ladder
+function rankBadge(p) {
+  const k = S.rank !== undefined ? S.rank : Sim.rankOf(S), nx = Sim.RANKS[k + 1];
+  const pc = nx ? Math.max(0, Math.min(1, (p - Sim.RANKS[k].pop) / (nx.pop - Sim.RANKS[k].pop))) : 1;
+  return `<div class="r rank" data-r="rank" title="${esc(Sim.rankName(S, k))}${nx ? ' · next: ' + esc(Sim.rankName(S, k + 1)) + ' at ' + nx.pop : ''}">${I.crown}<div><b class="rk">${esc(Sim.rankName(S, k))}</b><i class="rbar"><i style="width:${Math.round(pc * 100)}%"></i></i></div></div>`;
+}
+function showRanks() {
+  const k = S.rank !== undefined ? S.rank : Sim.rankOf(S), p = Sim.pop(S);
+  let h = `<div class="ol-head"><h2>${esc(Sim.rankName(S, k))}</h2><button class="x" data-m="close" aria-label="Close">×</button></div><p class="lead">Grow your ${Sim.eraOf(S) === 'modern' ? 'town' : 'colony'} to climb the ranks. Each new rank pays a reward.</p><ol class="ranks">`;
+  Sim.RANKS.forEach((R, i) => { const st = i < k ? 'done' : i === k ? 'now' : ''; h += `<li class="${st}"><b>${esc(Sim.rankName(S, i))}</b><span>${R.pop ? R.pop + ' ' + Sim.eraText(S, 'settlers') : 'Where it begins'}</span><em>${R.gold ? '+' + R.gold + ' gold' : ''}</em></li>`; });
+  h += `</ol><p class="ol-sub">${Sim.RANKS[k + 1] ? `${Sim.RANKS[k + 1].pop - p} more ${Sim.eraText(S, 'settlers')} to become a ${esc(Sim.rankName(S, k + 1))}.` : 'The top rank. Well done!'}</p>`;
+  openModal(h);
+}
+function showRankUp(e) {
+  const prev = Sim.RANKS[e.rank - 1], now = Sim.RANKS[e.rank];
+  const unlocked = Sim.BUILDABLE.filter(t => { const T = TYPES[t]; return T.unlock && T.unlock > (prev ? prev.pop : 0) && T.unlock <= now.pop && (!T.era || T.era === Sim.eraOf(S)); });
+  openModal(`<div class="rankup"><div class="burst">${I.crown.replace(/width="22" height="22"/, 'width="64" height="64"')}</div><h2>${esc(Sim.rankName(S, e.rank))}!</h2>
+    <p class="lead">Your ${Sim.eraOf(S) === 'modern' ? 'town' : 'colony'} has grown into a ${esc(Sim.rankName(S, e.rank))}. The ${Sim.eraOf(S) === 'modern' ? 'council' : 'settlers'} sent you <b>${e.gold} gold</b> to celebrate.</p>
+    ${unlocked.length ? `<p class="ol-sub">Now you can build: ${unlocked.map(t => `<b>${esc(TYPES[t].name)}</b>`).join(', ')}.</p>` : ''}
+    <button class="btn primary" data-m="close" style="width:100%">Onward</button></div>`);
+  for (const b of S.b) if (Sim.done(b)) world.sparkle(b);
+  Sfx.play('victory');
 }
 // tap the resource bar for a breakdown of where things come from and what drives happiness
 function renderStock() {
@@ -594,12 +667,12 @@ function renderGoals() {
   if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderDock() {
-  const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish };
+  const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish, shops: I.shops, power: I.power };
   const active = c => (c.tool && UI.tool === c.tool) || UI.cat === c.id;
-  $('#dock').innerHTML = CATS.map(c => `<button class="cat ${active(c) ? 'on' : ''}" data-cat="${c.id}" aria-label="${c.label}">${icon[c.id]}<span>${c.label}</span></button>`).join('');
+  $('#dock').innerHTML = cats().map(c => `<button class="cat ${active(c) ? 'on' : ''}" data-cat="${c.id}" aria-label="${c.label}">${icon[c.id]}<span>${c.label}</span></button>`).join('');
 }
 function renderTray() {
-  const tray = $('#tray'), cat = CATS.find(c => c.id === UI.cat);
+  const tray = $('#tray'), cat = cats().find(c => c.id === UI.cat);
   if (!cat || !cat.items) { tray.hidden = true; return; }
   tray.hidden = false;
   const p = Sim.pop(S);
@@ -644,6 +717,7 @@ function statusOf(b) {
     if (T.army) { const A = Sim.army(S), k = T.army, q = Sim.queued(S, k); if (b.staff === 0) return ['warn', 'No workers yet. Training needs a few staff.']; return ['ok', `${A.n[k]}/${Sim.armyCap(S, k)} ${Sim.TROOPS[k].name.toLowerCase()} trained${q ? `, ${q} in training` : ''}.`]; }
     if (b.type === 'warschool') return ['ok', 'Officers are ready. Research stronger troops from the Army panel.'];
     if (b.status === 'nofarm') return ['bad', 'No flour! Needs a farm with workers somewhere on the island.'];
+    if (b.status === 'nopower') return ['bad', `Not enough power: the grid makes ${Math.round(S.power.supply)} of the ${Math.round(S.power.demand)} MW the town needs. Build wind turbines, a solar farm or a power plant.`];
     if (b.status === 'nolumber') return ['bad', 'No logs coming in. Build a lumber camp within 8 tiles.'];
     const pd = perHour(b);
     if (pd) return ['ok', `Working: ${fmtRate(pd[0])} ${pd[1]} per hour.`];
@@ -677,11 +751,13 @@ function renderInsp() {
   const pd = perHour(b); if (pd) h += `<div><span>Per hour</span><b>${fmtRate(pd[0])} ${pd[1]}</b></div>`;
   if ((b.type === 'farm' || b.type === 'orchard') && Sim.done(b)) h += `<div><span>Next harvest</span><b>${Math.round((b.prog || 0) * 100)}%</b></div>`;
   if (!Sim.done(b)) h += `<div><span>Built</span><b>${Math.round(b.build * 100)}%</b></div>`;
+  if (S.power && T.gen) h += `<div><span>Power</span><b>${Math.round(Sim.genOf(S, b) * 10) / 10} MW</b></div>`;
+  if (S.power && T.power) h += `<div><span>Uses</span><b>${T.power} MW</b></div>`;
   h += '</div>';
   if (T.home) {
     const c = b.cov || {};
     const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? glyph('check', 12) : ''}</span>${txt}</div>`;
-    const extra = (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
+    const extra = (c.bus ? row(1, 'Bus route') : '') + (c.cafe ? row(1, 'Café nearby') : '') + (c.fun ? row(1, 'Cinema or sports nearby') : '') + (c.stadium ? row(1, 'Near the stadium') : '') + (c.fire ? row(1, 'Fire station cover') : '') + (S.power && S.power.ratio < 1 ? row(0, 'Power cuts') : '') + (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
     if (b.type === 'villa') h += `<div class="checks">${row(c.garden || c.plaza, 'Garden or plaza nearby (villas insist)')}</div>`;
     if (b.type === 'apartment') h += `<div class="checks">${row(c.market, 'Market nearby (tenants insist)')}</div>`;
     h += `<div class="checks">${extra}${row(c.market, 'Market nearby')}${row(c.well, 'Well nearby')}${row(c.chapel, 'Chapel nearby')}${row(c.tavern, 'Tavern nearby')}${row(c.school, 'School nearby')}${row(c.garden, 'Garden nearby')}${row((b.trees || 0) >= 3, `Trees nearby (${b.trees || 0})`)}${row(!S.starving, 'Food in the stores')}</div>`;
@@ -780,17 +856,17 @@ function renderLabels() {
   for (const el of [...box.querySelectorAll('.fl')]) if (!world.labels.some(l => l.el === el)) el.remove();
   // status badges
   let k = 0;
-  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: glyph('fire', 13) + ' Repair' };
+  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', nopower: 'No power', burnt: glyph('fire', 13) + ' Repair', rebuilding: glyph('fire', 13) + ' Firefighters rebuilding' };
   if (cam.dist < 75 && !Online.mode) for (const b of S.b) {
-    let st = b.burnt ? 'burnt' : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : null;
+    let st = b.burnt ? (Sim.eraOf(S) === 'modern' && Sim.fireCover(S, b) ? 'rebuilding' : 'burnt') : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : b.status === 'nopower' ? 'nopower' : null;
     if (!st) continue;
     const [x, z] = Sim.center(b), p = project(x, b.y + (b.type === 'lighthouse' ? 3.3 : 1.6), z);
     if (!p || p[0] < -50 || p[1] < -50 || p[0] > cssW + 50 || p[1] > cssH + 50) continue;
     let el = labelPool[k];
     if (!el) { el = document.createElement('div'); el.className = 'badge'; box.appendChild(el); labelPool[k] = el; }
-    el.hidden = false; el.className = 'badge ' + (st === 'noroad' || st === 'burnt' ? 'bad' : st === 'building' ? 'bld' : '');
+    el.hidden = false; el.className = 'badge ' + (st === 'noroad' || st === 'burnt' || st === 'nopower' ? 'bad' : st === 'building' ? 'bld' : '');
     const txt = st === 'building' ? `Building ${Math.round(b.build * 100)}%` : icons[st];
-    if (el._t !== txt) { el.textContent = txt; el._t = txt; }
+    if (el._t !== txt) { el.innerHTML = txt; el._t = txt; }
     el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px';
     if (++k > 40) break;
   }
@@ -806,7 +882,7 @@ function setTool(tool) {
   renderAll();
 }
 function openCat(id) {
-  const cat = CATS.find(c => c.id === id); if (!cat) return;
+  const cat = cats().find(c => c.id === id); if (!cat) return;
   Sfx.play('click');
   if (cat.tool) { UI.cat = null; setTool(cat.tool); return; }
   if (UI.cat === id) { UI.cat = null; setTool('select'); return; }
@@ -852,6 +928,7 @@ function processEvents() {
   for (const e of evs) {
     if (e.type === 'toast') toast(e.text, e.kind === 'goal' ? 'goal' : e.kind === 'bad' ? 'bad' : e.kind === 'unlock' ? 'unlock' : '');
     if (e.type === 'goal') Sfx.play('goal');
+    if (e.type === 'rankup' && !Online.mode) { if (UI.meetingOpen || !$('#modal').hidden) UI.pendingRank = e; else showRankUp(e); }
     if (e.type === 'settlers') { Sfx.play('bell'); resync = true; }
     if (e.type === 'boat') Sfx.play('bell');
     if (e.type === 'unlock') renderTray();
@@ -1033,7 +1110,7 @@ function bindInput() {
   });
   $('#chat').addEventListener('pointerover', e => { const ln = e.target.closest('[data-chat]'); const c = ln && world.chat.find(x => x.id === +ln.dataset.chat); UI.hoverAgent = c ? c.a : null; });
   $('#chat').addEventListener('pointerleave', () => { UI.hoverAgent = null; });
-  $('#res').addEventListener('click', () => { UI.stockOpen = !UI.stockOpen; Sfx.init(); Sfx.play('click'); renderStock(); });
+  $('#res').addEventListener('click', e => { Sfx.init(); Sfx.play('click'); if (e.target.closest('[data-r=rank]')) { showRanks(); return; } UI.stockOpen = !UI.stockOpen; renderStock(); });
   $('#stock').addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
   $('#clock').addEventListener('click', e => { Sfx.init(); const b = e.target.closest('[data-speed]'); if (b) setSpeed(+b.dataset.speed); const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
   $('#goals').addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
@@ -1099,7 +1176,9 @@ function resize() { cssW = $('#gl').clientWidth; cssH = $('#gl').clientHeight; R
 /* ---------- Modals ---------- */
 function openModal(html) {
   html = eraH(html); const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
-function closeModal() { $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
+function rankLater() { if (!UI.pendingRank) return; const e = UI.pendingRank; UI.pendingRank = null; setTimeout(() => { if ($('#modal').hidden && !UI.savesOpen) showRankUp(e); else UI.pendingRank = e; }, 400); }
+function closeModal() {
+  setTimeout(rankLater, 0); $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
 function islandName() { const a = ['Gull', 'Saltmoss', 'Cinder', 'Bramble', 'Pebble', 'Hollow', 'Kelp', 'Juniper', 'Larkspur', 'Tidewell'], b = [' Isle', ' Cay', ' Island', ' Key']; return a[S.seed % a.length] + b[(S.seed >> 4) % b.length]; }
 function startMeeting() {
   if (!S.meeting || UI.meetingOpen) return;
@@ -1121,7 +1200,7 @@ function showMeeting() {
 }
 function chooseMeeting(id) {
   Sim.meetingChoose(S, id);
-  UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true;
+  UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true; rankLater();
   setSpeed(UI.preMeetSpeed || 1); Sfx.play('goal'); processEvents(); renderAll();
 }
 const ERA_CARDS = [

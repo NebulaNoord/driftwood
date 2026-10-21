@@ -28,10 +28,16 @@ const HORSES = [[0.55, 0.35, 0.22], [0.3, 0.2, 0.14], [0.9, 0.88, 0.84], [0.18, 
 const FIRST_F = ['Ada', 'Maren', 'Ivy', 'Rosa', 'Elsie', 'Nell', 'Tilda', 'Wren', 'Hazel', 'June', 'Clara', 'Mabel', 'Ines', 'Lotte', 'Freya', 'Pearl', 'Agnes', 'Bea', 'Cora', 'Dot', 'Esme', 'Greta', 'Hattie', 'Iris', 'Kit', 'Lena', 'Mira', 'Nora', 'Opal', 'Ruth'];
 const FIRST_M = ['Arlo', 'Bram', 'Cal', 'Dov', 'Emil', 'Finn', 'Gus', 'Hal', 'Ike', 'Jory', 'Kai', 'Leif', 'Milo', 'Ned', 'Otto', 'Pip', 'Rory', 'Sam', 'Theo', 'Ugo', 'Vic', 'Wes', 'Abe', 'Bo', 'Cy', 'Dag', 'Ezra', 'Fitz', 'Gil', 'Hugo'];
 const SURN = ['Fletcher', 'Marsh', 'Tanner', 'Crabb', 'Hollis', 'Pike', 'Rowe', 'Saltmarsh', 'Thatcher', 'Wick', 'Brindle', 'Cole', 'Dunmore', 'Fenn', 'Gale', 'Harbour', 'Kettle', 'Lark', 'Mossop', 'Nettle', 'Oakes', 'Penrose', 'Quill', 'Reed', 'Shore', 'Tidewell', 'Underhill', 'Vane', 'Weller', 'Yarrow'];
+// modern job titles, for the same buildings and the modern-only ones
+const MJOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Logger', quarry: 'Quarry worker', dock: 'Fisher', market: 'Shop assistant', stable: 'Truck driver', tavern: 'Fry cook', school: 'Teacher', chapel: 'Pastor', port: 'Ferry crew',
+  bakery: 'Baker', sawmill: 'Mill worker', mine: 'Miner', blacksmith: 'Mechanic', shipyard: 'Welder', clinic: 'Nurse', library: 'Librarian', academy: 'Professor', watchtower: 'Marksman', guardhouse: 'Police officer', barracks: 'Sergeant',
+  archery: 'Range officer', cavyard: 'Mechanic', foundry: 'Engineer', warschool: 'Officer', office: 'Accountant', factory: 'Machinist', store: 'Shopkeeper', supermarket: 'Cashier', cafe: 'Barista', gasstation: 'Attendant',
+  hotel: 'Receptionist', cinema: 'Projectionist', stadium: 'Groundskeeper', firestation: 'Firefighter', busdepot: 'Bus driver', powerplant: 'Plant operator', skyscraper: 'Analyst', airfield: 'Pilot' };
 const JOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Lumberjack', quarry: 'Stonecutter', dock: 'Fisher', market: 'Market trader', stable: 'Stablehand', tavern: 'Innkeeper', school: 'Teacher', chapel: 'Priest', port: 'Dockhand', bakery: 'Baker', sawmill: 'Sawyer', mine: 'Miner', blacksmith: 'Blacksmith', shipyard: 'Shipwright', clinic: 'Doctor', library: 'Librarian', academy: 'Scholar', watchtower: 'Lookout', guardhouse: 'Guard', barracks: 'Drill sergeant', archery: 'Bowyer', cavyard: 'Horse master', foundry: 'Gunsmith', warschool: 'Officer' };
 const SMOKE = { rowhouse: [[-0.42, -0.45, 1.42], [0.2, -0.45, 1.56], [0.82, -0.45, 1.48]], apartment: [[0.45, -0.3, 1.88]], bakery: [[-0.22, -0.42, 0.84]], blacksmith: [[-0.18, -0.22, 0.9]], foundry: [[0.5, -0.65, 1.62]] };
 const SMOKE_M = { factory: [[0.75, -0.6, 1.72], [0.45, -0.75, 1.38]], foundry: [[0.65, -0.6, 1.42]], bakery: [[0.2, -0.2, 0.6]] };
 const isHome = b => !!TYPES[b.type].home;
+const cellAt = (x, z) => { const i = Math.max(0, Math.min(N - 1, Math.floor(x + N / 2))), j = Math.max(0, Math.min(N - 1, Math.floor(z + N / 2))); return j * N + i; };
 
 /* ---------------- Models ---------------- */
 function winBox(W, x, y, z, w, h, d) { W.box(x, y, z, w, h, d, WIN); }
@@ -1110,7 +1116,11 @@ class World {
     if (M && !this.mod) this.mod = { cannon: R.mesh(tankModel()), helms: { horn: R.mesh(modernHelmModel('horn')), guard: R.mesh(modernHelmModel('guard')) },
       ships: [null, R.mesh(warshipModel(1)), R.mesh(warshipModel(2)), R.mesh(warshipModel(3)), R.mesh(warshipModel(4))],
       boats: { fish: R.mesh(trawlerModel()), settle: R.mesh(ferryModel()), trade: R.mesh(cargoShipModel()) }, rifle: R.mesh(rifleModel()),
-      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()) };
+      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()),
+      lamp: R.mesh(streetLampModel()), lampGlow: R.mesh(lampGlowModel()), tlight: R.mesh(trafficLightModel()), bulb: R.mesh(bulbModel()), stree: R.mesh(streetTreeModel()), busstop: R.mesh(busStopModel()),
+      carLights: R.mesh(vehicleLightsModel(0.162, 0.05, 0.05)), bigLights: R.mesh(vehicleLightsModel(0.315, 0.06, 0.08)), bus: R.mesh(busModel('#ffffff')), firetruck: R.mesh(fireTruckModel()),
+      police: R.mesh(policeCarModel()), ambulance: R.mesh(ambulanceModel()), siren: R.mesh(sirenModel(0.165)), sirenTall: R.mesh(sirenModel(0.25)),
+      blades: R.mesh(bladesModel()), plane: R.mesh(planeModel()), crane: R.mesh(craneModel()), jib: R.mesh(jibModel()), crowd: R.mesh(crowdModel()) };
     const src = M ? this.mod : this.med;
     this.cannon = src.cannon; this.helms = src.helms; this.ships = src.ships; this.boats = src.boats; this.longboat = src.ships[1];
     for (const k of ['spear', 'sword', 'bow']) this.tools[k] = M ? this.mod.rifle : this.med.tools[k];
@@ -1118,7 +1128,7 @@ class World {
   }
   setState(S) {
     if (Sim.eraOf(S) !== this.era) { this.S = S; this.setEra(Sim.eraOf(S)); }
-    this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
+    this.S = S; this.vehicles = []; this.streetSig = null; this.streets = null; this.tlAt = {}; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
     S._dirty.terrain = S._dirty.roads = S._dirty.trees = true;
     this.waterGrid = null;
     this.syncAgents(true);
@@ -1428,6 +1438,73 @@ class World {
   }
 
   // one texel per cell: r dirt road, g footpath, b cobbles, a marks roads that don't reach the hall yet
+  // streetlights, traffic lights, street trees and bus stops along modern roads, plus the glow they cast at night
+  buildStreets() {
+    const S = this.S, out = { lamps: [], trees: [], tl: [], stops: [] }, R = this.R;
+    this.streets = out; this.tlAt = {};
+    const LN = 192, lamp = new Float32Array(LN * LN);
+    if (this.era === 'modern' && this.mod) {
+      const isR = (i, j) => Sim.inB(i, j) && S.road[j * N + i] && S.road[j * N + i] !== 4 ? 1 : 0;
+      const deg = (i, j) => isR(i + 1, j) + isR(i - 1, j) + isR(i, j + 1) + isR(i, j - 1);
+      const depot = S.b.some(b => b.type === 'busdepot' && Sim.done(b));
+      const y0 = (x, z) => Sim.groundAt(S, x, z) + 0.05;
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+        if (!isR(i, j)) continue;
+        const c = j * N + i, x = i - N / 2 + 0.5, z = j - N / 2 + 0.5, d = deg(i, j);
+        const diag = isR(i + 1, j + 1) + isR(i - 1, j + 1) + isR(i + 1, j - 1) + isR(i - 1, j - 1);
+        if (d >= 3 && diag <= 1 && S.road[c] === 1) { out.tl.push({ x, z, y: y0(x, z), id: c }); this.tlAt[c] = 1; continue; }
+        if (d === 4) continue; // the middle of a paved area: no kerbs, no furniture
+        const straight = d === 2 && ((isR(i + 1, j) && isR(i - 1, j)) || (isR(i, j + 1) && isR(i, j - 1)));
+        Sim.DIRS.forEach(([di, dj], k) => {
+          if (isR(i + di, j + dj)) return;
+          const px = x + di * 0.43, pz = z + dj * 0.43, ry = Math.atan2(-di, -dj);
+          if (depot && straight && S.road[c] === 1 && (i * 7 + j * 13 + k) % 11 === 0) { const sx2 = x + di * 0.37, sz2 = z + dj * 0.37; out.stops.push({ x: sx2, z: sz2, y: y0(sx2, sz2), ry, cell: c }); return; }
+          if ((i + j + k) % 2 === 0) { out.lamps.push({ x: px, z: pz, y: y0(px, pz), ry }); return; }
+          const oi = i + di, oj = j + dj, oc = oj * N + oi;
+          if (Sim.inB(oi, oj) && !S.occ[oc] && Sim.groundAt(S, px, pz) > 0.1 && hash(c * 4 + k) < 0.5) { const sl = (hash(c + k * 17) - 0.5) * 0.5, tx = x + di * 0.39 + dj * sl, tz = z + dj * 0.39 + di * sl; out.trees.push({ x: tx, z: tz, y: y0(tx, tz), ry: hash(c) * 6.28, s: 0.75 + hash(c * 3 + k) * 0.25 }); }
+        });
+      }
+      // each lamp lights a soft pool about one and a half tiles across
+      for (const l of out.lamps) {
+        const lx = l.x - Math.sin(l.ry) * -0.15, lz = l.z - Math.cos(l.ry) * -0.15, cx = (lx + 48) / 96 * LN, cz = (lz + 48) / 96 * LN, rad = 1.3 / 96 * LN;
+        for (let v = Math.floor(cz - rad); v <= Math.ceil(cz + rad); v++) for (let u = Math.floor(cx - rad); u <= Math.ceil(cx + rad); u++) {
+          if (u < 0 || v < 0 || u >= LN || v >= LN) continue;
+          const dd = Math.hypot(u + 0.5 - cx, v + 0.5 - cz) / rad; if (dd >= 1) continue;
+          lamp[v * LN + u] = Math.max(lamp[v * LN + u], (1 - dd) * (1 - dd) * 0.9);
+        }
+      }
+    }
+    const px = new Uint8Array(LN * LN * 4);
+    for (let k = 0; k < LN * LN; k++) px[k * 4] = Math.min(255, Math.round(lamp[k] * 255));
+    if (R.setLamp) R.setLamp(px, LN);
+  }
+  // Saturday afternoon match, or an evening game midweek
+  crowdOn(S) { const h = S.t % 24, wd = Math.floor(S.t / 24) % 7; return (wd === 5 && h >= 13.5 && h < 18) || (wd === 2 && h >= 19 && h < 22); }
+  // the airfield's plane flies a circuit: take-off roll, climb out, a wide loop over the island, approach, landing
+  planePose(T) {
+    const out = 26, side = 22, R = side / 2, legs = [['roll', 2.6], ['climb', out], ['turn1', Math.PI * R], ['back', 2 * out], ['turn2', Math.PI * R], ['final', out], ['land', 2.6]];
+    const L = legs.reduce((a, l) => a + l[1], 0), sp = 7;
+    let d = (T * sp) % (L + 40); // a spell parked between flights
+    if (d > L) return null;
+    for (const [k, len] of legs) {
+      if (d > len) { d -= len; continue; }
+      const f = d / len;
+      if (k === 'roll') return [-1.3 + f * 2.6, 0, 0, 0, 0];
+      if (k === 'climb') return [1.3 + d, 0, Math.min(9, f * f * 11), 0, 0];
+      if (k === 'turn1') { const a = f * Math.PI; return [1.3 + out + Math.sin(a) * R, R - Math.cos(a) * R, 9, a, -0.35]; }
+      if (k === 'back') return [1.3 + out - d, side, 9, Math.PI, 0];
+      if (k === 'turn2') { const a = f * Math.PI; return [1.3 - out - Math.sin(a) * R, R + Math.cos(a) * R, 9, Math.PI + a, -0.35]; }
+      if (k === 'final') return [1.3 - out + d - 2.6, 0, 9 * (1 - f) * (1 - f), 0, 0];
+      return [-1.3 + f * 2.6, 0, 0, 0, 0];
+    }
+    return null;
+  }
+  // traffic signals: each junction runs its own cycle; 'x' and 'z' are the two directions of travel
+  signal(id, axis) {
+    const t = (this.now + hash(id) * 16) % 16;
+    if (axis === 'x') return t < 6 ? 'g' : t < 8 ? 'a' : 'r';
+    return t < 8 ? 'r' : t < 14 ? 'g' : 'a';
+  }
   paintRoads() {
     const S = this.S, px = new Uint8Array(N * N * 4);
     for (let c = 0; c < N * N; c++) {
@@ -1477,6 +1554,7 @@ class World {
       const f = st.dead ? 0.6 : st.hp < st.max * 0.7 ? 1 - st.hp / st.max : 0;
       if (f > 0 && Math.random() < dt * (st.dead ? 8 : 30) * f) flame(b, st.dead ? 0.3 : 1);
     }
+    for (const b of S.b) if (b.burnt && b.fireAt !== undefined && S.t - b.fireAt < 2 && Math.random() < dt * 14) flame(b, 0.8);
     for (const b of S.b) if (b.burnt && Math.random() < dt * 0.6) { const [x, z] = Sim.center(b); this.addPart({ x: x + (Math.random() - 0.5) * 0.5, y: b.y + 0.7, z: z + (Math.random() - 0.5) * 0.5, vx: 0.1, vy: 0.35, vz: 0.05, life: 0, max: 2.6, size: 0.1, col: [0.35, 0.34, 0.33], g: -0.05, drag: 0.3, smoke: true }); }
   }
   // palisades and stone walls follow the ground; where they cross a road there is a gate
@@ -1527,6 +1605,14 @@ class World {
     if (evs.length) this.navDirty = true;
     const S = this.S, t = this.now;
     for (const e of evs) {
+      // a fire: the nearest crewed fire station sends a truck, lights flashing
+      if (e.type === 'fire' && this.era === 'modern') {
+        const b = S._byId[e.id]; if (!b) continue; const [bx, bz] = Sim.center(b);
+        const st = S.b.filter(f => f.type === 'firestation' && Sim.done(f) && f.staff > 0 && f.door >= 0 && f.door !== null).sort((p, q) => Math.hypot(Sim.center(p)[0] - bx, Sim.center(p)[1] - bz) - Math.hypot(Sim.center(q)[0] - bx, Sim.center(q)[1] - bz))[0];
+        const to = b.door >= 0 && b.door !== null ? b.door : this.roadNear(bx, bz);
+        if (st && to >= 0) this.spawnVehicle('firetruck', st.door, to, { siren: true, back: st.door, target: b.id });
+        b.fireAt = S.t;
+      }
       if (e.type === 'build') {
         this.anim[e.id] = { k: 'site', t0: t };
         const b = S.b.find(x => x.id === e.id); if (b) { this.dust(b, 18); this.sfx && this.sfx('build'); this.callBuilders(b); }
@@ -2047,8 +2133,10 @@ class World {
     let L = 0; for (let k = 1; k < a.path.length; k++) L += Math.abs(a.path[k][0] - a.path[k - 1][0]) + Math.abs(a.path[k][1] - a.path[k - 1][1]);
     if (this.era === 'modern') {
       // modern residents drive anywhere more than a few streets away, as long as the route is mostly road
-      let onRoad = 0; for (const p of a.path) { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); if (Sim.inB(ci, cj) && S.road[cj * N + ci]) onRoad++; }
-      a.riding = !a.kid && L > 10 && onRoad >= a.path.length * 0.6 && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
+      // only when everything between the first and last couple of points is road: no driving across beaches and fields
+      const onR = p => { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); return Sim.inB(ci, cj) && S.road[cj * N + ci] && S.road[cj * N + ci] !== 2; };
+      let roadOnly = a.path.length > 5; for (let k = 2; k < a.path.length - 2 && roadOnly; k++) if (!onR(a.path[k])) roadOnly = false;
+      a.riding = !a.kid && L > 10 && roadOnly && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
     } else a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
   }
   arriveAt(a) {
@@ -2067,6 +2155,7 @@ class World {
     const ci0 = Math.floor(a.x + N / 2), cj0 = Math.floor(a.z + N / 2), rt = Sim.inB(ci0, cj0) ? this.S.road[cj0 * N + ci0] : 0;
     const car = a.riding && this.era === 'modern';
     let step = a.speed * dtH * (car ? (rt ? 3.2 : 1.2) : a.riding ? 2.3 : 1) * (rt && !car ? Sim.ROADS[rt].speed : 1);
+    if (car && this.blocked(a)) step = 0;
     const step0 = step;
     while (step > 0 && a.path) {
       const p = a.path[a.pi + 1];
@@ -2083,6 +2172,7 @@ class World {
     if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c] && !car) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
+    this.gridCars();
     const S = this.S, ctx = this.ctx();
     this.lastCtx = ctx;
     if (this.assignDay !== ctx.day) this.assignWork(ctx);
@@ -2106,6 +2196,118 @@ class World {
         else if (a.anim === 'idle' && Math.random() < dtH * 0.6) a.ry += (Math.random() - 0.5) * 1.2;
       }
     }
+  }
+  /* ---------- Traffic (modern islands) ----------
+     Every moving car, bus and truck goes into a grid of road cells each tick. Before moving, a vehicle checks the
+     junction it's about to enter (red or amber means wait) and the lane ahead (someone close in front means wait). */
+  gridCars() {
+    const g = this.carGrid = new Map();
+    if (this.era !== 'modern') return;
+    const add = v => { const c = cellAt(v.x, v.z); let l = g.get(c); if (!l) g.set(c, l = []); l.push(v); };
+    for (const a of this.agents) if (a.riding && a.path && !a.hidden) add(a);
+    for (const v of this.vehicles || []) if (!v.parked) add(v);
+  }
+  blocked(v) {
+    const p = v.path && v.path[(v.pi || 0) + 1]; if (!p) return false;
+    const dx = p[0] - v.x, dz = p[1] - v.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d;
+    v.ux = ux; v.uz = uz;
+    const c0 = cellAt(v.x, v.z), c1 = cellAt(v.x + ux * 0.6, v.z + uz * 0.6);
+    let why = null;
+    if (!v.siren && c1 !== c0 && this.tlAt && this.tlAt[c1] && this.signal(c1, Math.abs(ux) > Math.abs(uz) ? 'x' : 'z') !== 'g') why = 'light';
+    if (!why && this.carGrid) {
+      for (const c of [c0, c1]) {
+        for (const o of this.carGrid.get(c) || []) {
+          if (o === v || o.ux === undefined) continue;
+          const rx = o.x - v.x, rz = o.z - v.z, fwd = rx * ux + rz * uz, lat = Math.abs(-rx * uz + rz * ux);
+          if (fwd > 0.04 && fwd < 0.48 && lat < 0.22 && o.ux * ux + o.uz * uz > 0.4) { why = 'car'; break; }
+        }
+        if (why) break;
+      }
+    }
+    // nobody waits forever: after a while they inch through anyway
+    if (!why) { v.waitSince = 0; return false; }
+    if (!v.waitSince) v.waitSince = this.now;
+    return this.now - v.waitSince < (why === 'light' ? 14 : 5);
+  }
+  // shortest way along the roads between two road cells, as points at cell centres
+  roadCells(from, to) {
+    const S = this.S; if (from < 0 || to < 0 || !S.road[from] || !S.road[to]) return null;
+    const prev = new Int32Array(N * N).fill(-1), q = [from]; prev[from] = from;
+    for (let qi = 0; qi < q.length && prev[to] < 0; qi++) {
+      const c = q[qi], i = c % N, j = (c / N) | 0;
+      for (const [di, dj] of Sim.DIRS) { const x = i + di, y = j + dj; if (!Sim.inB(x, y)) continue; const k = y * N + x; if (prev[k] < 0 && S.road[k] && S.road[k] !== 2 && S.road[k] !== 4) { prev[k] = c; q.push(k); } }
+    }
+    if (prev[to] < 0) return null;
+    const cells = []; for (let c = to; ; c = prev[c]) { cells.push(c); if (c === from) break; }
+    return cells.reverse().map(c => [c % N - N / 2 + 0.5, ((c / N) | 0) - N / 2 + 0.5]);
+  }
+  randomRoad() {
+    const S = this.S, conn = S._conn; if (!this._roadList || this._roadSig !== this.streetSig) { this._roadSig = this.streetSig; this._roadList = []; for (let c = 0; c < N * N; c++) if (conn[c] && S.road[c] === 1) this._roadList.push(c); }
+    return this._roadList.length ? this._roadList[Math.floor(Math.random() * this._roadList.length)] : -1;
+  }
+  // buses, delivery trucks, patrol cars, ambulances and fire trucks
+  spawnVehicle(kind, from, to, opt) {
+    const path = this.roadCells(from, to); if (!path || path.length < 2) return null;
+    const v = Object.assign({ kind, path, pi: 0, x: path[0][0], z: path[0][1], ry: 0, born: this.now, id: ++this.agentSeq }, opt || {});
+    (this.vehicles = this.vehicles || []).push(v); return v;
+  }
+  updateVehicles(dtH) {
+    const S = this.S;
+    if (this.era !== 'modern') { this.vehicles = []; return; }
+    const V = this.vehicles = this.vehicles || [], hour = S.t % 24, live = k => V.filter(v => v.kind === k);
+    const staffed = t => S.b.filter(b => b.type === t && Sim.done(b) && b.conn && b.staff > 0 && !b.burnt && b.door >= 0 && b.door !== null);
+    if (V.length < 46) {
+      // buses: two per depot, looping through a few stops from 6 in the morning till midnight
+      const stops = this.streets ? this.streets.stops : [];
+      for (const d of staffed('busdepot')) {
+        if (hour < 6 || live('bus').filter(v => v.home === d.id).length >= 2 || Math.random() > dtH * 2) continue;
+        let path = [], at = d.door; const pick = stops.slice().sort(() => Math.random() - 0.5).slice(0, 4), stopIdx = new Set();
+        for (const st of pick.concat([{ cell: d.door }])) { const seg = this.roadCells(at, st.cell); if (!seg) continue; path = path.concat(path.length ? seg.slice(1) : seg); if (st.ry !== undefined) stopIdx.add(path.length - 1); at = st.cell; }
+        if (path.length > 2) V.push({ kind: 'bus', path, pi: 0, x: path[0][0], z: path[0][1], ry: 0, born: this.now, id: ++this.agentSeq, home: d.id, stopIdx, col: hex(['#e3b23c', '#2f7c78', '#c8402f'][d.id % 3]) });
+      }
+      // delivery trucks from factories, depots and the shipyard to the shops
+      const shops = S.b.filter(b => ['store', 'market', 'supermarket', 'gasstation', 'cafe', 'tavern', 'hotel'].includes(b.type) && Sim.done(b) && b.conn && b.door >= 0);
+      for (const f of staffed('factory').concat(staffed('stable'))) {
+        if (!shops.length || hour < 6 || hour > 21 || Math.random() > dtH * 2) continue;
+        const to = shops[Math.floor(Math.random() * shops.length)];
+        this.spawnVehicle('truck', f.door, to.door, { col: hex(['#e8e4dc', '#b8412f', '#2f5f8a'][f.id % 3]) });
+      }
+      // one patrol car per police station, cruising all day
+      for (const p of staffed('guardhouse')) if (!live('police').some(v => v.home === p.id) && Math.random() < dtH * 3) this.spawnVehicle('police', p.door, this.randomRoad(), { home: p.id, patrol: 3 });
+      // the odd ambulance call
+      for (const h of staffed('clinic')) {
+        if (live('ambulance').some(v => v.home === h.id) || Math.random() > dtH * 0.12) continue;
+        const homes = S.b.filter(b => TYPES[b.type].home && b.res > 0 && b.door >= 0); if (!homes.length) continue;
+        const to = homes[Math.floor(Math.random() * homes.length)];
+        this.spawnVehicle('ambulance', h.door, to.door, { home: h.id, siren: true, back: h.door });
+      }
+      // in the evening and at night, cars cruise the streets: taxis, delivery vans, night owls
+      const city = S.b.filter(b => TYPES[b.type].home && b.res > 0).length;
+      if (live('car').length < Math.min(26, city / 2) && Math.random() < dtH * (hour > 6 && hour < 23 ? 9 : 2.5)) { const a = this.randomRoad(), b = this.randomRoad(); this.spawnVehicle('car', a, b, { col: hex(MCARS[Math.floor(Math.random() * MCARS.length)]) }); }
+    }
+    for (const v of V) {
+      if (v.parkedUntil) { if (S.t < v.parkedUntil && !(v.kind === 'firetruck' && v.target && !(S._byId[v.target] || {}).burnt)) continue; v.parkedUntil = 0; v.parked = false; v.siren = false;
+        const back = this.roadCells(cellAt(v.x, v.z), v.back); if (back && back.length > 1) { v.path = back; v.pi = 0; v.back = undefined; v.done = false; } else v.done = true; continue; }
+      if (v.wait && this.now < v.wait) continue;
+      v.wait = 0;
+      let step = dtH * (v.kind === 'bus' ? 20 : v.kind === 'truck' ? 22 : v.siren ? 34 : 26);
+      if (this.blocked(v)) step = 0;
+      while (step > 0 && v.path) {
+        const p = v.path[v.pi + 1]; if (!p) { v.path = null; break; }
+        const dx = p[0] - v.x, dz = p[1] - v.z, d = Math.hypot(dx, dz);
+        if (d > 1e-4) v.ry = Math.atan2(dx, dz);
+        if (d <= step) { v.x = p[0]; v.z = p[1]; v.pi++; step -= d; if (v.stopIdx && v.stopIdx.has(v.pi)) { v.wait = this.now + 2.2; break; } if (v.pi >= v.path.length - 1) v.path = null; }
+        else { v.x += dx / d * step; v.z += dz / d * step; step = 0; }
+      }
+      if (!v.path) {
+        // arrived: patrols pick a new street, emergencies wait on scene then head back, everyone else is done
+        if (v.patrol > 0) { v.patrol--; const nxt = this.roadCells(cellAt(v.x, v.z), this.randomRoad()); if (nxt && nxt.length > 1) { v.path = nxt; v.pi = 0; continue; } }
+        if (v.back !== undefined && v.back !== null) { v.parked = true; v.parkedUntil = S.t + (v.kind === 'firetruck' ? 3 : 0.6); continue; }
+        if (v.kind === 'police' && v.home) { const st = S._byId[v.home]; const nxt = st && this.roadCells(cellAt(v.x, v.z), st.door); if (nxt && nxt.length > 1 && !v.homing) { v.homing = true; v.path = nxt; v.pi = 0; continue; } }
+        v.done = true;
+      }
+    }
+    this.vehicles = V.filter(v => !v.done && this.now - v.born < 600);
   }
   // builders walk out from the hall to each new site, hammer away, then go back
   callBuilders(b) {
@@ -2170,7 +2372,7 @@ class World {
     if (a.temp === 'porter') return 'Porter';
     if (a.kid) return this.lastCtx && this.lastCtx.school ? 'Pupil' : 'Child';
     const w = a.work && this.S.b.find(b => b.id === a.work);
-    return w ? JOBNAME[w.type] || 'Worker' : (a.social > 0.8 ? 'Retired' : 'Homemaker');
+    return w ? (this.era === 'modern' ? MJOBNAME : JOBNAME)[w.type] || 'Worker' : (a.social > 0.8 ? 'Retired' : this.era === 'modern' ? 'Works from home' : 'Homemaker');
   }
   doingOf(a) {
     if (a.waitUntil) return 'Stepping off the ship';
@@ -2208,6 +2410,17 @@ class World {
     if ((S.fx || []).some(f => f.label === 'feast' && f.until > S.t)) lines.push('What a feast!', 'I couldn’t eat another bite!');
     if ((S.fx || []).some(f => f.label === 'whale' && f.until > S.t)) lines.push('Did you see the whales?!');
     if ((S.fx || []).some(f => f.label === 'minstrel' && f.until > S.t)) lines.push('That minstrel’s songs are stuck in my head.');
+    if (this.era === 'modern') {
+      if (S.power && S.power.ratio < 0.9) lines.push('Another power cut!', 'My fridge has gone warm again.', 'We need more power.');
+      if (has('busdepot')) lines.push('The bus was on time today!', 'I take the bus to work.'); else if (p >= 60) lines.push('We really need buses.', 'Traffic is getting bad.');
+      if (has('stadium')) lines.push(this.crowdOn(S) ? 'Big match today!' : 'Are you going to the match on Saturday?');
+      if (has('cinema')) lines.push('Seen the new film yet?', 'Popcorn and a film tonight?');
+      if (has('cafe')) lines.push('I need a coffee.', 'Flat white, please.');
+      if (S.b.some(b => b.burnt)) lines.push('Did you see the fire?', 'I heard sirens last night.');
+      if (!has('firestation') && p >= 50) lines.push('What if there’s a fire?');
+      if (has('airfield')) lines.push('The planes are so loud!', 'Fancy a flight round the island?');
+      if (has('skyscraper')) lines.push('You can see the whole island from the top of the tower.');
+    }
     const w = a.work && ctx.byId[a.work];
     const job = { farm: ['The wheat’s coming up nicely.', 'Long day in the fields.'], orchard: ['Apples are ripe!', 'Want an apple?'], lumber: ['My arms ache from chopping.', 'Timber!'],
       quarry: ['Dusty work at the quarry.', 'Found a lovely bit of granite.'], dock: ['Caught a big one this morning!', 'The fish were biting.'], market: ['Fresh produce today!', 'Business is good.'],
@@ -2383,10 +2596,12 @@ class World {
     if (Sim.eraOf(S) !== this.era) this.setEra(Sim.eraOf(S));
     if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
-    if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
+    if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; this.streetSig = null; }
+    const sig = this.era + ':' + S.b.length + ':' + S.nextId;
+    if (this.streetSig !== sig) { this.streetSig = sig; this.buildStreets(); }
     if (S._dirty.walls) { this.buildFort(); S._dirty.walls = false; }
     this.wearTick(dtH);
-    if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); }
+    if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); this.updateVehicles(Math.min(dtH, 0.5)); }
     else if (!this.lastCtx) this.lastCtx = this.ctx();
     this.updateBubbles(dtReal);
     this.updateWeather(dtReal);
@@ -2418,6 +2633,7 @@ class World {
     // chimney smoke
     const hour = S.t % 24, smoky = (hour > 5 && hour < 10) || hour > 17 || hour < 1;
     if (dtH > 0 && Math.random() < dtReal * (smoky ? 3 : 0.8)) {
+      if (this.era === 'modern') for (const b of S.b) if (b.type === 'powerplant' && b.staff > 0 && Sim.done(b) && Math.random() < 0.7) { const p = this.local(b, 0.5, -0.45); this.addPart({ x: p[0] + (Math.random() - 0.5) * 0.3, y: b.y + 1.38, z: p[1] + (Math.random() - 0.5) * 0.3, vx: 0.12, vy: 0.55, vz: 0.04, life: 0, max: 3.2, size: 0.22 + Math.random() * 0.1, col: [0.94, 0.94, 0.93], g: -0.06, drag: 0.25, smoke: true }); }
       const SM = this.era === 'modern' ? SMOKE_M : SMOKE;
       const hs = S.b.filter(b => Sim.done(b) && (this.era === 'modern' ? (SM[b.type] && b.staff > 0) : ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0)))));
       if (hs.length) {
@@ -2490,6 +2706,8 @@ class World {
       const T = TYPES[b.type];
       if (T.home) { if ((hour >= 23 + hash(b.id) * 1.6 || hour < 5.2) && hash(b.id + 9) > 0.18) return 0.05; return b.res ? 1 : 0.1; }
       if (b.type === 'tavern' || b.type === 'lighthouse' || b.type === 'hall' || b.type === 'port' || b.type === 'pier' || b.type === 'farm') return 1;
+      if (this.era === 'modern' && ['hotel', 'cinema', 'gasstation', 'firestation', 'clinic', 'guardhouse', 'airfield', 'busdepot', 'cafe'].includes(b.type)) return b.staff > 0 || T.jobs === 0 ? 1 : 0.2;
+      if (b.type === 'stadium') return b.staff > 0 && (this.crowdOn(this.S) || hour < 23) ? 1 : 0.1;
       if (hour >= 21.5 || hour < 5) return 0.05;
       return b.staff > 0 ? 0.9 : 0.15;
     };
@@ -2525,6 +2743,14 @@ class World {
         const [x, z] = Sim.center(b), s = TYPES[b.type].size, hgt = { lighthouse: 3, chapel: 2.2, tavern: 1.6, school: 1.5, farm: 0.9, garden: 0.5, orchard: 0.8, rowhouse: 1.45, villa: 1.25, apartment: 1.95, library: 1.6, academy: 2.1, mine: 0.9, plaza: 0.45, shipyard: 1.0, sawmill: 1.1, fishhut: 0.9, watchtower: 2.2, guardhouse: 1.1, barracks: 1.2, archery: 0.9, cavyard: 0.9, foundry: 1.7, warschool: 2.1 }[b.type] || (s === 1 ? 1.05 : 1.35);
         const pop = an && an.k === 'site' ? elastic((t - an.t0) / 0.8) : 1;
         R.push(B(this.scaffold), x, b.y, z, b.rot * Math.PI / 2, s * 1.04 * pop, hgt * pop, s * 1.04 * pop);
+        // modern sites get a tower crane whose jib swings back and forth
+        if (this.era === 'modern' && this.mod && s >= 2) { const cp = this.local(b, -s / 2 - 0.15, -s / 2 + 0.2), cs = 0.65 + s * 0.2, sw = Math.sin(t * 0.35 + b.id) * 1.2 + b.id; R.push(B(this.mod.crane), cp[0], b.y, cp[1], 0, cs, cs, cs); R.push(B(this.mod.jib), cp[0], b.y, cp[1], sw, cs, cs, cs); }
+      }
+      if (this.era === 'modern' && this.mod && Sim.done(b) && !b.burnt) {
+        // turbines spin with the wind
+        if (b.type === 'windturbine') { const hp = this.local(b, 0, 0.21); R.push(B(this.mod.blades), hp[0], b.y + 2.34 * sy, hp[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (1.2 + wind * 1.6) + b.id); }
+        // a crowd in the stands on match afternoons and big nights
+        if (b.type === 'stadium' && b.staff > 0 && this.crowdOn(S)) R.push(B(this.mod.crowd), Sim.center(b)[0], b.y, Sim.center(b)[1], b.rot * Math.PI / 2, 1, 1, 1);
       }
       if (this.era !== 'modern' && b.type === 'stable' && Sim.done(b)) {
         for (let k = 0; k < 2; k++) {
@@ -2628,6 +2854,39 @@ class World {
         R.push(HL, px, y + bob + 0.19 * hs, pz, ry, hs, hs, hs, col[0], col[1], col[2], 0, Math.sin(ph + off) * amp, 0);
       }
     };
+    // modern streets: lamps, signals, trees and bus stops
+    if (this.era === 'modern' && this.streets && this.mod) {
+      const M = this.mod, ST = this.streets, lit = night > 0.08;
+      for (const l of ST.lamps) { R.push(B(M.lamp), l.x, l.y, l.z, l.ry, 1, 1, 1); R.push(B(M.lampGlow), l.x, l.y, l.z, l.ry, 1, 1, 1, lit ? 1 : 0.7, lit ? 0.86 : 0.7, lit ? 0.62 : 0.68, lit ? 3 * night : 0); }
+      for (const tr of ST.trees) R.push(B(M.stree), tr.x, tr.y, tr.z, tr.ry, tr.s, tr.s, tr.s);
+      for (const st of ST.stops) R.push(B(M.busstop), st.x, st.y, st.z, st.ry, 1, 1, 1);
+      const COL = { r: [1, 0.22, 0.16], a: [1, 0.72, 0.15], g: [0.3, 1, 0.45] }, HY = { r: 0.475, a: 0.43, g: 0.385 };
+      for (const tl of ST.tl) {
+        for (const [ox, oz, ry, axis] of [[0.4, -0.4, Math.PI / 2, 'x'], [-0.4, 0.4, 0, 'z']]) {
+          const st = this.signal(tl.id, axis), c = COL[st];
+          R.push(B(M.tlight), tl.x + ox, tl.y, tl.z + oz, ry, 1, 1, 1);
+          R.push(B(M.bulb), tl.x + ox, tl.y + HY[st], tl.z + oz, ry, 1, 1, 1, c[0], c[1], c[2], 2.2);
+        }
+      }
+    }
+    if (this.era === 'modern' && this.mod) {
+      for (const b of S.b) {
+        if (b.type !== 'airfield' || !Sim.done(b) || !b.staff || b.burnt) continue;
+        const P = this.planePose(t + b.id * 7); if (!P) continue;
+        const [u, w, alt, hd, bank] = P, wp = this.local(b, 0.35 + w, u), gy = Math.max(b.y + 0.04, alt > 0.2 ? 0 : b.y + 0.04), ps = 1.6;
+        R.push(B(this.mod.plane), wp[0], b.y + 0.04 + alt, wp[1], b.rot * Math.PI / 2 + hd, ps, ps, ps, 1, 1, 1, 0, 0, bank);
+        if (night > 0.1) R.push(B(this.mod.carLights), wp[0], b.y + 0.15 + alt, wp[1], b.rot * Math.PI / 2 + hd, ps, ps, ps, 1, 1, 1, 3);
+      }
+    }
+    if (this.era === 'modern' && this.mod) {
+      const M = this.mod, lights = night > 0.1, blink = Math.floor(t * 6) % 2, MESH = { bus: M.bus, truck: M.truck, police: M.police, ambulance: M.ambulance, firetruck: M.firetruck, car: M.car };
+      for (const v of this.vehicles || []) {
+        const lane = v.parked ? 0.3 : 0.17, lx = v.x + Math.cos(v.ry) * lane, lz = v.z - Math.sin(v.ry) * lane, y = groundY(lx, lz), col = v.col || [1, 1, 1], vs = 1.35 * hsc;
+        R.push(B(MESH[v.kind] || M.car), lx, y, lz, v.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        if (lights) R.push(B(v.kind === 'bus' || v.kind === 'truck' || v.kind === 'firetruck' ? M.bigLights : M.carLights), lx, y, lz, v.ry, vs, vs, vs, 1, 1, 1, 2.4 * night + 0.4);
+        if (v.siren || v.kind === 'police' && v.parked) R.push(B(v.kind === 'police' ? M.siren : M.sirenTall), lx, y, lz, v.ry + (blink ? 0 : Math.PI), vs, vs, vs, 1, 1, 1, v.siren ? 3 : 0.4);
+      }
+    }
     const idleArms = a => Math.sin(t * 1.3 + a.id) * 0.05;
     for (const a of this.agents.concat(this.drillers(t))) {
       if (a.hidden || a.waitUntil) continue;
@@ -2641,6 +2900,7 @@ class World {
         // keep to the right-hand side of the road so traffic passes instead of overlapping
         const lane = a.mounted ? 0 : 0.17, lx = a.x + Math.cos(a.ry) * lane, lz = a.z - Math.sin(a.ry) * lane;
         R.push(B(a.mounted ? this.mod.acar : this.mod.car), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        if (!a.mounted && night > 0.1) R.push(B(this.mod.carLights), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, 1, 1, 1, 2.4 * night + 0.4);
         continue;
       }
       if ((a.riding && moving) || a.mounted) {
@@ -2698,7 +2958,7 @@ class World {
     }
     // horses grazing at the stables
     for (const b of S.b) {
-      if (b.type !== 'stable' || !Sim.done(b)) continue;
+      if (b.type !== 'stable' || !Sim.done(b) || this.era === 'modern') continue;
       for (let k = 0; k < 2; k++) {
         const w = t * 0.07 + k * 2.6 + b.id, walking = Math.sin(w * 1.3) > 0.2;
         const lx = 0.52 + Math.sin(w) * 0.2, lz = -0.3 + k * 0.62 + Math.cos(w * 0.7) * 0.18;
@@ -2837,6 +3097,8 @@ class World {
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
     gl.uniform1f(P.u.uModern, this.era === 'modern' ? 1 : 0);
+    gl.uniform1f(P.u.uNight, this.env ? this.env.night : 0);
+    if (R.lTex) { gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, R.lTex); gl.uniform1i(P.u.uLamp, 4); gl.activeTexture(gl.TEXTURE0); }
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
     for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);

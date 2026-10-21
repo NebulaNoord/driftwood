@@ -15,6 +15,7 @@ SETUP = r"""
   for (let k = 0; k < 18; k++) tryPlace('house', 11);
   for (const t of ['market', 'tavern', 'garden', 'well', 'stable', 'orchard', 'farm', 'school', 'chapel', 'lumber']) tryPlace(t, 16);
   Sim.step(S, 2);
+  S.rank = Sim.RANKS.length - 1; // tests of other features: no rank-up celebrations popping up
   return placed;
 })()
 """

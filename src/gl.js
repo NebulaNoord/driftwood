@@ -217,10 +217,13 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform sampler2D uLamp; uniform float uNight; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 vec4 roadAt(ivec2 c) { if (c.x < 0 || c.y < 0 || c.x > 95 || c.y > 95) return vec4(0.0); return texelFetch(uRoads, c, 0); }
 float roadAny(ivec2 c) { vec4 t = roadAt(c); return max(t.r, max(t.g, t.b)); }
+float roadDeg(ivec2 c) { return roadAny(c + ivec2(1, 0)) + roadAny(c + ivec2(-1, 0)) + roadAny(c + ivec2(0, 1)) + roadAny(c + ivec2(0, -1)); }
+// a proper junction: three or four arms, and not the inside of a wide paved area
+float junction(ivec2 c) { float diag = roadAny(c + ivec2(1, 1)) + roadAny(c + ivec2(-1, 1)) + roadAny(c + ivec2(1, -1)) + roadAny(c + ivec2(-1, -1)); return step(2.5, roadDeg(c)) * step(diag, 1.5); }
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hsh(i), hsh(i + vec2(1, 0)), f.x), mix(hsh(i + vec2(0, 1)), hsh(i + vec2(1, 1)), f.x), f.y); }
@@ -258,22 +261,39 @@ void main() {
         float e = min(qx, qz);
         const float rr = 0.2;
         if (qx < rr && qz < rr) e = min(e, rr - length(vec2(rr) - vec2(qx, qz)));
-        float inside = smoothstep(-0.012, 0.012, e), kerb = inside * (1.0 - smoothstep(0.055, 0.075, e));
+        float inside = smoothstep(-0.012, 0.012, e);
+        // a pavement along every open edge, with a kerb line where it meets the carriageway
+        const float sw = 0.13;
+        float walk = 1.0 - smoothstep(sw - 0.006, sw + 0.006, e), kerbLine = smoothstep(sw - 0.014, sw - 0.004, e) * (1.0 - smoothstep(sw + 0.004, sw + 0.014, e));
         vec3 surf;
         if (me.r > 0.5) {
           surf = vec3(0.33, 0.34, 0.36) * (0.92 + 0.12 * vnoise(vWorld.xz * 9.0));
-          float lineX = step(abs(f.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6)) * step(0.5, L * Rt) * step(max(roadAny(c + ivec2(0, -1)), roadAny(c + ivec2(0, 1))), 0.5);
-          float lineZ = step(abs(f.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)) * step(0.5, D * U) * step(max(roadAny(c + ivec2(-1, 0)), roadAny(c + ivec2(1, 0))), 0.5);
-          surf = mix(surf, vec3(0.93, 0.86, 0.55), max(lineX, lineZ) * 0.85);
-        } else if (me.g > 0.5) surf = vec3(0.8, 0.79, 0.76) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0));
+          float deg = roadDeg(c);
+          // zebra crossings on each road arm just before a junction
+          float zebra = 0.0;
+          if (junction(c) < 0.5 && deg <= 3.0) {
+            if (Rt > 0.5 && junction(c + ivec2(1, 0)) > 0.5) zebra = max(zebra, step(0.05, 1.0 - f.x) * step(1.0 - f.x, 0.3) * step(0.5, fract(f.y * 7.0)));
+            if (L > 0.5 && junction(c + ivec2(-1, 0)) > 0.5) zebra = max(zebra, step(0.05, f.x) * step(f.x, 0.3) * step(0.5, fract(f.y * 7.0)));
+            if (U > 0.5 && junction(c + ivec2(0, 1)) > 0.5) zebra = max(zebra, step(0.05, 1.0 - f.y) * step(1.0 - f.y, 0.3) * step(0.5, fract(f.x * 7.0)));
+            if (D > 0.5 && junction(c + ivec2(0, -1)) > 0.5) zebra = max(zebra, step(0.05, f.y) * step(f.y, 0.3) * step(0.5, fract(f.x * 7.0)));
+          }
+          float lineX = step(abs(f.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6)) * step(0.5, L * Rt) * step(max(D, U), 0.5);
+          float lineZ = step(abs(f.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)) * step(0.5, D * U) * step(max(L, Rt), 0.5);
+          surf = mix(surf, vec3(0.93, 0.86, 0.55), max(lineX, lineZ) * 0.85 * (1.0 - zebra));
+          surf = mix(surf, vec3(0.9, 0.9, 0.88), zebra * 0.9);
+        } else if (me.g > 0.5) { surf = vec3(0.8, 0.79, 0.76) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)); walk = 0.0; kerbLine = 0.0; }
         else {
           vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
           vec2 sf = fract(p), id = floor(p);
           float joint = min(min(sf.x, 1.0 - sf.x) * 0.55, min(sf.y, 1.0 - sf.y));
           surf = mix(vec3(0.36, 0.34, 0.31), vec3(0.66, 0.42, 0.34) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0)), smoothstep(0.03, 0.09, joint));
         }
+        // pavement slabs with faint joints
+        vec2 sl = fract(vWorld.xz * 3.0); float slab = min(min(sl.x, 1.0 - sl.x), min(sl.y, 1.0 - sl.y));
+        vec3 paveC = vec3(0.76, 0.75, 0.72) * (0.95 + 0.07 * vnoise(vWorld.xz * 13.0)) * mix(0.9, 1.0, smoothstep(0.0, 0.05, slab));
+        surf = mix(surf, paveC, walk);
         alb = mix(alb, surf, inside);
-        alb = mix(alb, vec3(0.78, 0.77, 0.74), kerb * 0.95);
+        alb = mix(alb, vec3(0.6, 0.6, 0.6), kerbLine * inside * 0.9);
         // roads not yet joined to the hall show up rusty
         alb = mix(alb, alb * vec3(1.08, 0.86, 0.78), me.a * inside * 0.8);
       }
@@ -312,6 +332,7 @@ void main() {
   if (uTerrain < 0.5) hemi *= mix(0.68, 1.0, smoothstep(0.0, 0.32, vLY));
   vec3 c = alb * (hemi + uSunCol * ndl * sh);
   c += alb * vEmis + uFlat * step(0.5, vEmis);
+  if (uNight > 0.01 && uModern > 0.5) { float lp = texture(uLamp, (vWorld.xz + 48.0) / 96.0).r; c += alb * vec3(1.0, 0.82, 0.6) * min(lp, 0.85) * uNight * 1.05; }
   // grade: a touch less saturated, warm in the light and cool in the shade
   float lum = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(vec3(lum), c, 0.9);
@@ -518,6 +539,16 @@ class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  // streetlight glow on the ground: n x n, red channel 0-255, sampled smoothly
+  setLamp(px, n) {
+    const gl = this.gl;
+    if (!this.lTex) this.lTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.lTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
   setWear(w, n) {

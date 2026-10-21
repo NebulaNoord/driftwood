@@ -39,6 +39,28 @@ function mAwning(B, x, y, z, w, col) { B.at(x, y, z, 0); B.box(0, 0, 0.06, w, 0.
 function mDisc(B, x, y, z, r, col, seg) { const c = hex(col), n = seg || 14; for (let k = 0; k < n; k++) { const a = k / n * 6.283, b = (k + 1) / n * 6.283; B.tri([x, y, z], [x + Math.cos(a) * r, y + Math.sin(a) * r, z], [x + Math.cos(b) * r, y + Math.sin(b) * r, z], c, [x, y, z - 1]); } }
 function mFlag(B, x, z, h) { B.box(x, 0, z, 0.018, h, 0.018, '#d0d3d6'); B.box(x + 0.07, h - 0.1, z, 0.12, 0.08, 0.006, '#3d6b8c'); }
 
+
+// a cylinder lying along +z: radius r0 at z0, r1 at z0 + len (fuselages, hubs, barrel roofs, windsocks)
+function mHcyl(B, x, y, z0, r0, r1, len, seg, col) {
+  const c = hex(col), n = seg || 10, z1 = z0 + len, cen = [x, y, z0 + len / 2];
+  for (let k = 0; k < n; k++) {
+    const a = k / n * 6.283, b = (k + 1) / n * 6.283;
+    const p0 = [x + Math.cos(a) * r0, y + Math.sin(a) * r0, z0], p1 = [x + Math.cos(b) * r0, y + Math.sin(b) * r0, z0];
+    const q0 = [x + Math.cos(a) * r1, y + Math.sin(a) * r1, z1], q1 = [x + Math.cos(b) * r1, y + Math.sin(b) * r1, z1];
+    if (r1 > 1e-4) B.quad(p0, p1, q1, q0, c, cen); else B.tri(p0, p1, [x, y, z1], c, cen);
+    if (r0 > 1e-4) B.tri([x, y, z0], p1, p0, c, cen);
+    if (r1 > 1e-4) B.tri([x, y, z1], q0, q1, c, cen);
+  }
+}
+// a car park laid on top of the plinth (x,z centre)
+function mLot2(B, w, d, x, z) { B.box(x, 0.021, z, w, 0.006, d, '#55585c'); for (let k = -3; k <= 3; k++) B.box(x + k * w / 7, 0.028, z, 0.012, 0.002, d * 0.6, '#e8e4dc'); }
+// a parasol colour slightly lighter than the awning
+function k2(c) { const h = hex(c); return '#' + h.map(v => Math.min(255, Math.round(v * 255 * 1.15 + 20)).toString(16).padStart(2, '0')).join(''); }
+// vehicles, built facing +z with their wheels on y = 0 (also used as moving traffic)
+function bus(B, col) { B.box(0, 0.04, 0, 0.17, 0.2, 0.62, col); B.box(0, 0.12, 0, 0.175, 0.08, 0.6, '#3a4a58'); B.box(0, 0.24, 0, 0.16, 0.012, 0.6, '#e9e9e6'); B.box(0, 0.06, 0.312, 0.15, 0.1, 0.006, '#e9e9e6'); for (const z of [-0.2, 0.2]) for (const x of [-0.085, 0.085]) B.box(x, 0, z, 0.02, 0.06, 0.07, '#2a2b2e'); }
+function fireTruck(B) { B.box(0, 0.04, -0.05, 0.18, 0.18, 0.42, '#c8402f'); B.box(0, 0.04, 0.22, 0.17, 0.16, 0.14, '#c8402f'); B.box(0, 0.13, 0.285, 0.15, 0.06, 0.006, '#a9bccb'); B.box(0, 0.22, -0.05, 0.08, 0.03, 0.44, '#d6d9db'); B.box(0, 0.205, 0.2, 0.12, 0.02, 0.03, '#4f8fd0'); for (const z of [-0.17, 0.05, 0.22]) for (const x of [-0.09, 0.09]) B.box(x, 0, z, 0.02, 0.06, 0.06, '#2a2b2e'); }
+function plane(B, col, stripe) { mHcyl(B, 0, 0.12, -0.32, 0.025, 0.055, 0.5, 8, col); mHcyl(B, 0, 0.12, 0.18, 0.055, 0.012, 0.13, 8, col); B.box(0, 0.12, 0.03, 0.62, 0.015, 0.12, col); B.box(0, 0.13, -0.27, 0.22, 0.012, 0.07, col); B.box(0, 0.13, -0.27, 0.012, 0.12, 0.08, stripe); B.box(0, 0.115, 0.04, 0.6, 0.004, 0.03, stripe); B.box(0, 0.12, 0.32, 0.012, 0.11, 0.02, '#3a3d42'); for (const x of [-0.08, 0.08]) B.box(x, 0, 0.05, 0.01, 0.07, 0.01, '#3a3d42'); B.box(0, 0, -0.2, 0.01, 0.06, 0.01, '#3a3d42'); }
+
 function modernModel(type, level, variant) {
   const B = new Builder(), W = new Builder();
   const v = variant | 0, r = k => hash(v * 31 + k * 7 + level), side = MSIDE[v % MSIDE.length], brick = MBRICK[v % MBRICK.length], roof = MROOF[(v >> 2) % MROOF.length];
@@ -345,6 +367,126 @@ function modernModel(type, level, variant) {
       B.box(0, 0, 0.62, 1.6, 0.012, 0.6, '#cbc6bc'); mFlag(B, 0, 0.62, 1.2);
       break;
     }
+    case 'supermarket': { // big box with a glass front, a coloured sign band and a car park
+      pl(1.94); B.box(0, 0.02, -0.38, 1.82, 0.56, 1.1, '#e9e4d9'); mFlat(B, 1.82, 1.1, 0.58, '#7a7d80', 5, v);
+      B.box(0, 0.44, 0.172, 1.82, 0.12, 0.02, '#2f8a4f'); B.box(0, 0.45, 0.184, 0.7, 0.08, 0.008, '#f4f1e8');
+      W.box(-0.35, 0.05, 0.176, 0.9, 0.32, 0.012, WIN); B.box(0.45, 0.02, 0.176, 0.32, 0.36, 0.012, '#a9bccb');
+      B.box(0.45, 0.38, 0.27, 0.5, 0.03, 0.2, '#2f8a4f'); for (const x of [0.24, 0.66]) B.box(x, 0.02, 0.36, 0.025, 0.36, 0.025, '#d6d9db');
+      mLot2(B, 1.82, 0.7, 0, 0.58); for (let k = 0; k < 5; k++) if (r(k) < 0.75) mCar(B, -0.72 + k * 0.36, 0.6, 0, CARS[(v + k) % CARS.length]);
+      B.box(-0.82, 0.02, 0.3, 0.18, 0.1, 0.06, '#b9bdc0'); B.box(0.82, 0.02, 0.3, 0.06, 0.18, 0.06, '#3a3d42');
+      break;
+    }
+    case 'cafe': { // a little café: big windows, striped awning, tables and parasols on the pavement
+      pl(0.94); const C = ['#2f6f6a', '#8a3b3b', '#3d5a80'][v % 3];
+      B.box(0, 0.02, -0.12, 0.7, 0.44, 0.5, ['#efe6d6', '#e3d3bf', '#d8dfd8'][v % 3]); mFlat(B, 0.7, 0.5, 0.46, '#6b6e70', 1, v);
+      B.box(0, 0.36, 0.13, 0.7, 0.08, 0.02, C); W.box(-0.13, 0.06, 0.135, 0.34, 0.24, 0.012, WIN); mDoor(B, 0.21, 0.131, '#a9bccb');
+      for (let k = 0; k < 6; k++) B.box(-0.3 + k * 0.12, 0.31, 0.2, 0.06, 0.012, 0.14, k % 2 ? '#f4f1e8' : C);
+      for (const [x, z] of [[-0.24, 0.36], [0.12, 0.38]]) { B.cyl(x, 0.02, z, 0.06, 0.06, 0.012, 10, '#f2ede3'); B.box(x, 0.02, z, 0.012, 0.1, 0.012, '#3a3d42'); B.cyl(x, 0.11, z, 0.06, 0.06, 0.012, 10, '#f2ede3'); B.box(x, 0.12, z, 0.01, 0.16, 0.01, '#d6d1c7'); B.cyl(x, 0.27, z, 0.13, 0.01, 0.06, 8, k2(C)); for (const d of [-0.08, 0.08]) B.box(x + d, 0.02, z, 0.04, 0.07, 0.04, '#5a4a3f'); }
+      break;
+    }
+    case 'gasstation': { // canopy over two pumps, a little shop, and a price sign
+      pl(0.94); B.box(-0.2, 0.02, -0.28, 0.5, 0.3, 0.34, '#efece6'); mFlat(B, 0.5, 0.34, 0.32, '#6b6e70', 1, v); W.box(-0.2, 0.06, -0.106, 0.34, 0.16, 0.012, WIN);
+      B.box(0.06, 0.4, 0.12, 0.84, 0.06, 0.5, '#f2f0ea'); B.box(0.06, 0.4, 0.12, 0.86, 0.025, 0.52, '#c8402f');
+      for (const x of [-0.24, 0.36]) B.box(x, 0.02, 0.12, 0.04, 0.38, 0.04, '#d6d9db');
+      for (const x of [-0.06, 0.18]) { B.box(x, 0.02, 0.12, 0.08, 0.16, 0.06, '#e8e4dc'); B.box(x, 0.12, 0.152, 0.06, 0.04, 0.006, '#c8402f'); }
+      B.box(0.38, 0.02, -0.34, 0.03, 0.5, 0.03, '#8a8f96'); B.box(0.38, 0.44, -0.34, 0.14, 0.2, 0.03, '#c8402f'); B.box(0.38, 0.47, -0.32, 0.1, 0.12, 0.006, '#f4f1e8');
+      if (r(2) < 0.6) mCar(B, -0.06, 0.28, 0, CARS[v % CARS.length]);
+      break;
+    }
+    case 'hotel': { // eight storeys, balconies, a rooftop sign and a porte-cochère
+      pl(1.94); const h = 2.7, col = ['#e6dccb', '#d9e0e3', '#efe9df'][v % 3];
+      B.box(0, 0.02, -0.15, 1.2, h, 0.95, col); mFlat(B, 1.2, 0.95, h + 0.02, '#5d6064', 2, v + 5);
+      mGrid(W, 1.2, 0.95, 0.42, 7, 0.32, 0.14, 0.2, 'all');
+      for (let f = 1; f < 8; f++) B.box(0, 0.08 + f * 0.32, 0.36, 1.1, 0.02, 0.1, '#bdb8af');
+      B.box(0, 0.02, 0.33, 0.9, 0.36, 0.02, '#7d97a8'); B.box(0, 0.38, 0.55, 1.0, 0.04, 0.48, '#3f4652'); for (const x of [-0.45, 0.45]) B.box(x, 0.02, 0.75, 0.04, 0.36, 0.04, '#d6d1c7');
+      B.box(0, h + 0.05, 0.3, 0.7, 0.18, 0.04, '#3f4652'); B.box(0, h + 0.08, 0.322, 0.6, 0.11, 0.006, '#e9c46a');
+      for (const x of [-0.8, 0.8]) mTree(B, x, 0.7, 1.0);
+      break;
+    }
+    case 'cinema': { // a tall box with a marquee and posters
+      pl(1.94); B.box(0, 0.02, -0.2, 1.6, 0.9, 1.3, '#3f4652'); mFlat(B, 1.6, 1.3, 0.92, '#5d6064', 3, v);
+      B.box(0, 0.02, 0.46, 1.0, 0.5, 0.04, '#7a2f3a'); B.box(0, 0.5, 0.56, 1.3, 0.12, 0.28, '#e9e2d3'); B.box(0, 0.53, 0.703, 1.2, 0.07, 0.006, '#c8402f');
+      for (let k = 0; k < 3; k++) { B.box(-0.6 + k * 0.6, 0.12, 0.482, 0.22, 0.3, 0.006, ['#e9c46a', '#5a8fb3', '#b5523b'][k]); }
+      W.box(0, 0.03, 0.482, 0.4, 0.28, 0.012, WIN);
+      B.box(0.62, 0.02, 0.42, 0.18, 1.2, 0.08, '#c8402f'); B.box(0.62, 0.3, 0.465, 0.12, 0.8, 0.006, '#f4f1e8');
+      break;
+    }
+    case 'sportsfield': { // a football pitch, two goals and some bleachers
+      B.box(0, -0.005, 0, 1.92, 0.025, 1.92, '#5e9e4a');
+      for (let k = 0; k < 6; k++) B.box(-0.8 + k * 0.32, 0.021, 0.08, 0.16, 0.002, 1.3, '#6aab55');
+      const ln = '#f4f1e8'; B.box(0, 0.023, 0.08, 1.5, 0.002, 0.02, ln); B.box(0, 0.023, 0.73, 1.5, 0.002, 0.02, ln); B.box(0, 0.023, -0.57, 1.5, 0.002, 0.02, ln);
+      for (const x of [-0.75, 0.75]) B.box(x, 0.023, 0.08, 0.02, 0.002, 1.3, ln); B.cyl(0, 0.023, 0.08, 0.2, 0.2, 0.002, 18, ln); B.cyl(0, 0.024, 0.08, 0.18, 0.18, 0.002, 18, '#5e9e4a');
+      for (const z of [-0.55, 0.71]) { B.box(-0.18, 0.02, z, 0.02, 0.16, 0.02, ln); B.box(0.18, 0.02, z, 0.02, 0.16, 0.02, ln); B.box(0, 0.17, z, 0.38, 0.02, 0.02, ln); }
+      for (let k = 0; k < 3; k++) B.box(0, 0.02 + k * 0.06, -0.78 - k * 0.05, 1.3, 0.06, 0.06, '#9aa3ab');
+      break;
+    }
+    case 'stadium': { // a bowl of stands round a pitch, a roof ring and four floodlight towers
+      B.box(0, -0.04, 0, 2.94, 0.06, 2.94, '#a39c90');
+      B.box(0, 0.02, 0, 2.2, 0.02, 1.6, '#5e9e4a'); for (let k = 0; k < 7; k++) B.box(-0.96 + k * 0.32, 0.041, 0, 0.16, 0.002, 1.5, '#6aab55');
+      B.box(0, 0.043, 0, 1.9, 0.002, 0.02, '#f4f1e8'); B.cyl(0, 0.043, 0, 0.2, 0.2, 0.002, 18, '#f4f1e8');
+      const seat = ['#2f5f8a', '#c8402f'][v % 2];
+      for (let k = 0; k < 4; k++) { const y = 0.04 + k * 0.12; B.box(0, y, -0.95 - k * 0.1, 2.5, 0.12, 0.1, k % 2 ? seat : '#d6d9db'); B.box(0, y, 0.95 + k * 0.1, 2.5, 0.12, 0.1, k % 2 ? seat : '#d6d9db'); B.box(-1.25 - k * 0.1, y, 0, 0.1, 0.12, 2.0, k % 2 ? seat : '#d6d9db'); B.box(1.25 + k * 0.1, y, 0, 0.1, 0.12, 2.0, k % 2 ? seat : '#d6d9db'); }
+      B.box(0, 0.04, -1.38, 2.9, 0.62, 0.06, '#bdb8af'); B.box(0, 0.04, 1.38, 2.9, 0.62, 0.06, '#bdb8af'); B.box(-1.42, 0.04, 0, 0.06, 0.62, 2.8, '#bdb8af'); B.box(1.42, 0.04, 0, 0.06, 0.62, 2.8, '#bdb8af');
+      B.box(0, 0.68, -1.2, 2.9, 0.04, 0.42, '#e9e9e6'); B.box(0, 0.68, 1.2, 2.9, 0.04, 0.42, '#e9e9e6');
+      for (const [x, z] of [[-1.38, -1.38], [1.38, -1.38], [-1.38, 1.38], [1.38, 1.38]]) { B.box(x, 0.04, z, 0.06, 1.4, 0.06, '#8a8f96'); B.box(x, 1.42, z, 0.24, 0.12, 0.08, '#5d6064'); W.box(x - Math.sign(x) * 0.0, 1.43, z - Math.sign(z) * 0.045, 0.2, 0.08, 0.012, WIN); }
+      W.box(0, 0.3, 1.415, 0.6, 0.12, 0.012, WIN);
+      break;
+    }
+    case 'firestation': { // red brick, three big bay doors, a hose tower and a fire truck out front
+      pl(1.94); B.box(-0.15, 0.02, -0.25, 1.4, 0.62, 1.1, '#a8473a'); mFlat(B, 1.4, 1.1, 0.64, '#5d6064', 2, v);
+      for (let k = 0; k < 3; k++) { const x = -0.6 + k * 0.45; B.box(x, 0.02, 0.306, 0.36, 0.42, 0.012, '#e9e4d9'); for (let q = 1; q < 6; q++) B.box(x, 0.02 + q * 0.07, 0.313, 0.36, 0.006, 0.004, '#c9c4bb'); }
+      B.box(-0.15, 0.48, 0.31, 1.3, 0.08, 0.02, '#f4f1e8'); mGrid(W, 1.4, 1.1, 0.5, 1, 0.12, 0.1, 0.08, 'back');
+      B.box(0.75, 0.02, -0.55, 0.32, 1.3, 0.32, '#8f3c31'); mFlat(B, 0.32, 0.32, 1.32, '#5d6064', 0, v); W.box(0.75, 0.9, -0.385, 0.1, 0.2, 0.012, WIN);
+      mAt(B, -0.6, 0.72, 0); fireTruck(B); mReset(B);
+      break;
+    }
+    case 'busdepot': { // a long open shed with buses parked in bays and an office
+      pl(1.94); B.box(0, 0.02, 0.62, 1.86, 0.012, 0.6, '#5a5d61');
+      for (const x of [-0.85, 0.85]) for (const z of [-0.85, 0.15]) B.box(x, 0.02, z, 0.05, 0.6, 0.05, '#8a8f96');
+      B.box(0, 0.62, -0.35, 1.86, 0.04, 1.1, '#5d6064'); B.box(0, 0.58, -0.35, 1.86, 0.04, 1.12, '#d6d9db');
+      for (let k = 0; k < 4; k++) { mAt(B, -0.66 + k * 0.44, -0.35, 0); bus(B, ['#e3b23c', '#2f7c78', '#e3b23c', '#c8402f'][(v + k) % 4]); mReset(B); }
+      B.box(0.65, 0.02, 0.62, 0.5, 0.32, 0.4, '#e9e4d9'); mFlat(B, 0.5, 0.4, 0.34, '#6b6e70', 1, v); W.box(0.65, 0.08, 0.826, 0.36, 0.14, 0.012, WIN);
+      break;
+    }
+    case 'windturbine': { // a tall white tower and nacelle; the blades turn in the world
+      B.box(0, -0.04, 0, 0.5, 0.06, 0.5, '#bdb8af'); B.cyl(0, 0.02, 0, 0.09, 0.05, 2.3, 12, '#f2f2ef'); B.box(0, 2.28, -0.04, 0.12, 0.12, 0.3, '#e9e9e6'); mHcyl(B, 0, 2.34, 0.11, 0.05, 0.015, 0.1, 8, '#e9e9e6');
+      break;
+    }
+    case 'solarfarm': { // rows of tilted panels behind a fence
+      B.box(0, -0.005, 0, 1.92, 0.025, 1.92, '#9fae86');
+      for (let row = 0; row < 5; row++) for (let k = 0; k < 2; k++) { const z = -0.72 + row * 0.36, x = -0.45 + k * 0.9; B.at(x, 0.08, z, 0); B.quad([-0.4, 0, 0.1], [0.4, 0, 0.1], [0.4, 0.16, -0.1], [-0.4, 0.16, -0.1], hex('#2c3e5c'), [0, 1, 0.8]); B.box(0, -0.06, 0, 0.02, 0.1, 0.02, '#8a8f96'); for (let q = -3; q <= 3; q++) B.beam([q * 0.11, 0.003, 0.098], [q * 0.11, 0.163, -0.098], 0.004, 0.004, '#8ea1bf'); mReset(B); }
+      for (const z of [-0.95, 0.95]) B.box(0, 0.02, z, 1.9, 0.14, 0.008, '#a9aeb3'); for (const x of [-0.95, 0.95]) B.box(x, 0.02, 0, 0.008, 0.14, 1.9, '#a9aeb3');
+      break;
+    }
+    case 'powerplant': { // turbine hall, a hyperbolic cooling tower and two stacks
+      pl(1.94); B.box(-0.35, 0.02, 0.25, 1.1, 0.7, 1.2, '#b9b6af'); mFlat(B, 1.1, 1.2, 0.72, '#5d6064', 4, v); mGrid(W, 1.1, 1.2, 0.3, 1, 0.3, 0.16, 0.12, 'front');
+      B.cyl(0.5, 0.02, -0.45, 0.48, 0.32, 0.8, 18, '#d8d6d0'); B.cyl(0.5, 0.82, -0.45, 0.32, 0.36, 0.5, 18, '#d8d6d0'); B.cyl(0.5, 1.31, -0.45, 0.33, 0.33, 0.02, 18, '#6b6e70');
+      for (const [x, z] of [[-0.75, -0.6], [-0.45, -0.75]]) { B.cyl(x, 0.02, z, 0.08, 0.06, 1.9, 10, '#c9c4bb'); B.cyl(x, 1.6, z, 0.066, 0.064, 0.12, 10, '#c8402f'); }
+      for (let k = 0; k < 3; k++) B.box(0.7, 0.02, 0.25 + k * 0.22, 0.24, 0.24, 0.16, '#8a8f96');
+      break;
+    }
+    case 'skyscraper': { // a glass tower that steps back near the top, with a crown and a spire
+      pl(1.94); const h1 = 3.6, h2 = 1.0, glass = ['#6f8fa6', '#7d9aa8', '#5f7d8f'][v % 3];
+      B.box(0, 0.02, 0, 1.3, 0.5, 1.3, '#d6d9db');
+      B.box(0, 0.5, 0, 1.2, h1, 1.2, glass); mGrid(W, 1.2, 1.2, 0.56, 12, 0.3, 0.2, 0.2, 'all');
+      for (let f = 0; f < 12; f++) B.box(0, 0.78 + f * 0.3, 0, 1.215, 0.02, 1.215, '#c8ced3');
+      for (const [x, z] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B.box(x, 0.5, z, 0.06, h1, 0.06, '#c8ced3');
+      B.box(0, 0.5 + h1, 0, 0.9, h2, 0.9, glass); mGrid(W, 0.9, 0.9, 0.56 + h1, 3, 0.3, 0.18, 0.2, 'all');
+      B.box(0, 0.5 + h1 + h2, 0, 0.94, 0.08, 0.94, '#c8ced3'); B.cyl(0, 0.58 + h1 + h2, 0, 0.04, 0.01, 0.8, 6, '#d6d9db');
+      W.box(0, 0.06, 0.656, 0.6, 0.36, 0.012, WIN); B.box(0, 0.44, 0.75, 0.9, 0.03, 0.2, '#3f4652');
+      break;
+    }
+    case 'airfield': { // a short runway, a hangar, a little control tower, a windsock and a parked plane
+      B.box(0, -0.04, 0, 2.94, 0.06, 2.94, '#8faa6e'); B.box(0.35, 0.02, 0, 0.62, 0.012, 2.9, '#4f5357');
+      for (let k = 0; k < 7; k++) B.box(0.35, 0.033, -1.2 + k * 0.4, 0.03, 0.002, 0.2, '#f4f1e8');
+      for (const z of [-1.38, 1.38]) for (let k = 0; k < 5; k++) B.box(0.13 + k * 0.11, 0.033, z, 0.05, 0.002, 0.1, '#f4f1e8');
+      B.box(-0.45, 0.02, 0.2, 0.9, 0.012, 1.3, '#5a5d61');
+      B.at(-0.95, 0.02, -0.75, 0); B.box(0, 0, 0, 0.9, 0.42, 0.8, '#c9cbcc'); mHcyl(B, 0, 0.42, -0.4, 0.45, 0.45, 0.8, 12, '#a9aeb3'); B.box(0, 0, 0.405, 0.7, 0.36, 0.01, '#8a8f96'); mReset(B);
+      B.box(-1.1, 0.02, 0.85, 0.22, 0.6, 0.22, '#e9e4d9'); B.box(-1.1, 0.62, 0.85, 0.32, 0.18, 0.32, '#7d97a8'); W.box(-1.1, 0.64, 1.012, 0.28, 0.13, 0.012, WIN); B.box(-1.1, 0.8, 0.85, 0.36, 0.03, 0.36, '#3f4652');
+      B.box(1.05, 0.02, 1.1, 0.02, 0.4, 0.02, '#8a8f96'); B.at(1.05, 0, 1.1, Math.PI / 2); mHcyl(B, 0, 0.4, 0, 0.03, 0.015, 0.16, 8, '#e07b39'); mReset(B);
+      mAt(B, -0.45, 0.3, 2.6); plane(B, '#f2f2ef', '#c8402f'); mReset(B);
+      break;
+    }
     default: return null;
   }
   return { B, W };
@@ -422,5 +564,42 @@ function modernHelmModel(kind) {
   const B = new Builder();
   if (kind === 'horn') { smoothBlob(B, 0, 0.3, 0, 0.082, 0.06, 0.088, '#5d6b4a', 0); B.cyl(0, 0.278, 0, 0.1, 0.1, 0.01, 10, '#55603f'); }
   else { B.cyl(0, 0.29, 0, 0.085, 0.08, 0.06, 10, '#22324a'); B.box(0, 0.29, 0.07, 0.12, 0.012, 0.07, '#1a2533'); B.box(0, 0.33, 0.075, 0.03, 0.025, 0.006, '#d9b45a'); }
+  return B;
+}
+
+/* ---------- Street furniture and city traffic (modern islands) ----------
+   Static parts and their glowing parts are separate meshes, so lamps, signals and headlights can light up at night. */
+function streetLampModel() { const B = new Builder(); B.cyl(0, 0, 0, 0.018, 0.014, 0.62, 6, '#4a4f55'); B.box(0, 0.6, 0.07, 0.018, 0.018, 0.16, '#4a4f55'); B.box(0, 0.575, 0.15, 0.06, 0.03, 0.08, '#3a3d42'); return B; }
+function lampGlowModel() { const B = new Builder(); B.box(0, 0.566, 0.15, 0.05, 0.012, 0.07, '#ffffff'); return B; }
+function trafficLightModel() { const B = new Builder(); B.cyl(0, 0, 0, 0.016, 0.014, 0.5, 6, '#3a3d42'); B.box(0, 0.36, 0.03, 0.06, 0.17, 0.045, '#2a2b2e'); B.box(0, 0.52, 0.03, 0.07, 0.012, 0.05, '#2a2b2e'); return B; }
+function bulbModel() { const B = new Builder(); B.box(0, 0, 0.055, 0.032, 0.032, 0.008, '#ffffff'); return B; }
+function streetTreeModel() { const B = new Builder(); B.box(0, 0, 0, 0.1, 0.012, 0.1, '#6b5a4a'); B.cyl(0, 0, 0, 0.016, 0.012, 0.22, 5, '#6b4a33'); smoothBlob(B, 0, 0.3, 0, 0.1, 0.1, 0.1, '#5f9a4b', 0); smoothBlob(B, 0.04, 0.36, 0.02, 0.07, 0.07, 0.07, '#6aa553', 0); return B; }
+function busStopModel() { const B = new Builder(); B.box(0, 0, -0.04, 0.32, 0.012, 0.12, '#bdb8af'); for (const x of [-0.14, 0.14]) B.box(x, 0, -0.08, 0.012, 0.22, 0.012, '#8a8f96'); B.box(0, 0.22, -0.05, 0.34, 0.015, 0.14, '#3f6f8a'); B.box(0, 0.06, -0.085, 0.3, 0.15, 0.006, '#a9bccb'); B.box(0, 0.04, -0.06, 0.22, 0.015, 0.04, '#6b4a33'); B.box(0.2, 0, 0.03, 0.012, 0.3, 0.012, '#8a8f96'); B.box(0.2, 0.28, 0.03, 0.07, 0.07, 0.008, '#3f6f8a'); return B; }
+// the glowing parts of any vehicle: white headlights at the front (+z), red tail lights at the back
+function vehicleLightsModel(len, w, y) { const B = new Builder(); for (const x of [-w, w]) { B.box(x, y, len, 0.03, 0.02, 0.006, '#fff6d8'); B.box(x, y, -len, 0.03, 0.02, 0.006, '#ff3b2f'); } return B; }
+function busModel(col) { const B = new Builder(); bus(B, col); return B; }
+function fireTruckModel() { const B = new Builder(); fireTruck(B); return B; }
+function policeCarModel() { const B = new Builder(); B.box(0, 0.03, 0, 0.16, 0.065, 0.32, '#f2f2ef'); B.box(0, 0.03, 0.02, 0.165, 0.035, 0.18, '#22385a'); B.box(0, 0.095, -0.015, 0.14, 0.06, 0.17, '#c9d6de'); B.box(0, 0.155, -0.015, 0.142, 0.01, 0.17, '#f2f2ef'); for (const [a, b] of [[-0.08, 0.1], [0.08, 0.1], [-0.08, -0.1], [0.08, -0.1]]) B.box(a, 0, b, 0.025, 0.055, 0.06, '#2a2b2e'); return B; }
+function ambulanceModel() { const B = new Builder(); B.box(0, 0.03, -0.04, 0.17, 0.17, 0.3, '#f4f2ec'); B.box(0, 0.03, 0.15, 0.16, 0.12, 0.12, '#f4f2ec'); B.box(0, 0.1, 0.212, 0.14, 0.05, 0.006, '#a9bccb'); B.box(0, 0.1, -0.04, 0.172, 0.03, 0.3, '#c8402f'); B.box(0.086, 0.13, -0.05, 0.004, 0.06, 0.02, '#c8402f'); B.box(0.086, 0.15, -0.05, 0.004, 0.02, 0.06, '#c8402f'); for (const [a, b] of [[-0.085, 0.14], [0.085, 0.14], [-0.085, -0.12], [0.085, -0.12]]) B.box(a, 0, b, 0.02, 0.055, 0.06, '#2a2b2e'); return B; }
+// a light bar on top of police cars, ambulances and fire trucks: blue on one side, red on the other
+function sirenModel(y) { const B = new Builder(); B.box(-0.03, y, 0, 0.05, 0.02, 0.03, '#3d7cff'); B.box(0.03, y, 0, 0.05, 0.02, 0.03, '#ff3b2f'); return B; }
+function bladesModel() { const B = new Builder(); for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; B.tri([0, 0, 0], [Math.cos(a - 0.05) * 0.95, Math.sin(a - 0.05) * 0.95, 0], [Math.cos(a + 0.06) * 0.95, Math.sin(a + 0.06) * 0.95, 0.01], hex('#f2f2ef'), [0, 0, -1]); B.tri([0, 0, 0], [Math.cos(a + 0.06) * 0.95, Math.sin(a + 0.06) * 0.95, 0.01], [Math.cos(a - 0.05) * 0.95, Math.sin(a - 0.05) * 0.95, 0], hex('#e9e9e6'), [0, 0, 1]); } return B; }
+function planeModel() { const B = new Builder(); plane(B, '#f2f2ef', '#c8402f'); return B; }
+function craneModel() { // a tower crane; its jib is a separate piece that slews
+  const B = new Builder(); for (const [x, z] of [[-0.05, -0.05], [0.05, -0.05], [-0.05, 0.05], [0.05, 0.05]]) B.box(x, 0, z, 0.012, 2.3, 0.012, '#e3b23c');
+  for (let k = 0; k < 11; k++) { B.box(0, 0.1 + k * 0.21, 0.05, 0.1, 0.008, 0.008, '#e3b23c'); B.box(0.05, 0.1 + k * 0.21, 0, 0.008, 0.008, 0.1, '#e3b23c'); }
+  B.box(0, 2.3, 0, 0.14, 0.12, 0.14, '#e9e4d9'); B.box(0, 0, 0, 0.3, 0.06, 0.3, '#9a958c'); return B; }
+function jibModel() { const B = new Builder(); B.box(0, 2.42, 0.45, 0.06, 0.06, 1.4, '#e3b23c'); B.box(0, 2.42, -0.4, 0.06, 0.06, 0.4, '#e3b23c'); B.box(0, 2.3, -0.5, 0.16, 0.14, 0.16, '#8a8f96'); B.box(0, 2.48, 0, 0.012, 0.18, 0.012, '#e3b23c'); B.box(0, 1.6, 0.95, 0.006, 0.82, 0.006, '#3a3d42'); B.box(0, 1.56, 0.95, 0.05, 0.04, 0.05, '#3a3d42'); return B; }
+// a stadium crowd: thousands of fans as tiny coloured specks along the four stands
+function crowdModel() {
+  const B = new Builder(), C = ['#c8402f', '#2f5f8a', '#f2f2ef', '#e3b23c', '#3a3d42', '#2f7c78'];
+  for (let k = 0; k < 4; k++) {
+    const y = 0.16 + k * 0.12;
+    for (let n = 0; n < 34; n++) {
+      const u = -1.2 + n * 0.073 + (hash(k * 97 + n) - 0.5) * 0.03, c = C[Math.floor(hash(k * 31 + n * 7) * C.length)];
+      B.box(u, y, -0.95 - k * 0.1, 0.035, 0.05, 0.035, c); B.box(u, y, 0.95 + k * 0.1, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 13 + n * 5) * C.length)]);
+      if (n < 26) { const v = -0.95 + n * 0.073; B.box(-1.25 - k * 0.1, y, v, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 7 + n * 3) * C.length)]); B.box(1.25 + k * 0.1, y, v, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 5 + n * 11) * C.length)]); }
+    }
+  }
   return B;
 }

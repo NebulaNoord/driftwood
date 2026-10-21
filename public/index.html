@@ -128,7 +128,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 @keyframes rise { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -46px); opacity: 0; } }
 
 /* resources */
-#res { position: absolute; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 12px); left: max(12px, env(safe-area-inset-left, 0px)); display: flex; gap: 4px; padding: 6px 8px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 24px - 230px); }
+#res { position: absolute; z-index: 5; top: calc(env(safe-area-inset-top, 0px) + 12px); left: max(12px, env(safe-area-inset-left, 0px)); display: flex; gap: 4px; padding: 6px 8px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 24px - 430px); }
 .r { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 12px; min-width: 0; }
 .r svg { flex: none; }
 .r b { font-family: var(--f-num); font-weight: 800; font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; padding-top: 3px; }
@@ -329,6 +329,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--sea); outli
 .era:hover { transform: translateY(-1px); background: #e6d6b8; }
 .era.on { background: #fffaf0; border-color: var(--coral); box-shadow: 0 0 0 2px var(--coral); }
 @media (max-width: 560px) { .eras { grid-template-columns: 1fr; } .era { flex-direction: row; flex-wrap: wrap; align-items: center; } .era span { flex-basis: 100%; } }
+.r.rank { gap: 6px; } .r.rank .rk { font-size: 14px; display: block; white-space: nowrap; }
+.rbar { display: block; width: 72px; height: 5px; border-radius: 3px; background: rgba(58, 46, 38, 0.15); overflow: hidden; margin-top: 3px; } .rbar > i { display: block; height: 100%; background: #c9952b; border-radius: 3px; }
+.ranks { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ranks li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline; padding: 7px 12px; border-radius: 10px; background: var(--paper-2); color: var(--ink-soft); }
+.ranks li b { color: var(--ink); font-weight: 800; } .ranks li span { font-size: 13px; font-weight: 700; } .ranks li em { font-style: normal; font-weight: 800; font-size: 13px; color: #a8761b; min-width: 76px; text-align: right; }
+.ranks li.done { opacity: 0.6; } .ranks li.now { background: #fff6dc; box-shadow: 0 0 0 2px #c9952b; }
+.rankup { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; } .rankup h2 { font-size: 32px; margin: 0; }
+.rankup .burst { animation: rankpop 0.9s cubic-bezier(.34,1.56,.64,1); filter: drop-shadow(0 6px 10px rgba(168, 118, 27, 0.35)); }
+@keyframes rankpop { 0% { transform: scale(0.2) rotate(-25deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+.lb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; counter-reset: lb; }
+.lb li { counter-increment: lb; display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: baseline; padding: 6px 10px; border-radius: 9px; background: var(--paper-2); font-weight: 700; font-size: 14px; }
+.lb li::before { content: counter(lb); font-weight: 900; color: #a8761b; } .lb li small { color: var(--ink-soft); font-weight: 700; } .lb li.me { box-shadow: 0 0 0 2px var(--sea); }
 .credit { margin: 10px 0 0; font-size: 11.5px; color: var(--ink-soft); font-weight: 700; text-align: center; }
 #err { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; background: #8fd0e8; z-index: 30; }
 
@@ -545,13 +557,28 @@ const TYPES = {
   cavyard:    { name: 'Cavalry Yard', size: 2, jobs: 2, cost: { wood: 70, stone: 20, gold: 120 }, unlock: 50, build: 2.4, army: 'cav', desc: 'Trains mounted riders, 8 per yard. Fast, tough, and they carry the most loot.' },
   foundry:    { name: 'Cannon Foundry', size: 2, jobs: 3, cost: { wood: 60, stone: 80, gold: 200 }, unlock: 70, build: 3, army: 'can', desc: 'Casts cannons, 4 per foundry. They smash walls and buildings from long range.' },
   warschool:  { name: 'Military School', size: 2, jobs: 3, cost: { wood: 80, stone: 100, gold: 300 }, unlock: 40, unique: true, build: 3, desc: 'Officers train here. Research stronger troops and build bigger warships.' },
-  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
-  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
-  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
+  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', power: 2.5, desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
+  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', power: 4, desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
+  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', power: 0.5, desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
+  // modern city: shops, leisure, services and the power grid. power = megawatts a working building draws, gen = megawatts it makes
+  supermarket: { name: 'Supermarket', size: 2, jobs: 6, radius: 11, cost: { wood: 40, stone: 60, gold: 180 }, prod: { food: 2 }, unlock: 60, build: 2.5, era: 'modern', power: 3, desc: 'Groceries for the neighbourhood. Homes within 11 tiles count as having shops nearby, and it adds 2 food an hour.' },
+  cafe:       { name: 'Café', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 15, gold: 60 }, unlock: 20, build: 1, era: 'modern', power: 0.5, desc: 'Coffee and pastries on the pavement. Homes within 6 tiles are happier.' },
+  gasstation: { name: 'Gas Station', size: 1, jobs: 2, cost: { wood: 15, stone: 25, gold: 80 }, prod: { gold: 1.6 }, unlock: 25, build: 1.2, era: 'modern', power: 1, desc: 'Fuel and snacks for the town’s drivers. Earns more on a busy road.' },
+  hotel:      { name: 'Hotel', size: 2, jobs: 6, cost: { wood: 50, stone: 80, gold: 260 }, prod: { gold: 5 }, unlock: 90, build: 3, era: 'modern', power: 3, desc: 'Visitors stay the night. Earns 50% more by the sea, a park or the stadium.' },
+  cinema:     { name: 'Cinema', size: 2, jobs: 3, radius: 12, cost: { wood: 40, stone: 60, gold: 220 }, unlock: 80, build: 2.5, era: 'modern', power: 2, desc: 'Films every evening. Homes within 12 tiles are happier and pay a little more.' },
+  sportsfield:{ name: 'Sports Field', size: 2, jobs: 0, radius: 9, cost: { wood: 20, stone: 10, gold: 70 }, unlock: 15, build: 1, era: 'modern', power: 0.5, desc: 'Football pitch and bleachers. Homes within 9 tiles are happier.' },
+  stadium:    { name: 'Stadium', size: 3, jobs: 8, radius: 32, unique: true, cost: { wood: 120, stone: 250, gold: 900 }, prod: { gold: 4 }, unlock: 220, build: 5, era: 'modern', power: 6, desc: 'The pride of the city. Every home within 32 tiles is happier, and Saturday match days bring a big crowd and big takings.' },
+  firestation:{ name: 'Fire Station', size: 2, jobs: 4, radius: 14, cost: { wood: 40, stone: 50, gold: 160 }, unlock: 40, build: 2, era: 'modern', power: 1.5, desc: 'Fire trucks on call. Nothing within 14 tiles catches fire, and burnt buildings nearby are repaired for free.' },
+  busdepot:   { name: 'Bus Depot', size: 2, jobs: 4, radius: 18, cost: { wood: 40, stone: 40, gold: 150 }, unlock: 50, build: 2, era: 'modern', power: 1.5, desc: 'City buses run along your roads. Homes within 18 tiles are happier and pay 5% more.' },
+  windturbine:{ name: 'Wind Turbine', size: 1, jobs: 0, cost: { wood: 20, stone: 20, gold: 90 }, unlock: 10, build: 1.2, era: 'modern', gen: 6, desc: 'Clean power: 6 MW, a little more in a strong wind.' },
+  solarfarm:  { name: 'Solar Farm', size: 2, jobs: 0, cost: { wood: 20, stone: 30, gold: 200 }, unlock: 60, build: 1.5, era: 'modern', gen: 14, desc: 'Rows of panels: 14 MW on a clear day, less under cloud, none at night.' },
+  powerplant: { name: 'Power Plant', size: 2, jobs: 6, cost: { wood: 60, stone: 120, gold: 400 }, unlock: 120, build: 3.5, era: 'modern', gen: 45, desc: 'A gas power plant: 45 MW day and night with a full crew. Noisy, so keep homes away.' },
+  skyscraper: { name: 'Office Tower', size: 2, jobs: 20, cost: { wood: 60, stone: 220, gold: 700 }, prod: { gold: 13 }, unlock: 200, build: 5, era: 'modern', power: 6, desc: 'A glass tower with twenty well-paid office jobs.' },
+  airfield:   { name: 'Airfield', size: 3, jobs: 5, unique: true, cost: { wood: 80, stone: 150, gold: 800 }, prod: { gold: 8 }, unlock: 160, build: 4, era: 'modern', power: 3, desc: 'Small planes bring tourists and take off over the island.' },
   guardhouse: { name: 'Guardhouse', size: 1, jobs: 3, cost: { wood: 40, stone: 25, gold: 60 }, unlock: 25, build: 1.4, guard: 'guards', desc: 'Three guards patrol nearby and rush out to fight raiders.' },
 };
-const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'stable', 'shipyard', 'store', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
-const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'store', 'market', 'factory', 'office', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
+const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'skyscraper', 'stable', 'shipyard', 'store', 'market', 'supermarket', 'cafe', 'gasstation', 'hotel', 'cinema', 'sportsfield', 'stadium', 'firestation', 'busdepot', 'windturbine', 'solarfarm', 'powerplant', 'airfield', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
+const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'powerplant', 'firestation', 'store', 'market', 'supermarket', 'cafe', 'gasstation', 'busdepot', 'factory', 'office', 'skyscraper', 'hotel', 'cinema', 'stadium', 'airfield', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
 // raids: how much a raid can carry off, and how long an island is safe afterwards
 // the army: four kinds of troops, trained at their own buildings
 const TROOPS = {
@@ -1036,17 +1063,58 @@ function quayNear(S, b, r) {
   return false;
 }
 function cobbleNext(S, b) { for (const [i, j] of around(b)) if (S.road[ci(i, j)] === 3) return true; return false; }
+/* ---------------- Power (modern islands) ---------------- */
+// supply: the town hall's own hookup, turbines (more in wind), solar (by daylight and cloud), and a crewed power plant
+function genOf(S, b) {
+  const T = TYPES[b.type]; if (!T.gen || !done(b) || b.burnt) return 0;
+  if (b.type === 'windturbine') { const w = S.wx && S.wx.now ? S.wx.now.wind || 0.3 : 0.3; return T.gen * (0.75 + w * 0.8); }
+  if (b.type === 'solarfarm') { const h = S.t % DAY, sun = h > 6 && h < 19 ? Math.sin((h - 6) / 13 * Math.PI) : 0, k = wxKind(S); return T.gen * Math.min(1, sun * 1.4) * (k === 'clear' ? 1 : k === 'fair' ? 0.9 : k === 'cloudy' || k === 'fog' ? 0.5 : 0.3); }
+  if (T.jobs) return T.gen * (b.staff || 0) / T.jobs;
+  return T.gen;
+}
+function power(S) {
+  if (eraOf(S) !== 'modern') { S.power = null; return null; }
+  let supply = 10, demand = 0; // the town hall comes with a small grid hookup
+  for (const b of S.b) {
+    supply += genOf(S, b);
+    const T = TYPES[b.type];
+    if (!done(b) || b.burnt) continue;
+    if (T.power) demand += T.power;
+    if (T.home) demand += (b.res || 0) * 0.06;
+  }
+  const ratio = demand ? Math.min(1, supply / demand) : 1;
+  S.power = { supply: Math.round(supply * 10) / 10, demand: Math.round(demand * 10) / 10, ratio };
+  return S.power;
+}
+/* ---------------- City ranks: a reward each time the town grows into the next one ---------------- */
+const RANKS = [
+  { pop: 0, name: 'Outpost', modern: 'Settlement', gold: 0 }, { pop: 20, name: 'Hamlet', modern: 'Neighbourhood', gold: 150 },
+  { pop: 45, name: 'Village', modern: 'Suburb', gold: 300 }, { pop: 90, name: 'Town', modern: 'Town', gold: 500 },
+  { pop: 160, name: 'Market Town', modern: 'Large Town', gold: 800 }, { pop: 260, name: 'City', modern: 'City', gold: 1200 },
+  { pop: 400, name: 'Great City', modern: 'Big City', gold: 1800 }, { pop: 600, name: 'Capital', modern: 'Metropolis', gold: 3000 },
+];
+function rankOf(S, p) { p = p === undefined ? pop(S) : p; let r = 0; for (let k = 0; k < RANKS.length; k++) if (p >= RANKS[k].pop) r = k; return r; }
+function rankName(S, k) { const R = RANKS[k === undefined ? (S.rank || 0) : k]; return eraOf(S) === 'modern' ? R.modern : R.name; }
+function checkRank(S) {
+  const r = rankOf(S); if (S.rank === undefined) { S.rank = r; return; }
+  if (r <= S.rank) return;
+  S.rank = r; const R = RANKS[r];
+  S.gold += R.gold; S.stats.gold += R.gold;
+  say(S, `Your ${eraOf(S) === 'modern' ? 'town' : 'colony'} is now a ${rankName(S, r)}! +${R.gold} gold.`, 'goal');
+  ev(S, { type: 'rankup', rank: r, gold: R.gold });
+}
 function coverage(S) {
   const ok = (t, needStaff) => S.b.filter(b => b.type === t && b.conn && done(b) && !b.burnt && (!needStaff || b.staff > 0));
-  const L = { market: ok('market', 1).concat(ok('store', 1)), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
+  const L = { market: ok('market', 1).concat(ok('store', 1), ok('supermarket', 1)), cafe: ok('cafe', 1), fun: ok('cinema', 1).concat(ok('sportsfield')), stadium: ok('stadium', 1), fire: ok('firestation', 1), bus: ok('busdepot', 1), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
     plaza: ok('plaza'), clinic: ok('clinic', 1), library: ok('library', 1), academy: ok('academy', 1) };
-  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory');
+  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory' || b.type === 'powerplant' || b.type === 'airfield');
   const light = S.b.some(b => b.type === 'lighthouse' && done(b));
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
   S.foodMood = foodMood;
   const weather = { clear: 2, fair: 1, cloudy: 0, fog: 0, drizzle: -1, rain: -2, storm: -5 }[wxKind(S)] || 0;
   const fxh = fxHappy(S);
+  const pw = power(S), dark = pw ? 1 - pw.ratio : 0;
   let tot = 0, wsum = 0;
   for (const b of S.b) {
     const T = TYPES[b.type];
@@ -1056,6 +1124,7 @@ function coverage(S) {
       market: near('market'), well: near('well'), chapel: near('chapel'), tavern: near('tavern'), school: near('school'), garden: near('garden'),
       orchard: near('orchard', 3.5), plaza: near('plaza'), clinic: near('clinic'), library: near('library'), academy: near('academy'),
       quay: quayNear(S, b, 2), cobble: cobbleNext(S, b),
+      cafe: near('cafe'), fun: near('fun'), stadium: near('stadium'), fire: near('fire'), bus: b.conn && near('bus'),
     };
     let trees = 0;
     for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { const x = b.i + di, y = b.j + dj; if (inB(x, y) && S.tree[ci(x, y)]) trees++; }
@@ -1064,6 +1133,8 @@ function coverage(S) {
     if (c.market) hp += 10; if (c.well) hp += 6; if (c.chapel) hp += 8; if (c.tavern) hp += 8; if (c.school) hp += 5; if (c.garden) hp += 5;
     if (c.orchard) hp += 2; if (c.plaza) hp += 6; if (c.clinic) hp += 6; if (c.library) hp += 4; if (c.academy) hp += 3;
     if (c.quay) hp += 5; if (c.cobble) hp += 3;
+    if (c.cafe) hp += 4; if (c.fun) hp += 5; if (c.stadium) hp += 5; if (c.fire) hp += 3; if (c.bus) hp += 4;
+    if (dark > 0.02) hp -= Math.round(dark * 18);
     hp += Math.min(8, trees * 1.2);
     if (light) hp += 5;
     if (noisy.some(q => bDist(q, b) < 4.5)) hp -= 8;
@@ -1101,6 +1172,10 @@ function prodMult(S, b) {
   if (b.type === 'sawmill' && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) m = 0;
   if ((b.type === 'dock' || b.type === 'port' || b.type === 'shipyard') && quayNear(S, b, 2)) m *= 1.25;
   if (b.type === 'dock' && S.b.some(x => x.type === 'fishhut' && x.res > 0 && bDist(x, b) < 6)) m *= 1.1;
+  if (TYPES[b.type].power && S.power) m *= 0.4 + 0.6 * S.power.ratio;
+  if (b.type === 'hotel' && (distToWater(S, b.i + 1, b.j + 1, 5) <= 5 || S.b.some(x => (x.type === 'garden' || x.type === 'plaza' || x.type === 'stadium') && done(x) && bDist(x, b) <= 8))) m *= 1.5;
+  if (b.type === 'gasstation') { let r = 0; for (const [i, j] of around(b)) if (inB(i, j) && S.road[ci(i, j)]) r++; m *= 0.8 + Math.min(0.6, r * 0.1); }
+  if (b.type === 'stadium' && weekday(S) === 5 && S.t % DAY >= 14 && S.t % DAY < 18) m *= 6;
   const res = Object.keys(TYPES[b.type].prod || {})[0];
   return m * fxMult(S, res) * fxMult(S, b.type);
 }
@@ -1124,7 +1199,7 @@ function taxRate(S) {
   for (const b of S.b) {
     if (!b.res) continue;
     const c = b.cov || {};
-    tax += b.res * 0.05 * (TYPES[b.type].rich || 1) * (c.market ? 1.5 : 1) * (c.school ? 1.15 : 1) * (c.library ? 1.1 : 1) * (c.academy ? 1.2 : 1) * (0.5 + b.happy / 100);
+    tax += b.res * 0.05 * (TYPES[b.type].rich || 1) * (c.market ? 1.5 : 1) * (c.school ? 1.15 : 1) * (c.library ? 1.1 : 1) * (c.academy ? 1.2 : 1) * (c.bus ? 1.05 : 1) * (c.fun ? 1.04 : 1) * (0.5 + b.happy / 100);
   }
   return tax;
 }
@@ -1564,6 +1639,7 @@ function tick(S, dt) {
     else if (b.staff === 0) b.status = 'nostaff';
     else if (b.status !== 'notrees') b.status = '';
     if (b.type === 'bakery' && b.staff && !S.b.some(x => x.type === 'farm' && x.staff > 0 && done(x))) b.status = 'nofarm';
+    if (T.power && S.power && S.power.ratio < 0.75 && b.staff) b.status = 'nopower';
     if (b.type === 'sawmill' && b.staff && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) b.status = 'nolumber';
     const pr = prodOf(S, b);
     if (!pr) continue;
@@ -1649,6 +1725,9 @@ function hourly(S) {
   S.fx = (S.fx || []).filter(f => f.until > S.t);
   staff(S); coverage(S); settleMood(S);
   const p = pop(S), R = rates(S);
+  checkRank(S);
+  if (S.power && S.power.ratio < 0.9 && hr >= 7 && hr <= 21) warnOnce(S, 'power', `The power grid is overloaded: ${Math.round(S.power.supply)} of ${Math.round(S.power.demand)} MW. Build wind turbines, a solar farm or a power plant.`);
+  if (eraOf(S) === 'modern') fires(S, hr, p);
   // morning: weather and the odd surprise
   if (hr === 5) {
     if (dayOf(S) > 0 && rnd(S) < 0.35) {
@@ -1728,6 +1807,28 @@ function hourly(S) {
     if (S.stats.days.length > 30) S.stats.days.shift();
   }
   checkGoals(S);
+}
+
+/* ---------------- Fires (modern islands) ----------------
+   Now and then a building outside every fire station's reach catches fire. A crewed fire station keeps its area safe
+   and repairs burnt buildings nearby, raid damage included, a few hours later. */
+function fireCover(S, b) { return S.b.some(f => f.type === 'firestation' && f.staff > 0 && f.conn && done(f) && !f.burnt && bDist(f, b) <= TYPES.firestation.radius); }
+function fires(S, hr, p) {
+  for (const b of S.b) {
+    if (!b.burnt || !fireCover(S, b)) { if (!b.burnt) b.fixAt = undefined; continue; }
+    if (b.fixAt === undefined) b.fixAt = S.t + 4;
+    else if (S.t >= b.fixAt) { b.burnt = 0; b.fixAt = undefined; say(S, `Firefighters have rebuilt the ${TYPES[b.type].name.toLowerCase()}.`, 'good'); ev(S, { type: 'repaired', id: b.id }); recompute(S); }
+  }
+  if (hr !== 13 || dayOf(S) < 4 || p < 40) return;
+  const risk = Math.min(0.35, 0.08 + S.b.length / 300);
+  if (rnd(S) > risk) return;
+  const pool = S.b.filter(b => b.type !== 'hall' && b.type !== 'pier' && done(b) && !b.burnt && TYPES[b.type].size <= 2 && !fireCover(S, b));
+  if (!pool.length) return;
+  const b = pool[Math.floor(rnd(S) * pool.length)];
+  b.burnt = 1; b.fireAt = S.t;
+  say(S, `Fire! The ${TYPES[b.type].name.toLowerCase()} burnt down. A fire station keeps everything within 14 tiles safe and rebuilds what burns.`, 'bad');
+  ev(S, { type: 'fire', id: b.id });
+  recompute(S);
 }
 
 /* ---------------- Town meetings ---------------- */
@@ -1878,7 +1979,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
-    era: eraOf(S), rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
+    era: eraOf(S), rank: S.rank || 0, rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1923,7 +2024,7 @@ function deserialize(o) {
     weather: ['sun', 'cloud', 'rain'].includes(o.weather) ? o.weather : 'sun', fx: Array.isArray(o.fx) ? o.fx : [], meeting: o.meeting || null, promise: o.promise || null, week: o.week || null, warn: o.warn || {},
     mp: o.mp && typeof o.mp === 'object' ? o.mp : undefined, wall: o.wall ? unb64(o.wall, Uint8Array, N * N) : new Uint8Array(N * N),
     army: o.army && typeof o.army === 'object' ? o.army : undefined,
-    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval',
+    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval', rank: Number.isInteger(o.rank) ? Math.max(0, Math.min(7, o.rank)) : undefined,
   };
   attach(S);
   for (const r of (o.b || [])) {
@@ -1959,7 +2060,7 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
   wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock,
-  ERAS, eraOf, applyEra, eraText };
+  ERAS, eraOf, applyEra, eraText, power, genOf, RANKS, rankOf, rankName, fireCover };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -2182,10 +2283,13 @@ precision highp float; precision highp sampler2DShadow;
 in vec3 vCol; in vec3 vNor; in vec3 vWorld; in vec4 vLight; in float vEmis; in float vLY;
 uniform vec3 uSunDir; uniform vec3 uSunCol; uniform vec3 uSky; uniform vec3 uGround; uniform vec3 uFog; uniform vec2 uFogR;
 uniform vec3 uEye; uniform sampler2DShadow uShadow; uniform float uAlpha; uniform float uShadowOn; uniform float uTexel; uniform vec3 uFlat;
-uniform sampler2D uWear; uniform sampler2D uRoads; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
+uniform sampler2D uWear; uniform sampler2D uRoads; uniform sampler2D uLamp; uniform float uNight; uniform float uTerrain; uniform float uModern; uniform float uWet; uniform float uCloud; uniform vec2 uCloudOff;
 out vec4 o;
 vec4 roadAt(ivec2 c) { if (c.x < 0 || c.y < 0 || c.x > 95 || c.y > 95) return vec4(0.0); return texelFetch(uRoads, c, 0); }
 float roadAny(ivec2 c) { vec4 t = roadAt(c); return max(t.r, max(t.g, t.b)); }
+float roadDeg(ivec2 c) { return roadAny(c + ivec2(1, 0)) + roadAny(c + ivec2(-1, 0)) + roadAny(c + ivec2(0, 1)) + roadAny(c + ivec2(0, -1)); }
+// a proper junction: three or four arms, and not the inside of a wide paved area
+float junction(ivec2 c) { float diag = roadAny(c + ivec2(1, 1)) + roadAny(c + ivec2(-1, 1)) + roadAny(c + ivec2(1, -1)) + roadAny(c + ivec2(-1, -1)); return step(2.5, roadDeg(c)) * step(diag, 1.5); }
 float hsh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(hsh(i), hsh(i + vec2(1, 0)), f.x), mix(hsh(i + vec2(0, 1)), hsh(i + vec2(1, 1)), f.x), f.y); }
@@ -2223,22 +2327,39 @@ void main() {
         float e = min(qx, qz);
         const float rr = 0.2;
         if (qx < rr && qz < rr) e = min(e, rr - length(vec2(rr) - vec2(qx, qz)));
-        float inside = smoothstep(-0.012, 0.012, e), kerb = inside * (1.0 - smoothstep(0.055, 0.075, e));
+        float inside = smoothstep(-0.012, 0.012, e);
+        // a pavement along every open edge, with a kerb line where it meets the carriageway
+        const float sw = 0.13;
+        float walk = 1.0 - smoothstep(sw - 0.006, sw + 0.006, e), kerbLine = smoothstep(sw - 0.014, sw - 0.004, e) * (1.0 - smoothstep(sw + 0.004, sw + 0.014, e));
         vec3 surf;
         if (me.r > 0.5) {
           surf = vec3(0.33, 0.34, 0.36) * (0.92 + 0.12 * vnoise(vWorld.xz * 9.0));
-          float lineX = step(abs(f.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6)) * step(0.5, L * Rt) * step(max(roadAny(c + ivec2(0, -1)), roadAny(c + ivec2(0, 1))), 0.5);
-          float lineZ = step(abs(f.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)) * step(0.5, D * U) * step(max(roadAny(c + ivec2(-1, 0)), roadAny(c + ivec2(1, 0))), 0.5);
-          surf = mix(surf, vec3(0.93, 0.86, 0.55), max(lineX, lineZ) * 0.85);
-        } else if (me.g > 0.5) surf = vec3(0.8, 0.79, 0.76) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0));
+          float deg = roadDeg(c);
+          // zebra crossings on each road arm just before a junction
+          float zebra = 0.0;
+          if (junction(c) < 0.5 && deg <= 3.0) {
+            if (Rt > 0.5 && junction(c + ivec2(1, 0)) > 0.5) zebra = max(zebra, step(0.05, 1.0 - f.x) * step(1.0 - f.x, 0.3) * step(0.5, fract(f.y * 7.0)));
+            if (L > 0.5 && junction(c + ivec2(-1, 0)) > 0.5) zebra = max(zebra, step(0.05, f.x) * step(f.x, 0.3) * step(0.5, fract(f.y * 7.0)));
+            if (U > 0.5 && junction(c + ivec2(0, 1)) > 0.5) zebra = max(zebra, step(0.05, 1.0 - f.y) * step(1.0 - f.y, 0.3) * step(0.5, fract(f.x * 7.0)));
+            if (D > 0.5 && junction(c + ivec2(0, -1)) > 0.5) zebra = max(zebra, step(0.05, f.y) * step(f.y, 0.3) * step(0.5, fract(f.x * 7.0)));
+          }
+          float lineX = step(abs(f.y - 0.5), 0.018) * step(0.5, fract(vWorld.x * 1.6)) * step(0.5, L * Rt) * step(max(D, U), 0.5);
+          float lineZ = step(abs(f.x - 0.5), 0.018) * step(0.5, fract(vWorld.z * 1.6)) * step(0.5, D * U) * step(max(L, Rt), 0.5);
+          surf = mix(surf, vec3(0.93, 0.86, 0.55), max(lineX, lineZ) * 0.85 * (1.0 - zebra));
+          surf = mix(surf, vec3(0.9, 0.9, 0.88), zebra * 0.9);
+        } else if (me.g > 0.5) { surf = vec3(0.8, 0.79, 0.76) * (0.92 + 0.14 * vnoise(vWorld.xz * 11.0)); walk = 0.0; kerbLine = 0.0; }
         else {
           vec2 p = vWorld.xz * 5.2; float row = floor(p.y); p.x += mod(row, 2.0) * 0.5;
           vec2 sf = fract(p), id = floor(p);
           float joint = min(min(sf.x, 1.0 - sf.x) * 0.55, min(sf.y, 1.0 - sf.y));
           surf = mix(vec3(0.36, 0.34, 0.31), vec3(0.66, 0.42, 0.34) * (0.82 + 0.3 * hsh(id)) * (0.94 + 0.12 * vnoise(vWorld.xz * 14.0)), smoothstep(0.03, 0.09, joint));
         }
+        // pavement slabs with faint joints
+        vec2 sl = fract(vWorld.xz * 3.0); float slab = min(min(sl.x, 1.0 - sl.x), min(sl.y, 1.0 - sl.y));
+        vec3 paveC = vec3(0.76, 0.75, 0.72) * (0.95 + 0.07 * vnoise(vWorld.xz * 13.0)) * mix(0.9, 1.0, smoothstep(0.0, 0.05, slab));
+        surf = mix(surf, paveC, walk);
         alb = mix(alb, surf, inside);
-        alb = mix(alb, vec3(0.78, 0.77, 0.74), kerb * 0.95);
+        alb = mix(alb, vec3(0.6, 0.6, 0.6), kerbLine * inside * 0.9);
         // roads not yet joined to the hall show up rusty
         alb = mix(alb, alb * vec3(1.08, 0.86, 0.78), me.a * inside * 0.8);
       }
@@ -2277,6 +2398,7 @@ void main() {
   if (uTerrain < 0.5) hemi *= mix(0.68, 1.0, smoothstep(0.0, 0.32, vLY));
   vec3 c = alb * (hemi + uSunCol * ndl * sh);
   c += alb * vEmis + uFlat * step(0.5, vEmis);
+  if (uNight > 0.01 && uModern > 0.5) { float lp = texture(uLamp, (vWorld.xz + 48.0) / 96.0).r; c += alb * vec3(1.0, 0.82, 0.6) * min(lp, 0.85) * uNight * 1.05; }
   // grade: a touch less saturated, warm in the light and cool in the shade
   float lum = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(vec3(lum), c, 0.9);
@@ -2484,6 +2606,16 @@ class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
+  // streetlight glow on the ground: n x n, red channel 0-255, sampled smoothly
+  setLamp(px, n) {
+    const gl = this.gl;
+    if (!this.lTex) this.lTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.lTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, n, n, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
   // how worn each cell is (0-255), sampled smoothly so footpaths have soft edges
   setWear(w, n) {
     const gl = this.gl;
@@ -2565,10 +2697,16 @@ const HORSES = [[0.55, 0.35, 0.22], [0.3, 0.2, 0.14], [0.9, 0.88, 0.84], [0.18, 
 const FIRST_F = ['Ada', 'Maren', 'Ivy', 'Rosa', 'Elsie', 'Nell', 'Tilda', 'Wren', 'Hazel', 'June', 'Clara', 'Mabel', 'Ines', 'Lotte', 'Freya', 'Pearl', 'Agnes', 'Bea', 'Cora', 'Dot', 'Esme', 'Greta', 'Hattie', 'Iris', 'Kit', 'Lena', 'Mira', 'Nora', 'Opal', 'Ruth'];
 const FIRST_M = ['Arlo', 'Bram', 'Cal', 'Dov', 'Emil', 'Finn', 'Gus', 'Hal', 'Ike', 'Jory', 'Kai', 'Leif', 'Milo', 'Ned', 'Otto', 'Pip', 'Rory', 'Sam', 'Theo', 'Ugo', 'Vic', 'Wes', 'Abe', 'Bo', 'Cy', 'Dag', 'Ezra', 'Fitz', 'Gil', 'Hugo'];
 const SURN = ['Fletcher', 'Marsh', 'Tanner', 'Crabb', 'Hollis', 'Pike', 'Rowe', 'Saltmarsh', 'Thatcher', 'Wick', 'Brindle', 'Cole', 'Dunmore', 'Fenn', 'Gale', 'Harbour', 'Kettle', 'Lark', 'Mossop', 'Nettle', 'Oakes', 'Penrose', 'Quill', 'Reed', 'Shore', 'Tidewell', 'Underhill', 'Vane', 'Weller', 'Yarrow'];
+// modern job titles, for the same buildings and the modern-only ones
+const MJOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Logger', quarry: 'Quarry worker', dock: 'Fisher', market: 'Shop assistant', stable: 'Truck driver', tavern: 'Fry cook', school: 'Teacher', chapel: 'Pastor', port: 'Ferry crew',
+  bakery: 'Baker', sawmill: 'Mill worker', mine: 'Miner', blacksmith: 'Mechanic', shipyard: 'Welder', clinic: 'Nurse', library: 'Librarian', academy: 'Professor', watchtower: 'Marksman', guardhouse: 'Police officer', barracks: 'Sergeant',
+  archery: 'Range officer', cavyard: 'Mechanic', foundry: 'Engineer', warschool: 'Officer', office: 'Accountant', factory: 'Machinist', store: 'Shopkeeper', supermarket: 'Cashier', cafe: 'Barista', gasstation: 'Attendant',
+  hotel: 'Receptionist', cinema: 'Projectionist', stadium: 'Groundskeeper', firestation: 'Firefighter', busdepot: 'Bus driver', powerplant: 'Plant operator', skyscraper: 'Analyst', airfield: 'Pilot' };
 const JOBNAME = { farm: 'Farmer', orchard: 'Fruit picker', lumber: 'Lumberjack', quarry: 'Stonecutter', dock: 'Fisher', market: 'Market trader', stable: 'Stablehand', tavern: 'Innkeeper', school: 'Teacher', chapel: 'Priest', port: 'Dockhand', bakery: 'Baker', sawmill: 'Sawyer', mine: 'Miner', blacksmith: 'Blacksmith', shipyard: 'Shipwright', clinic: 'Doctor', library: 'Librarian', academy: 'Scholar', watchtower: 'Lookout', guardhouse: 'Guard', barracks: 'Drill sergeant', archery: 'Bowyer', cavyard: 'Horse master', foundry: 'Gunsmith', warschool: 'Officer' };
 const SMOKE = { rowhouse: [[-0.42, -0.45, 1.42], [0.2, -0.45, 1.56], [0.82, -0.45, 1.48]], apartment: [[0.45, -0.3, 1.88]], bakery: [[-0.22, -0.42, 0.84]], blacksmith: [[-0.18, -0.22, 0.9]], foundry: [[0.5, -0.65, 1.62]] };
 const SMOKE_M = { factory: [[0.75, -0.6, 1.72], [0.45, -0.75, 1.38]], foundry: [[0.65, -0.6, 1.42]], bakery: [[0.2, -0.2, 0.6]] };
 const isHome = b => !!TYPES[b.type].home;
+const cellAt = (x, z) => { const i = Math.max(0, Math.min(N - 1, Math.floor(x + N / 2))), j = Math.max(0, Math.min(N - 1, Math.floor(z + N / 2))); return j * N + i; };
 
 /* ---------------- Models ---------------- */
 function winBox(W, x, y, z, w, h, d) { W.box(x, y, z, w, h, d, WIN); }
@@ -2634,6 +2772,28 @@ function mAwning(B, x, y, z, w, col) { B.at(x, y, z, 0); B.box(0, 0, 0.06, w, 0.
 // a flat round face looking along +z (clocks, signs, wheels, targets)
 function mDisc(B, x, y, z, r, col, seg) { const c = hex(col), n = seg || 14; for (let k = 0; k < n; k++) { const a = k / n * 6.283, b = (k + 1) / n * 6.283; B.tri([x, y, z], [x + Math.cos(a) * r, y + Math.sin(a) * r, z], [x + Math.cos(b) * r, y + Math.sin(b) * r, z], c, [x, y, z - 1]); } }
 function mFlag(B, x, z, h) { B.box(x, 0, z, 0.018, h, 0.018, '#d0d3d6'); B.box(x + 0.07, h - 0.1, z, 0.12, 0.08, 0.006, '#3d6b8c'); }
+
+
+// a cylinder lying along +z: radius r0 at z0, r1 at z0 + len (fuselages, hubs, barrel roofs, windsocks)
+function mHcyl(B, x, y, z0, r0, r1, len, seg, col) {
+  const c = hex(col), n = seg || 10, z1 = z0 + len, cen = [x, y, z0 + len / 2];
+  for (let k = 0; k < n; k++) {
+    const a = k / n * 6.283, b = (k + 1) / n * 6.283;
+    const p0 = [x + Math.cos(a) * r0, y + Math.sin(a) * r0, z0], p1 = [x + Math.cos(b) * r0, y + Math.sin(b) * r0, z0];
+    const q0 = [x + Math.cos(a) * r1, y + Math.sin(a) * r1, z1], q1 = [x + Math.cos(b) * r1, y + Math.sin(b) * r1, z1];
+    if (r1 > 1e-4) B.quad(p0, p1, q1, q0, c, cen); else B.tri(p0, p1, [x, y, z1], c, cen);
+    if (r0 > 1e-4) B.tri([x, y, z0], p1, p0, c, cen);
+    if (r1 > 1e-4) B.tri([x, y, z1], q0, q1, c, cen);
+  }
+}
+// a car park laid on top of the plinth (x,z centre)
+function mLot2(B, w, d, x, z) { B.box(x, 0.021, z, w, 0.006, d, '#55585c'); for (let k = -3; k <= 3; k++) B.box(x + k * w / 7, 0.028, z, 0.012, 0.002, d * 0.6, '#e8e4dc'); }
+// a parasol colour slightly lighter than the awning
+function k2(c) { const h = hex(c); return '#' + h.map(v => Math.min(255, Math.round(v * 255 * 1.15 + 20)).toString(16).padStart(2, '0')).join(''); }
+// vehicles, built facing +z with their wheels on y = 0 (also used as moving traffic)
+function bus(B, col) { B.box(0, 0.04, 0, 0.17, 0.2, 0.62, col); B.box(0, 0.12, 0, 0.175, 0.08, 0.6, '#3a4a58'); B.box(0, 0.24, 0, 0.16, 0.012, 0.6, '#e9e9e6'); B.box(0, 0.06, 0.312, 0.15, 0.1, 0.006, '#e9e9e6'); for (const z of [-0.2, 0.2]) for (const x of [-0.085, 0.085]) B.box(x, 0, z, 0.02, 0.06, 0.07, '#2a2b2e'); }
+function fireTruck(B) { B.box(0, 0.04, -0.05, 0.18, 0.18, 0.42, '#c8402f'); B.box(0, 0.04, 0.22, 0.17, 0.16, 0.14, '#c8402f'); B.box(0, 0.13, 0.285, 0.15, 0.06, 0.006, '#a9bccb'); B.box(0, 0.22, -0.05, 0.08, 0.03, 0.44, '#d6d9db'); B.box(0, 0.205, 0.2, 0.12, 0.02, 0.03, '#4f8fd0'); for (const z of [-0.17, 0.05, 0.22]) for (const x of [-0.09, 0.09]) B.box(x, 0, z, 0.02, 0.06, 0.06, '#2a2b2e'); }
+function plane(B, col, stripe) { mHcyl(B, 0, 0.12, -0.32, 0.025, 0.055, 0.5, 8, col); mHcyl(B, 0, 0.12, 0.18, 0.055, 0.012, 0.13, 8, col); B.box(0, 0.12, 0.03, 0.62, 0.015, 0.12, col); B.box(0, 0.13, -0.27, 0.22, 0.012, 0.07, col); B.box(0, 0.13, -0.27, 0.012, 0.12, 0.08, stripe); B.box(0, 0.115, 0.04, 0.6, 0.004, 0.03, stripe); B.box(0, 0.12, 0.32, 0.012, 0.11, 0.02, '#3a3d42'); for (const x of [-0.08, 0.08]) B.box(x, 0, 0.05, 0.01, 0.07, 0.01, '#3a3d42'); B.box(0, 0, -0.2, 0.01, 0.06, 0.01, '#3a3d42'); }
 
 function modernModel(type, level, variant) {
   const B = new Builder(), W = new Builder();
@@ -2941,6 +3101,126 @@ function modernModel(type, level, variant) {
       B.box(0, 0, 0.62, 1.6, 0.012, 0.6, '#cbc6bc'); mFlag(B, 0, 0.62, 1.2);
       break;
     }
+    case 'supermarket': { // big box with a glass front, a coloured sign band and a car park
+      pl(1.94); B.box(0, 0.02, -0.38, 1.82, 0.56, 1.1, '#e9e4d9'); mFlat(B, 1.82, 1.1, 0.58, '#7a7d80', 5, v);
+      B.box(0, 0.44, 0.172, 1.82, 0.12, 0.02, '#2f8a4f'); B.box(0, 0.45, 0.184, 0.7, 0.08, 0.008, '#f4f1e8');
+      W.box(-0.35, 0.05, 0.176, 0.9, 0.32, 0.012, WIN); B.box(0.45, 0.02, 0.176, 0.32, 0.36, 0.012, '#a9bccb');
+      B.box(0.45, 0.38, 0.27, 0.5, 0.03, 0.2, '#2f8a4f'); for (const x of [0.24, 0.66]) B.box(x, 0.02, 0.36, 0.025, 0.36, 0.025, '#d6d9db');
+      mLot2(B, 1.82, 0.7, 0, 0.58); for (let k = 0; k < 5; k++) if (r(k) < 0.75) mCar(B, -0.72 + k * 0.36, 0.6, 0, CARS[(v + k) % CARS.length]);
+      B.box(-0.82, 0.02, 0.3, 0.18, 0.1, 0.06, '#b9bdc0'); B.box(0.82, 0.02, 0.3, 0.06, 0.18, 0.06, '#3a3d42');
+      break;
+    }
+    case 'cafe': { // a little café: big windows, striped awning, tables and parasols on the pavement
+      pl(0.94); const C = ['#2f6f6a', '#8a3b3b', '#3d5a80'][v % 3];
+      B.box(0, 0.02, -0.12, 0.7, 0.44, 0.5, ['#efe6d6', '#e3d3bf', '#d8dfd8'][v % 3]); mFlat(B, 0.7, 0.5, 0.46, '#6b6e70', 1, v);
+      B.box(0, 0.36, 0.13, 0.7, 0.08, 0.02, C); W.box(-0.13, 0.06, 0.135, 0.34, 0.24, 0.012, WIN); mDoor(B, 0.21, 0.131, '#a9bccb');
+      for (let k = 0; k < 6; k++) B.box(-0.3 + k * 0.12, 0.31, 0.2, 0.06, 0.012, 0.14, k % 2 ? '#f4f1e8' : C);
+      for (const [x, z] of [[-0.24, 0.36], [0.12, 0.38]]) { B.cyl(x, 0.02, z, 0.06, 0.06, 0.012, 10, '#f2ede3'); B.box(x, 0.02, z, 0.012, 0.1, 0.012, '#3a3d42'); B.cyl(x, 0.11, z, 0.06, 0.06, 0.012, 10, '#f2ede3'); B.box(x, 0.12, z, 0.01, 0.16, 0.01, '#d6d1c7'); B.cyl(x, 0.27, z, 0.13, 0.01, 0.06, 8, k2(C)); for (const d of [-0.08, 0.08]) B.box(x + d, 0.02, z, 0.04, 0.07, 0.04, '#5a4a3f'); }
+      break;
+    }
+    case 'gasstation': { // canopy over two pumps, a little shop, and a price sign
+      pl(0.94); B.box(-0.2, 0.02, -0.28, 0.5, 0.3, 0.34, '#efece6'); mFlat(B, 0.5, 0.34, 0.32, '#6b6e70', 1, v); W.box(-0.2, 0.06, -0.106, 0.34, 0.16, 0.012, WIN);
+      B.box(0.06, 0.4, 0.12, 0.84, 0.06, 0.5, '#f2f0ea'); B.box(0.06, 0.4, 0.12, 0.86, 0.025, 0.52, '#c8402f');
+      for (const x of [-0.24, 0.36]) B.box(x, 0.02, 0.12, 0.04, 0.38, 0.04, '#d6d9db');
+      for (const x of [-0.06, 0.18]) { B.box(x, 0.02, 0.12, 0.08, 0.16, 0.06, '#e8e4dc'); B.box(x, 0.12, 0.152, 0.06, 0.04, 0.006, '#c8402f'); }
+      B.box(0.38, 0.02, -0.34, 0.03, 0.5, 0.03, '#8a8f96'); B.box(0.38, 0.44, -0.34, 0.14, 0.2, 0.03, '#c8402f'); B.box(0.38, 0.47, -0.32, 0.1, 0.12, 0.006, '#f4f1e8');
+      if (r(2) < 0.6) mCar(B, -0.06, 0.28, 0, CARS[v % CARS.length]);
+      break;
+    }
+    case 'hotel': { // eight storeys, balconies, a rooftop sign and a porte-cochère
+      pl(1.94); const h = 2.7, col = ['#e6dccb', '#d9e0e3', '#efe9df'][v % 3];
+      B.box(0, 0.02, -0.15, 1.2, h, 0.95, col); mFlat(B, 1.2, 0.95, h + 0.02, '#5d6064', 2, v + 5);
+      mGrid(W, 1.2, 0.95, 0.42, 7, 0.32, 0.14, 0.2, 'all');
+      for (let f = 1; f < 8; f++) B.box(0, 0.08 + f * 0.32, 0.36, 1.1, 0.02, 0.1, '#bdb8af');
+      B.box(0, 0.02, 0.33, 0.9, 0.36, 0.02, '#7d97a8'); B.box(0, 0.38, 0.55, 1.0, 0.04, 0.48, '#3f4652'); for (const x of [-0.45, 0.45]) B.box(x, 0.02, 0.75, 0.04, 0.36, 0.04, '#d6d1c7');
+      B.box(0, h + 0.05, 0.3, 0.7, 0.18, 0.04, '#3f4652'); B.box(0, h + 0.08, 0.322, 0.6, 0.11, 0.006, '#e9c46a');
+      for (const x of [-0.8, 0.8]) mTree(B, x, 0.7, 1.0);
+      break;
+    }
+    case 'cinema': { // a tall box with a marquee and posters
+      pl(1.94); B.box(0, 0.02, -0.2, 1.6, 0.9, 1.3, '#3f4652'); mFlat(B, 1.6, 1.3, 0.92, '#5d6064', 3, v);
+      B.box(0, 0.02, 0.46, 1.0, 0.5, 0.04, '#7a2f3a'); B.box(0, 0.5, 0.56, 1.3, 0.12, 0.28, '#e9e2d3'); B.box(0, 0.53, 0.703, 1.2, 0.07, 0.006, '#c8402f');
+      for (let k = 0; k < 3; k++) { B.box(-0.6 + k * 0.6, 0.12, 0.482, 0.22, 0.3, 0.006, ['#e9c46a', '#5a8fb3', '#b5523b'][k]); }
+      W.box(0, 0.03, 0.482, 0.4, 0.28, 0.012, WIN);
+      B.box(0.62, 0.02, 0.42, 0.18, 1.2, 0.08, '#c8402f'); B.box(0.62, 0.3, 0.465, 0.12, 0.8, 0.006, '#f4f1e8');
+      break;
+    }
+    case 'sportsfield': { // a football pitch, two goals and some bleachers
+      B.box(0, -0.005, 0, 1.92, 0.025, 1.92, '#5e9e4a');
+      for (let k = 0; k < 6; k++) B.box(-0.8 + k * 0.32, 0.021, 0.08, 0.16, 0.002, 1.3, '#6aab55');
+      const ln = '#f4f1e8'; B.box(0, 0.023, 0.08, 1.5, 0.002, 0.02, ln); B.box(0, 0.023, 0.73, 1.5, 0.002, 0.02, ln); B.box(0, 0.023, -0.57, 1.5, 0.002, 0.02, ln);
+      for (const x of [-0.75, 0.75]) B.box(x, 0.023, 0.08, 0.02, 0.002, 1.3, ln); B.cyl(0, 0.023, 0.08, 0.2, 0.2, 0.002, 18, ln); B.cyl(0, 0.024, 0.08, 0.18, 0.18, 0.002, 18, '#5e9e4a');
+      for (const z of [-0.55, 0.71]) { B.box(-0.18, 0.02, z, 0.02, 0.16, 0.02, ln); B.box(0.18, 0.02, z, 0.02, 0.16, 0.02, ln); B.box(0, 0.17, z, 0.38, 0.02, 0.02, ln); }
+      for (let k = 0; k < 3; k++) B.box(0, 0.02 + k * 0.06, -0.78 - k * 0.05, 1.3, 0.06, 0.06, '#9aa3ab');
+      break;
+    }
+    case 'stadium': { // a bowl of stands round a pitch, a roof ring and four floodlight towers
+      B.box(0, -0.04, 0, 2.94, 0.06, 2.94, '#a39c90');
+      B.box(0, 0.02, 0, 2.2, 0.02, 1.6, '#5e9e4a'); for (let k = 0; k < 7; k++) B.box(-0.96 + k * 0.32, 0.041, 0, 0.16, 0.002, 1.5, '#6aab55');
+      B.box(0, 0.043, 0, 1.9, 0.002, 0.02, '#f4f1e8'); B.cyl(0, 0.043, 0, 0.2, 0.2, 0.002, 18, '#f4f1e8');
+      const seat = ['#2f5f8a', '#c8402f'][v % 2];
+      for (let k = 0; k < 4; k++) { const y = 0.04 + k * 0.12; B.box(0, y, -0.95 - k * 0.1, 2.5, 0.12, 0.1, k % 2 ? seat : '#d6d9db'); B.box(0, y, 0.95 + k * 0.1, 2.5, 0.12, 0.1, k % 2 ? seat : '#d6d9db'); B.box(-1.25 - k * 0.1, y, 0, 0.1, 0.12, 2.0, k % 2 ? seat : '#d6d9db'); B.box(1.25 + k * 0.1, y, 0, 0.1, 0.12, 2.0, k % 2 ? seat : '#d6d9db'); }
+      B.box(0, 0.04, -1.38, 2.9, 0.62, 0.06, '#bdb8af'); B.box(0, 0.04, 1.38, 2.9, 0.62, 0.06, '#bdb8af'); B.box(-1.42, 0.04, 0, 0.06, 0.62, 2.8, '#bdb8af'); B.box(1.42, 0.04, 0, 0.06, 0.62, 2.8, '#bdb8af');
+      B.box(0, 0.68, -1.2, 2.9, 0.04, 0.42, '#e9e9e6'); B.box(0, 0.68, 1.2, 2.9, 0.04, 0.42, '#e9e9e6');
+      for (const [x, z] of [[-1.38, -1.38], [1.38, -1.38], [-1.38, 1.38], [1.38, 1.38]]) { B.box(x, 0.04, z, 0.06, 1.4, 0.06, '#8a8f96'); B.box(x, 1.42, z, 0.24, 0.12, 0.08, '#5d6064'); W.box(x - Math.sign(x) * 0.0, 1.43, z - Math.sign(z) * 0.045, 0.2, 0.08, 0.012, WIN); }
+      W.box(0, 0.3, 1.415, 0.6, 0.12, 0.012, WIN);
+      break;
+    }
+    case 'firestation': { // red brick, three big bay doors, a hose tower and a fire truck out front
+      pl(1.94); B.box(-0.15, 0.02, -0.25, 1.4, 0.62, 1.1, '#a8473a'); mFlat(B, 1.4, 1.1, 0.64, '#5d6064', 2, v);
+      for (let k = 0; k < 3; k++) { const x = -0.6 + k * 0.45; B.box(x, 0.02, 0.306, 0.36, 0.42, 0.012, '#e9e4d9'); for (let q = 1; q < 6; q++) B.box(x, 0.02 + q * 0.07, 0.313, 0.36, 0.006, 0.004, '#c9c4bb'); }
+      B.box(-0.15, 0.48, 0.31, 1.3, 0.08, 0.02, '#f4f1e8'); mGrid(W, 1.4, 1.1, 0.5, 1, 0.12, 0.1, 0.08, 'back');
+      B.box(0.75, 0.02, -0.55, 0.32, 1.3, 0.32, '#8f3c31'); mFlat(B, 0.32, 0.32, 1.32, '#5d6064', 0, v); W.box(0.75, 0.9, -0.385, 0.1, 0.2, 0.012, WIN);
+      mAt(B, -0.6, 0.72, 0); fireTruck(B); mReset(B);
+      break;
+    }
+    case 'busdepot': { // a long open shed with buses parked in bays and an office
+      pl(1.94); B.box(0, 0.02, 0.62, 1.86, 0.012, 0.6, '#5a5d61');
+      for (const x of [-0.85, 0.85]) for (const z of [-0.85, 0.15]) B.box(x, 0.02, z, 0.05, 0.6, 0.05, '#8a8f96');
+      B.box(0, 0.62, -0.35, 1.86, 0.04, 1.1, '#5d6064'); B.box(0, 0.58, -0.35, 1.86, 0.04, 1.12, '#d6d9db');
+      for (let k = 0; k < 4; k++) { mAt(B, -0.66 + k * 0.44, -0.35, 0); bus(B, ['#e3b23c', '#2f7c78', '#e3b23c', '#c8402f'][(v + k) % 4]); mReset(B); }
+      B.box(0.65, 0.02, 0.62, 0.5, 0.32, 0.4, '#e9e4d9'); mFlat(B, 0.5, 0.4, 0.34, '#6b6e70', 1, v); W.box(0.65, 0.08, 0.826, 0.36, 0.14, 0.012, WIN);
+      break;
+    }
+    case 'windturbine': { // a tall white tower and nacelle; the blades turn in the world
+      B.box(0, -0.04, 0, 0.5, 0.06, 0.5, '#bdb8af'); B.cyl(0, 0.02, 0, 0.09, 0.05, 2.3, 12, '#f2f2ef'); B.box(0, 2.28, -0.04, 0.12, 0.12, 0.3, '#e9e9e6'); mHcyl(B, 0, 2.34, 0.11, 0.05, 0.015, 0.1, 8, '#e9e9e6');
+      break;
+    }
+    case 'solarfarm': { // rows of tilted panels behind a fence
+      B.box(0, -0.005, 0, 1.92, 0.025, 1.92, '#9fae86');
+      for (let row = 0; row < 5; row++) for (let k = 0; k < 2; k++) { const z = -0.72 + row * 0.36, x = -0.45 + k * 0.9; B.at(x, 0.08, z, 0); B.quad([-0.4, 0, 0.1], [0.4, 0, 0.1], [0.4, 0.16, -0.1], [-0.4, 0.16, -0.1], hex('#2c3e5c'), [0, 1, 0.8]); B.box(0, -0.06, 0, 0.02, 0.1, 0.02, '#8a8f96'); for (let q = -3; q <= 3; q++) B.beam([q * 0.11, 0.003, 0.098], [q * 0.11, 0.163, -0.098], 0.004, 0.004, '#8ea1bf'); mReset(B); }
+      for (const z of [-0.95, 0.95]) B.box(0, 0.02, z, 1.9, 0.14, 0.008, '#a9aeb3'); for (const x of [-0.95, 0.95]) B.box(x, 0.02, 0, 0.008, 0.14, 1.9, '#a9aeb3');
+      break;
+    }
+    case 'powerplant': { // turbine hall, a hyperbolic cooling tower and two stacks
+      pl(1.94); B.box(-0.35, 0.02, 0.25, 1.1, 0.7, 1.2, '#b9b6af'); mFlat(B, 1.1, 1.2, 0.72, '#5d6064', 4, v); mGrid(W, 1.1, 1.2, 0.3, 1, 0.3, 0.16, 0.12, 'front');
+      B.cyl(0.5, 0.02, -0.45, 0.48, 0.32, 0.8, 18, '#d8d6d0'); B.cyl(0.5, 0.82, -0.45, 0.32, 0.36, 0.5, 18, '#d8d6d0'); B.cyl(0.5, 1.31, -0.45, 0.33, 0.33, 0.02, 18, '#6b6e70');
+      for (const [x, z] of [[-0.75, -0.6], [-0.45, -0.75]]) { B.cyl(x, 0.02, z, 0.08, 0.06, 1.9, 10, '#c9c4bb'); B.cyl(x, 1.6, z, 0.066, 0.064, 0.12, 10, '#c8402f'); }
+      for (let k = 0; k < 3; k++) B.box(0.7, 0.02, 0.25 + k * 0.22, 0.24, 0.24, 0.16, '#8a8f96');
+      break;
+    }
+    case 'skyscraper': { // a glass tower that steps back near the top, with a crown and a spire
+      pl(1.94); const h1 = 3.6, h2 = 1.0, glass = ['#6f8fa6', '#7d9aa8', '#5f7d8f'][v % 3];
+      B.box(0, 0.02, 0, 1.3, 0.5, 1.3, '#d6d9db');
+      B.box(0, 0.5, 0, 1.2, h1, 1.2, glass); mGrid(W, 1.2, 1.2, 0.56, 12, 0.3, 0.2, 0.2, 'all');
+      for (let f = 0; f < 12; f++) B.box(0, 0.78 + f * 0.3, 0, 1.215, 0.02, 1.215, '#c8ced3');
+      for (const [x, z] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B.box(x, 0.5, z, 0.06, h1, 0.06, '#c8ced3');
+      B.box(0, 0.5 + h1, 0, 0.9, h2, 0.9, glass); mGrid(W, 0.9, 0.9, 0.56 + h1, 3, 0.3, 0.18, 0.2, 'all');
+      B.box(0, 0.5 + h1 + h2, 0, 0.94, 0.08, 0.94, '#c8ced3'); B.cyl(0, 0.58 + h1 + h2, 0, 0.04, 0.01, 0.8, 6, '#d6d9db');
+      W.box(0, 0.06, 0.656, 0.6, 0.36, 0.012, WIN); B.box(0, 0.44, 0.75, 0.9, 0.03, 0.2, '#3f4652');
+      break;
+    }
+    case 'airfield': { // a short runway, a hangar, a little control tower, a windsock and a parked plane
+      B.box(0, -0.04, 0, 2.94, 0.06, 2.94, '#8faa6e'); B.box(0.35, 0.02, 0, 0.62, 0.012, 2.9, '#4f5357');
+      for (let k = 0; k < 7; k++) B.box(0.35, 0.033, -1.2 + k * 0.4, 0.03, 0.002, 0.2, '#f4f1e8');
+      for (const z of [-1.38, 1.38]) for (let k = 0; k < 5; k++) B.box(0.13 + k * 0.11, 0.033, z, 0.05, 0.002, 0.1, '#f4f1e8');
+      B.box(-0.45, 0.02, 0.2, 0.9, 0.012, 1.3, '#5a5d61');
+      B.at(-0.95, 0.02, -0.75, 0); B.box(0, 0, 0, 0.9, 0.42, 0.8, '#c9cbcc'); mHcyl(B, 0, 0.42, -0.4, 0.45, 0.45, 0.8, 12, '#a9aeb3'); B.box(0, 0, 0.405, 0.7, 0.36, 0.01, '#8a8f96'); mReset(B);
+      B.box(-1.1, 0.02, 0.85, 0.22, 0.6, 0.22, '#e9e4d9'); B.box(-1.1, 0.62, 0.85, 0.32, 0.18, 0.32, '#7d97a8'); W.box(-1.1, 0.64, 1.012, 0.28, 0.13, 0.012, WIN); B.box(-1.1, 0.8, 0.85, 0.36, 0.03, 0.36, '#3f4652');
+      B.box(1.05, 0.02, 1.1, 0.02, 0.4, 0.02, '#8a8f96'); B.at(1.05, 0, 1.1, Math.PI / 2); mHcyl(B, 0, 0.4, 0, 0.03, 0.015, 0.16, 8, '#e07b39'); mReset(B);
+      mAt(B, -0.45, 0.3, 2.6); plane(B, '#f2f2ef', '#c8402f'); mReset(B);
+      break;
+    }
     default: return null;
   }
   return { B, W };
@@ -3018,6 +3298,43 @@ function modernHelmModel(kind) {
   const B = new Builder();
   if (kind === 'horn') { smoothBlob(B, 0, 0.3, 0, 0.082, 0.06, 0.088, '#5d6b4a', 0); B.cyl(0, 0.278, 0, 0.1, 0.1, 0.01, 10, '#55603f'); }
   else { B.cyl(0, 0.29, 0, 0.085, 0.08, 0.06, 10, '#22324a'); B.box(0, 0.29, 0.07, 0.12, 0.012, 0.07, '#1a2533'); B.box(0, 0.33, 0.075, 0.03, 0.025, 0.006, '#d9b45a'); }
+  return B;
+}
+
+/* ---------- Street furniture and city traffic (modern islands) ----------
+   Static parts and their glowing parts are separate meshes, so lamps, signals and headlights can light up at night. */
+function streetLampModel() { const B = new Builder(); B.cyl(0, 0, 0, 0.018, 0.014, 0.62, 6, '#4a4f55'); B.box(0, 0.6, 0.07, 0.018, 0.018, 0.16, '#4a4f55'); B.box(0, 0.575, 0.15, 0.06, 0.03, 0.08, '#3a3d42'); return B; }
+function lampGlowModel() { const B = new Builder(); B.box(0, 0.566, 0.15, 0.05, 0.012, 0.07, '#ffffff'); return B; }
+function trafficLightModel() { const B = new Builder(); B.cyl(0, 0, 0, 0.016, 0.014, 0.5, 6, '#3a3d42'); B.box(0, 0.36, 0.03, 0.06, 0.17, 0.045, '#2a2b2e'); B.box(0, 0.52, 0.03, 0.07, 0.012, 0.05, '#2a2b2e'); return B; }
+function bulbModel() { const B = new Builder(); B.box(0, 0, 0.055, 0.032, 0.032, 0.008, '#ffffff'); return B; }
+function streetTreeModel() { const B = new Builder(); B.box(0, 0, 0, 0.1, 0.012, 0.1, '#6b5a4a'); B.cyl(0, 0, 0, 0.016, 0.012, 0.22, 5, '#6b4a33'); smoothBlob(B, 0, 0.3, 0, 0.1, 0.1, 0.1, '#5f9a4b', 0); smoothBlob(B, 0.04, 0.36, 0.02, 0.07, 0.07, 0.07, '#6aa553', 0); return B; }
+function busStopModel() { const B = new Builder(); B.box(0, 0, -0.04, 0.32, 0.012, 0.12, '#bdb8af'); for (const x of [-0.14, 0.14]) B.box(x, 0, -0.08, 0.012, 0.22, 0.012, '#8a8f96'); B.box(0, 0.22, -0.05, 0.34, 0.015, 0.14, '#3f6f8a'); B.box(0, 0.06, -0.085, 0.3, 0.15, 0.006, '#a9bccb'); B.box(0, 0.04, -0.06, 0.22, 0.015, 0.04, '#6b4a33'); B.box(0.2, 0, 0.03, 0.012, 0.3, 0.012, '#8a8f96'); B.box(0.2, 0.28, 0.03, 0.07, 0.07, 0.008, '#3f6f8a'); return B; }
+// the glowing parts of any vehicle: white headlights at the front (+z), red tail lights at the back
+function vehicleLightsModel(len, w, y) { const B = new Builder(); for (const x of [-w, w]) { B.box(x, y, len, 0.03, 0.02, 0.006, '#fff6d8'); B.box(x, y, -len, 0.03, 0.02, 0.006, '#ff3b2f'); } return B; }
+function busModel(col) { const B = new Builder(); bus(B, col); return B; }
+function fireTruckModel() { const B = new Builder(); fireTruck(B); return B; }
+function policeCarModel() { const B = new Builder(); B.box(0, 0.03, 0, 0.16, 0.065, 0.32, '#f2f2ef'); B.box(0, 0.03, 0.02, 0.165, 0.035, 0.18, '#22385a'); B.box(0, 0.095, -0.015, 0.14, 0.06, 0.17, '#c9d6de'); B.box(0, 0.155, -0.015, 0.142, 0.01, 0.17, '#f2f2ef'); for (const [a, b] of [[-0.08, 0.1], [0.08, 0.1], [-0.08, -0.1], [0.08, -0.1]]) B.box(a, 0, b, 0.025, 0.055, 0.06, '#2a2b2e'); return B; }
+function ambulanceModel() { const B = new Builder(); B.box(0, 0.03, -0.04, 0.17, 0.17, 0.3, '#f4f2ec'); B.box(0, 0.03, 0.15, 0.16, 0.12, 0.12, '#f4f2ec'); B.box(0, 0.1, 0.212, 0.14, 0.05, 0.006, '#a9bccb'); B.box(0, 0.1, -0.04, 0.172, 0.03, 0.3, '#c8402f'); B.box(0.086, 0.13, -0.05, 0.004, 0.06, 0.02, '#c8402f'); B.box(0.086, 0.15, -0.05, 0.004, 0.02, 0.06, '#c8402f'); for (const [a, b] of [[-0.085, 0.14], [0.085, 0.14], [-0.085, -0.12], [0.085, -0.12]]) B.box(a, 0, b, 0.02, 0.055, 0.06, '#2a2b2e'); return B; }
+// a light bar on top of police cars, ambulances and fire trucks: blue on one side, red on the other
+function sirenModel(y) { const B = new Builder(); B.box(-0.03, y, 0, 0.05, 0.02, 0.03, '#3d7cff'); B.box(0.03, y, 0, 0.05, 0.02, 0.03, '#ff3b2f'); return B; }
+function bladesModel() { const B = new Builder(); for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; B.tri([0, 0, 0], [Math.cos(a - 0.05) * 0.95, Math.sin(a - 0.05) * 0.95, 0], [Math.cos(a + 0.06) * 0.95, Math.sin(a + 0.06) * 0.95, 0.01], hex('#f2f2ef'), [0, 0, -1]); B.tri([0, 0, 0], [Math.cos(a + 0.06) * 0.95, Math.sin(a + 0.06) * 0.95, 0.01], [Math.cos(a - 0.05) * 0.95, Math.sin(a - 0.05) * 0.95, 0], hex('#e9e9e6'), [0, 0, 1]); } return B; }
+function planeModel() { const B = new Builder(); plane(B, '#f2f2ef', '#c8402f'); return B; }
+function craneModel() { // a tower crane; its jib is a separate piece that slews
+  const B = new Builder(); for (const [x, z] of [[-0.05, -0.05], [0.05, -0.05], [-0.05, 0.05], [0.05, 0.05]]) B.box(x, 0, z, 0.012, 2.3, 0.012, '#e3b23c');
+  for (let k = 0; k < 11; k++) { B.box(0, 0.1 + k * 0.21, 0.05, 0.1, 0.008, 0.008, '#e3b23c'); B.box(0.05, 0.1 + k * 0.21, 0, 0.008, 0.008, 0.1, '#e3b23c'); }
+  B.box(0, 2.3, 0, 0.14, 0.12, 0.14, '#e9e4d9'); B.box(0, 0, 0, 0.3, 0.06, 0.3, '#9a958c'); return B; }
+function jibModel() { const B = new Builder(); B.box(0, 2.42, 0.45, 0.06, 0.06, 1.4, '#e3b23c'); B.box(0, 2.42, -0.4, 0.06, 0.06, 0.4, '#e3b23c'); B.box(0, 2.3, -0.5, 0.16, 0.14, 0.16, '#8a8f96'); B.box(0, 2.48, 0, 0.012, 0.18, 0.012, '#e3b23c'); B.box(0, 1.6, 0.95, 0.006, 0.82, 0.006, '#3a3d42'); B.box(0, 1.56, 0.95, 0.05, 0.04, 0.05, '#3a3d42'); return B; }
+// a stadium crowd: thousands of fans as tiny coloured specks along the four stands
+function crowdModel() {
+  const B = new Builder(), C = ['#c8402f', '#2f5f8a', '#f2f2ef', '#e3b23c', '#3a3d42', '#2f7c78'];
+  for (let k = 0; k < 4; k++) {
+    const y = 0.16 + k * 0.12;
+    for (let n = 0; n < 34; n++) {
+      const u = -1.2 + n * 0.073 + (hash(k * 97 + n) - 0.5) * 0.03, c = C[Math.floor(hash(k * 31 + n * 7) * C.length)];
+      B.box(u, y, -0.95 - k * 0.1, 0.035, 0.05, 0.035, c); B.box(u, y, 0.95 + k * 0.1, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 13 + n * 5) * C.length)]);
+      if (n < 26) { const v = -0.95 + n * 0.073; B.box(-1.25 - k * 0.1, y, v, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 7 + n * 3) * C.length)]); B.box(1.25 + k * 0.1, y, v, 0.035, 0.05, 0.035, C[Math.floor(hash(k * 5 + n * 11) * C.length)]); }
+    }
+  }
   return B;
 }
 
@@ -4073,7 +4390,11 @@ class World {
     if (M && !this.mod) this.mod = { cannon: R.mesh(tankModel()), helms: { horn: R.mesh(modernHelmModel('horn')), guard: R.mesh(modernHelmModel('guard')) },
       ships: [null, R.mesh(warshipModel(1)), R.mesh(warshipModel(2)), R.mesh(warshipModel(3)), R.mesh(warshipModel(4))],
       boats: { fish: R.mesh(trawlerModel()), settle: R.mesh(ferryModel()), trade: R.mesh(cargoShipModel()) }, rifle: R.mesh(rifleModel()),
-      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()) };
+      car: R.mesh(carModel()), truck: R.mesh(truckModel()), acar: R.mesh(armouredCarModel()),
+      lamp: R.mesh(streetLampModel()), lampGlow: R.mesh(lampGlowModel()), tlight: R.mesh(trafficLightModel()), bulb: R.mesh(bulbModel()), stree: R.mesh(streetTreeModel()), busstop: R.mesh(busStopModel()),
+      carLights: R.mesh(vehicleLightsModel(0.162, 0.05, 0.05)), bigLights: R.mesh(vehicleLightsModel(0.315, 0.06, 0.08)), bus: R.mesh(busModel('#ffffff')), firetruck: R.mesh(fireTruckModel()),
+      police: R.mesh(policeCarModel()), ambulance: R.mesh(ambulanceModel()), siren: R.mesh(sirenModel(0.165)), sirenTall: R.mesh(sirenModel(0.25)),
+      blades: R.mesh(bladesModel()), plane: R.mesh(planeModel()), crane: R.mesh(craneModel()), jib: R.mesh(jibModel()), crowd: R.mesh(crowdModel()) };
     const src = M ? this.mod : this.med;
     this.cannon = src.cannon; this.helms = src.helms; this.ships = src.ships; this.boats = src.boats; this.longboat = src.ships[1];
     for (const k of ['spear', 'sword', 'bow']) this.tools[k] = M ? this.mod.rifle : this.med.tools[k];
@@ -4081,7 +4402,7 @@ class World {
   }
   setState(S) {
     if (Sim.eraOf(S) !== this.era) { this.S = S; this.setEra(Sim.eraOf(S)); }
-    this.S = S; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
+    this.S = S; this.vehicles = []; this.streetSig = null; this.streets = null; this.tlAt = {}; this.anim = {}; this.dying = []; this.falling = []; this.sprout = {}; this.parts = []; this.labels = []; this.agents = []; this.boatsLive = []; this.fishSpots = {}; this.carts = []; this.bubbles = []; this.replies = []; this.chat = []; this.pois = null; this.assignDay = -1; this.gulls = null; this.flutter = null; this.grassDirty = true;
     S._dirty.terrain = S._dirty.roads = S._dirty.trees = true;
     this.waterGrid = null;
     this.syncAgents(true);
@@ -4391,6 +4712,73 @@ class World {
   }
 
   // one texel per cell: r dirt road, g footpath, b cobbles, a marks roads that don't reach the hall yet
+  // streetlights, traffic lights, street trees and bus stops along modern roads, plus the glow they cast at night
+  buildStreets() {
+    const S = this.S, out = { lamps: [], trees: [], tl: [], stops: [] }, R = this.R;
+    this.streets = out; this.tlAt = {};
+    const LN = 192, lamp = new Float32Array(LN * LN);
+    if (this.era === 'modern' && this.mod) {
+      const isR = (i, j) => Sim.inB(i, j) && S.road[j * N + i] && S.road[j * N + i] !== 4 ? 1 : 0;
+      const deg = (i, j) => isR(i + 1, j) + isR(i - 1, j) + isR(i, j + 1) + isR(i, j - 1);
+      const depot = S.b.some(b => b.type === 'busdepot' && Sim.done(b));
+      const y0 = (x, z) => Sim.groundAt(S, x, z) + 0.05;
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+        if (!isR(i, j)) continue;
+        const c = j * N + i, x = i - N / 2 + 0.5, z = j - N / 2 + 0.5, d = deg(i, j);
+        const diag = isR(i + 1, j + 1) + isR(i - 1, j + 1) + isR(i + 1, j - 1) + isR(i - 1, j - 1);
+        if (d >= 3 && diag <= 1 && S.road[c] === 1) { out.tl.push({ x, z, y: y0(x, z), id: c }); this.tlAt[c] = 1; continue; }
+        if (d === 4) continue; // the middle of a paved area: no kerbs, no furniture
+        const straight = d === 2 && ((isR(i + 1, j) && isR(i - 1, j)) || (isR(i, j + 1) && isR(i, j - 1)));
+        Sim.DIRS.forEach(([di, dj], k) => {
+          if (isR(i + di, j + dj)) return;
+          const px = x + di * 0.43, pz = z + dj * 0.43, ry = Math.atan2(-di, -dj);
+          if (depot && straight && S.road[c] === 1 && (i * 7 + j * 13 + k) % 11 === 0) { const sx2 = x + di * 0.37, sz2 = z + dj * 0.37; out.stops.push({ x: sx2, z: sz2, y: y0(sx2, sz2), ry, cell: c }); return; }
+          if ((i + j + k) % 2 === 0) { out.lamps.push({ x: px, z: pz, y: y0(px, pz), ry }); return; }
+          const oi = i + di, oj = j + dj, oc = oj * N + oi;
+          if (Sim.inB(oi, oj) && !S.occ[oc] && Sim.groundAt(S, px, pz) > 0.1 && hash(c * 4 + k) < 0.5) { const sl = (hash(c + k * 17) - 0.5) * 0.5, tx = x + di * 0.39 + dj * sl, tz = z + dj * 0.39 + di * sl; out.trees.push({ x: tx, z: tz, y: y0(tx, tz), ry: hash(c) * 6.28, s: 0.75 + hash(c * 3 + k) * 0.25 }); }
+        });
+      }
+      // each lamp lights a soft pool about one and a half tiles across
+      for (const l of out.lamps) {
+        const lx = l.x - Math.sin(l.ry) * -0.15, lz = l.z - Math.cos(l.ry) * -0.15, cx = (lx + 48) / 96 * LN, cz = (lz + 48) / 96 * LN, rad = 1.3 / 96 * LN;
+        for (let v = Math.floor(cz - rad); v <= Math.ceil(cz + rad); v++) for (let u = Math.floor(cx - rad); u <= Math.ceil(cx + rad); u++) {
+          if (u < 0 || v < 0 || u >= LN || v >= LN) continue;
+          const dd = Math.hypot(u + 0.5 - cx, v + 0.5 - cz) / rad; if (dd >= 1) continue;
+          lamp[v * LN + u] = Math.max(lamp[v * LN + u], (1 - dd) * (1 - dd) * 0.9);
+        }
+      }
+    }
+    const px = new Uint8Array(LN * LN * 4);
+    for (let k = 0; k < LN * LN; k++) px[k * 4] = Math.min(255, Math.round(lamp[k] * 255));
+    if (R.setLamp) R.setLamp(px, LN);
+  }
+  // Saturday afternoon match, or an evening game midweek
+  crowdOn(S) { const h = S.t % 24, wd = Math.floor(S.t / 24) % 7; return (wd === 5 && h >= 13.5 && h < 18) || (wd === 2 && h >= 19 && h < 22); }
+  // the airfield's plane flies a circuit: take-off roll, climb out, a wide loop over the island, approach, landing
+  planePose(T) {
+    const out = 26, side = 22, R = side / 2, legs = [['roll', 2.6], ['climb', out], ['turn1', Math.PI * R], ['back', 2 * out], ['turn2', Math.PI * R], ['final', out], ['land', 2.6]];
+    const L = legs.reduce((a, l) => a + l[1], 0), sp = 7;
+    let d = (T * sp) % (L + 40); // a spell parked between flights
+    if (d > L) return null;
+    for (const [k, len] of legs) {
+      if (d > len) { d -= len; continue; }
+      const f = d / len;
+      if (k === 'roll') return [-1.3 + f * 2.6, 0, 0, 0, 0];
+      if (k === 'climb') return [1.3 + d, 0, Math.min(9, f * f * 11), 0, 0];
+      if (k === 'turn1') { const a = f * Math.PI; return [1.3 + out + Math.sin(a) * R, R - Math.cos(a) * R, 9, a, -0.35]; }
+      if (k === 'back') return [1.3 + out - d, side, 9, Math.PI, 0];
+      if (k === 'turn2') { const a = f * Math.PI; return [1.3 - out - Math.sin(a) * R, R + Math.cos(a) * R, 9, Math.PI + a, -0.35]; }
+      if (k === 'final') return [1.3 - out + d - 2.6, 0, 9 * (1 - f) * (1 - f), 0, 0];
+      return [-1.3 + f * 2.6, 0, 0, 0, 0];
+    }
+    return null;
+  }
+  // traffic signals: each junction runs its own cycle; 'x' and 'z' are the two directions of travel
+  signal(id, axis) {
+    const t = (this.now + hash(id) * 16) % 16;
+    if (axis === 'x') return t < 6 ? 'g' : t < 8 ? 'a' : 'r';
+    return t < 8 ? 'r' : t < 14 ? 'g' : 'a';
+  }
   paintRoads() {
     const S = this.S, px = new Uint8Array(N * N * 4);
     for (let c = 0; c < N * N; c++) {
@@ -4440,6 +4828,7 @@ class World {
       const f = st.dead ? 0.6 : st.hp < st.max * 0.7 ? 1 - st.hp / st.max : 0;
       if (f > 0 && Math.random() < dt * (st.dead ? 8 : 30) * f) flame(b, st.dead ? 0.3 : 1);
     }
+    for (const b of S.b) if (b.burnt && b.fireAt !== undefined && S.t - b.fireAt < 2 && Math.random() < dt * 14) flame(b, 0.8);
     for (const b of S.b) if (b.burnt && Math.random() < dt * 0.6) { const [x, z] = Sim.center(b); this.addPart({ x: x + (Math.random() - 0.5) * 0.5, y: b.y + 0.7, z: z + (Math.random() - 0.5) * 0.5, vx: 0.1, vy: 0.35, vz: 0.05, life: 0, max: 2.6, size: 0.1, col: [0.35, 0.34, 0.33], g: -0.05, drag: 0.3, smoke: true }); }
   }
   // palisades and stone walls follow the ground; where they cross a road there is a gate
@@ -4490,6 +4879,14 @@ class World {
     if (evs.length) this.navDirty = true;
     const S = this.S, t = this.now;
     for (const e of evs) {
+      // a fire: the nearest crewed fire station sends a truck, lights flashing
+      if (e.type === 'fire' && this.era === 'modern') {
+        const b = S._byId[e.id]; if (!b) continue; const [bx, bz] = Sim.center(b);
+        const st = S.b.filter(f => f.type === 'firestation' && Sim.done(f) && f.staff > 0 && f.door >= 0 && f.door !== null).sort((p, q) => Math.hypot(Sim.center(p)[0] - bx, Sim.center(p)[1] - bz) - Math.hypot(Sim.center(q)[0] - bx, Sim.center(q)[1] - bz))[0];
+        const to = b.door >= 0 && b.door !== null ? b.door : this.roadNear(bx, bz);
+        if (st && to >= 0) this.spawnVehicle('firetruck', st.door, to, { siren: true, back: st.door, target: b.id });
+        b.fireAt = S.t;
+      }
       if (e.type === 'build') {
         this.anim[e.id] = { k: 'site', t0: t };
         const b = S.b.find(x => x.id === e.id); if (b) { this.dust(b, 18); this.sfx && this.sfx('build'); this.callBuilders(b); }
@@ -5010,8 +5407,10 @@ class World {
     let L = 0; for (let k = 1; k < a.path.length; k++) L += Math.abs(a.path[k][0] - a.path[k - 1][0]) + Math.abs(a.path[k][1] - a.path[k - 1][1]);
     if (this.era === 'modern') {
       // modern residents drive anywhere more than a few streets away, as long as the route is mostly road
-      let onRoad = 0; for (const p of a.path) { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); if (Sim.inB(ci, cj) && S.road[cj * N + ci]) onRoad++; }
-      a.riding = !a.kid && L > 10 && onRoad >= a.path.length * 0.6 && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
+      // only when everything between the first and last couple of points is road: no driving across beaches and fields
+      const onR = p => { const ci = Math.floor(p[0] + N / 2), cj = Math.floor(p[1] + N / 2); return Sim.inB(ci, cj) && S.road[cj * N + ci] && S.road[cj * N + ci] !== 2; };
+      let roadOnly = a.path.length > 5; for (let k = 2; k < a.path.length - 2 && roadOnly; k++) if (!onR(a.path[k])) roadOnly = false;
+      a.riding = !a.kid && L > 10 && roadOnly && hash(a.id * 13 + ctx.day + (act.b ? act.b.id : 0)) < 0.8;
     } else a.riding = !a.kid && !!ctx.stable && L > 24 && hash(a.id * 13 + ctx.day) < 0.4;
   }
   arriveAt(a) {
@@ -5030,6 +5429,7 @@ class World {
     const ci0 = Math.floor(a.x + N / 2), cj0 = Math.floor(a.z + N / 2), rt = Sim.inB(ci0, cj0) ? this.S.road[cj0 * N + ci0] : 0;
     const car = a.riding && this.era === 'modern';
     let step = a.speed * dtH * (car ? (rt ? 3.2 : 1.2) : a.riding ? 2.3 : 1) * (rt && !car ? Sim.ROADS[rt].speed : 1);
+    if (car && this.blocked(a)) step = 0;
     const step0 = step;
     while (step > 0 && a.path) {
       const p = a.path[a.pi + 1];
@@ -5046,6 +5446,7 @@ class World {
     if (Sim.inB(ci1, cj1)) { const c = cj1 * N + ci1; if (c !== a.lastCell) { a.lastCell = c; const S = this.S; if (S.wear && !S.road[c] && !S.occ[c] && !car) { const w = S.wear[c]; S.wear[c] = Math.min(255, w + (a.riding ? 9 : 6)); this.wearTex = true; if ((w < 130) !== (S.wear[c] < 130)) this.wearGrass = true; } } }
   }
   updateAgents(dtH) {
+    this.gridCars();
     const S = this.S, ctx = this.ctx();
     this.lastCtx = ctx;
     if (this.assignDay !== ctx.day) this.assignWork(ctx);
@@ -5069,6 +5470,118 @@ class World {
         else if (a.anim === 'idle' && Math.random() < dtH * 0.6) a.ry += (Math.random() - 0.5) * 1.2;
       }
     }
+  }
+  /* ---------- Traffic (modern islands) ----------
+     Every moving car, bus and truck goes into a grid of road cells each tick. Before moving, a vehicle checks the
+     junction it's about to enter (red or amber means wait) and the lane ahead (someone close in front means wait). */
+  gridCars() {
+    const g = this.carGrid = new Map();
+    if (this.era !== 'modern') return;
+    const add = v => { const c = cellAt(v.x, v.z); let l = g.get(c); if (!l) g.set(c, l = []); l.push(v); };
+    for (const a of this.agents) if (a.riding && a.path && !a.hidden) add(a);
+    for (const v of this.vehicles || []) if (!v.parked) add(v);
+  }
+  blocked(v) {
+    const p = v.path && v.path[(v.pi || 0) + 1]; if (!p) return false;
+    const dx = p[0] - v.x, dz = p[1] - v.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d;
+    v.ux = ux; v.uz = uz;
+    const c0 = cellAt(v.x, v.z), c1 = cellAt(v.x + ux * 0.6, v.z + uz * 0.6);
+    let why = null;
+    if (!v.siren && c1 !== c0 && this.tlAt && this.tlAt[c1] && this.signal(c1, Math.abs(ux) > Math.abs(uz) ? 'x' : 'z') !== 'g') why = 'light';
+    if (!why && this.carGrid) {
+      for (const c of [c0, c1]) {
+        for (const o of this.carGrid.get(c) || []) {
+          if (o === v || o.ux === undefined) continue;
+          const rx = o.x - v.x, rz = o.z - v.z, fwd = rx * ux + rz * uz, lat = Math.abs(-rx * uz + rz * ux);
+          if (fwd > 0.04 && fwd < 0.48 && lat < 0.22 && o.ux * ux + o.uz * uz > 0.4) { why = 'car'; break; }
+        }
+        if (why) break;
+      }
+    }
+    // nobody waits forever: after a while they inch through anyway
+    if (!why) { v.waitSince = 0; return false; }
+    if (!v.waitSince) v.waitSince = this.now;
+    return this.now - v.waitSince < (why === 'light' ? 14 : 5);
+  }
+  // shortest way along the roads between two road cells, as points at cell centres
+  roadCells(from, to) {
+    const S = this.S; if (from < 0 || to < 0 || !S.road[from] || !S.road[to]) return null;
+    const prev = new Int32Array(N * N).fill(-1), q = [from]; prev[from] = from;
+    for (let qi = 0; qi < q.length && prev[to] < 0; qi++) {
+      const c = q[qi], i = c % N, j = (c / N) | 0;
+      for (const [di, dj] of Sim.DIRS) { const x = i + di, y = j + dj; if (!Sim.inB(x, y)) continue; const k = y * N + x; if (prev[k] < 0 && S.road[k] && S.road[k] !== 2 && S.road[k] !== 4) { prev[k] = c; q.push(k); } }
+    }
+    if (prev[to] < 0) return null;
+    const cells = []; for (let c = to; ; c = prev[c]) { cells.push(c); if (c === from) break; }
+    return cells.reverse().map(c => [c % N - N / 2 + 0.5, ((c / N) | 0) - N / 2 + 0.5]);
+  }
+  randomRoad() {
+    const S = this.S, conn = S._conn; if (!this._roadList || this._roadSig !== this.streetSig) { this._roadSig = this.streetSig; this._roadList = []; for (let c = 0; c < N * N; c++) if (conn[c] && S.road[c] === 1) this._roadList.push(c); }
+    return this._roadList.length ? this._roadList[Math.floor(Math.random() * this._roadList.length)] : -1;
+  }
+  // buses, delivery trucks, patrol cars, ambulances and fire trucks
+  spawnVehicle(kind, from, to, opt) {
+    const path = this.roadCells(from, to); if (!path || path.length < 2) return null;
+    const v = Object.assign({ kind, path, pi: 0, x: path[0][0], z: path[0][1], ry: 0, born: this.now, id: ++this.agentSeq }, opt || {});
+    (this.vehicles = this.vehicles || []).push(v); return v;
+  }
+  updateVehicles(dtH) {
+    const S = this.S;
+    if (this.era !== 'modern') { this.vehicles = []; return; }
+    const V = this.vehicles = this.vehicles || [], hour = S.t % 24, live = k => V.filter(v => v.kind === k);
+    const staffed = t => S.b.filter(b => b.type === t && Sim.done(b) && b.conn && b.staff > 0 && !b.burnt && b.door >= 0 && b.door !== null);
+    if (V.length < 46) {
+      // buses: two per depot, looping through a few stops from 6 in the morning till midnight
+      const stops = this.streets ? this.streets.stops : [];
+      for (const d of staffed('busdepot')) {
+        if (hour < 6 || live('bus').filter(v => v.home === d.id).length >= 2 || Math.random() > dtH * 2) continue;
+        let path = [], at = d.door; const pick = stops.slice().sort(() => Math.random() - 0.5).slice(0, 4), stopIdx = new Set();
+        for (const st of pick.concat([{ cell: d.door }])) { const seg = this.roadCells(at, st.cell); if (!seg) continue; path = path.concat(path.length ? seg.slice(1) : seg); if (st.ry !== undefined) stopIdx.add(path.length - 1); at = st.cell; }
+        if (path.length > 2) V.push({ kind: 'bus', path, pi: 0, x: path[0][0], z: path[0][1], ry: 0, born: this.now, id: ++this.agentSeq, home: d.id, stopIdx, col: hex(['#e3b23c', '#2f7c78', '#c8402f'][d.id % 3]) });
+      }
+      // delivery trucks from factories, depots and the shipyard to the shops
+      const shops = S.b.filter(b => ['store', 'market', 'supermarket', 'gasstation', 'cafe', 'tavern', 'hotel'].includes(b.type) && Sim.done(b) && b.conn && b.door >= 0);
+      for (const f of staffed('factory').concat(staffed('stable'))) {
+        if (!shops.length || hour < 6 || hour > 21 || Math.random() > dtH * 2) continue;
+        const to = shops[Math.floor(Math.random() * shops.length)];
+        this.spawnVehicle('truck', f.door, to.door, { col: hex(['#e8e4dc', '#b8412f', '#2f5f8a'][f.id % 3]) });
+      }
+      // one patrol car per police station, cruising all day
+      for (const p of staffed('guardhouse')) if (!live('police').some(v => v.home === p.id) && Math.random() < dtH * 3) this.spawnVehicle('police', p.door, this.randomRoad(), { home: p.id, patrol: 3 });
+      // the odd ambulance call
+      for (const h of staffed('clinic')) {
+        if (live('ambulance').some(v => v.home === h.id) || Math.random() > dtH * 0.12) continue;
+        const homes = S.b.filter(b => TYPES[b.type].home && b.res > 0 && b.door >= 0); if (!homes.length) continue;
+        const to = homes[Math.floor(Math.random() * homes.length)];
+        this.spawnVehicle('ambulance', h.door, to.door, { home: h.id, siren: true, back: h.door });
+      }
+      // in the evening and at night, cars cruise the streets: taxis, delivery vans, night owls
+      const city = S.b.filter(b => TYPES[b.type].home && b.res > 0).length;
+      if (live('car').length < Math.min(26, city / 2) && Math.random() < dtH * (hour > 6 && hour < 23 ? 9 : 2.5)) { const a = this.randomRoad(), b = this.randomRoad(); this.spawnVehicle('car', a, b, { col: hex(MCARS[Math.floor(Math.random() * MCARS.length)]) }); }
+    }
+    for (const v of V) {
+      if (v.parkedUntil) { if (S.t < v.parkedUntil && !(v.kind === 'firetruck' && v.target && !(S._byId[v.target] || {}).burnt)) continue; v.parkedUntil = 0; v.parked = false; v.siren = false;
+        const back = this.roadCells(cellAt(v.x, v.z), v.back); if (back && back.length > 1) { v.path = back; v.pi = 0; v.back = undefined; v.done = false; } else v.done = true; continue; }
+      if (v.wait && this.now < v.wait) continue;
+      v.wait = 0;
+      let step = dtH * (v.kind === 'bus' ? 20 : v.kind === 'truck' ? 22 : v.siren ? 34 : 26);
+      if (this.blocked(v)) step = 0;
+      while (step > 0 && v.path) {
+        const p = v.path[v.pi + 1]; if (!p) { v.path = null; break; }
+        const dx = p[0] - v.x, dz = p[1] - v.z, d = Math.hypot(dx, dz);
+        if (d > 1e-4) v.ry = Math.atan2(dx, dz);
+        if (d <= step) { v.x = p[0]; v.z = p[1]; v.pi++; step -= d; if (v.stopIdx && v.stopIdx.has(v.pi)) { v.wait = this.now + 2.2; break; } if (v.pi >= v.path.length - 1) v.path = null; }
+        else { v.x += dx / d * step; v.z += dz / d * step; step = 0; }
+      }
+      if (!v.path) {
+        // arrived: patrols pick a new street, emergencies wait on scene then head back, everyone else is done
+        if (v.patrol > 0) { v.patrol--; const nxt = this.roadCells(cellAt(v.x, v.z), this.randomRoad()); if (nxt && nxt.length > 1) { v.path = nxt; v.pi = 0; continue; } }
+        if (v.back !== undefined && v.back !== null) { v.parked = true; v.parkedUntil = S.t + (v.kind === 'firetruck' ? 3 : 0.6); continue; }
+        if (v.kind === 'police' && v.home) { const st = S._byId[v.home]; const nxt = st && this.roadCells(cellAt(v.x, v.z), st.door); if (nxt && nxt.length > 1 && !v.homing) { v.homing = true; v.path = nxt; v.pi = 0; continue; } }
+        v.done = true;
+      }
+    }
+    this.vehicles = V.filter(v => !v.done && this.now - v.born < 600);
   }
   // builders walk out from the hall to each new site, hammer away, then go back
   callBuilders(b) {
@@ -5133,7 +5646,7 @@ class World {
     if (a.temp === 'porter') return 'Porter';
     if (a.kid) return this.lastCtx && this.lastCtx.school ? 'Pupil' : 'Child';
     const w = a.work && this.S.b.find(b => b.id === a.work);
-    return w ? JOBNAME[w.type] || 'Worker' : (a.social > 0.8 ? 'Retired' : 'Homemaker');
+    return w ? (this.era === 'modern' ? MJOBNAME : JOBNAME)[w.type] || 'Worker' : (a.social > 0.8 ? 'Retired' : this.era === 'modern' ? 'Works from home' : 'Homemaker');
   }
   doingOf(a) {
     if (a.waitUntil) return 'Stepping off the ship';
@@ -5171,6 +5684,17 @@ class World {
     if ((S.fx || []).some(f => f.label === 'feast' && f.until > S.t)) lines.push('What a feast!', 'I couldn’t eat another bite!');
     if ((S.fx || []).some(f => f.label === 'whale' && f.until > S.t)) lines.push('Did you see the whales?!');
     if ((S.fx || []).some(f => f.label === 'minstrel' && f.until > S.t)) lines.push('That minstrel’s songs are stuck in my head.');
+    if (this.era === 'modern') {
+      if (S.power && S.power.ratio < 0.9) lines.push('Another power cut!', 'My fridge has gone warm again.', 'We need more power.');
+      if (has('busdepot')) lines.push('The bus was on time today!', 'I take the bus to work.'); else if (p >= 60) lines.push('We really need buses.', 'Traffic is getting bad.');
+      if (has('stadium')) lines.push(this.crowdOn(S) ? 'Big match today!' : 'Are you going to the match on Saturday?');
+      if (has('cinema')) lines.push('Seen the new film yet?', 'Popcorn and a film tonight?');
+      if (has('cafe')) lines.push('I need a coffee.', 'Flat white, please.');
+      if (S.b.some(b => b.burnt)) lines.push('Did you see the fire?', 'I heard sirens last night.');
+      if (!has('firestation') && p >= 50) lines.push('What if there’s a fire?');
+      if (has('airfield')) lines.push('The planes are so loud!', 'Fancy a flight round the island?');
+      if (has('skyscraper')) lines.push('You can see the whole island from the top of the tower.');
+    }
     const w = a.work && ctx.byId[a.work];
     const job = { farm: ['The wheat’s coming up nicely.', 'Long day in the fields.'], orchard: ['Apples are ripe!', 'Want an apple?'], lumber: ['My arms ache from chopping.', 'Timber!'],
       quarry: ['Dusty work at the quarry.', 'Found a lovely bit of granite.'], dock: ['Caught a big one this morning!', 'The fish were biting.'], market: ['Fresh produce today!', 'Business is good.'],
@@ -5346,10 +5870,12 @@ class World {
     if (Sim.eraOf(S) !== this.era) this.setEra(Sim.eraOf(S));
     if (S._dirty.terrain || S._dirty.roads || S._dirty.walls || S._dirty.trees) this.navDirty = true;
     if (S._dirty.terrain) { this.buildTerrain(); S._dirty.terrain = false; }
-    if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; }
+    if (S._dirty.roads) { this.buildRoads(); S._dirty.roads = false; this.streetSig = null; }
+    const sig = this.era + ':' + S.b.length + ':' + S.nextId;
+    if (this.streetSig !== sig) { this.streetSig = sig; this.buildStreets(); }
     if (S._dirty.walls) { this.buildFort(); S._dirty.walls = false; }
     this.wearTick(dtH);
-    if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); }
+    if (dtH > 0) { this.updateAgents(Math.min(dtH, 0.5)); this.updateCarts(Math.min(dtH, 0.5)); this.updateVehicles(Math.min(dtH, 0.5)); }
     else if (!this.lastCtx) this.lastCtx = this.ctx();
     this.updateBubbles(dtReal);
     this.updateWeather(dtReal);
@@ -5381,6 +5907,7 @@ class World {
     // chimney smoke
     const hour = S.t % 24, smoky = (hour > 5 && hour < 10) || hour > 17 || hour < 1;
     if (dtH > 0 && Math.random() < dtReal * (smoky ? 3 : 0.8)) {
+      if (this.era === 'modern') for (const b of S.b) if (b.type === 'powerplant' && b.staff > 0 && Sim.done(b) && Math.random() < 0.7) { const p = this.local(b, 0.5, -0.45); this.addPart({ x: p[0] + (Math.random() - 0.5) * 0.3, y: b.y + 1.38, z: p[1] + (Math.random() - 0.5) * 0.3, vx: 0.12, vy: 0.55, vz: 0.04, life: 0, max: 3.2, size: 0.22 + Math.random() * 0.1, col: [0.94, 0.94, 0.93], g: -0.06, drag: 0.25, smoke: true }); }
       const SM = this.era === 'modern' ? SMOKE_M : SMOKE;
       const hs = S.b.filter(b => Sim.done(b) && (this.era === 'modern' ? (SM[b.type] && b.staff > 0) : ((b.type === 'house' && b.res > 0) || (b.type === 'tavern' && b.staff > 0) || (SMOKE[b.type] && (b.res > 0 || b.staff > 0)))));
       if (hs.length) {
@@ -5453,6 +5980,8 @@ class World {
       const T = TYPES[b.type];
       if (T.home) { if ((hour >= 23 + hash(b.id) * 1.6 || hour < 5.2) && hash(b.id + 9) > 0.18) return 0.05; return b.res ? 1 : 0.1; }
       if (b.type === 'tavern' || b.type === 'lighthouse' || b.type === 'hall' || b.type === 'port' || b.type === 'pier' || b.type === 'farm') return 1;
+      if (this.era === 'modern' && ['hotel', 'cinema', 'gasstation', 'firestation', 'clinic', 'guardhouse', 'airfield', 'busdepot', 'cafe'].includes(b.type)) return b.staff > 0 || T.jobs === 0 ? 1 : 0.2;
+      if (b.type === 'stadium') return b.staff > 0 && (this.crowdOn(this.S) || hour < 23) ? 1 : 0.1;
       if (hour >= 21.5 || hour < 5) return 0.05;
       return b.staff > 0 ? 0.9 : 0.15;
     };
@@ -5488,6 +6017,14 @@ class World {
         const [x, z] = Sim.center(b), s = TYPES[b.type].size, hgt = { lighthouse: 3, chapel: 2.2, tavern: 1.6, school: 1.5, farm: 0.9, garden: 0.5, orchard: 0.8, rowhouse: 1.45, villa: 1.25, apartment: 1.95, library: 1.6, academy: 2.1, mine: 0.9, plaza: 0.45, shipyard: 1.0, sawmill: 1.1, fishhut: 0.9, watchtower: 2.2, guardhouse: 1.1, barracks: 1.2, archery: 0.9, cavyard: 0.9, foundry: 1.7, warschool: 2.1 }[b.type] || (s === 1 ? 1.05 : 1.35);
         const pop = an && an.k === 'site' ? elastic((t - an.t0) / 0.8) : 1;
         R.push(B(this.scaffold), x, b.y, z, b.rot * Math.PI / 2, s * 1.04 * pop, hgt * pop, s * 1.04 * pop);
+        // modern sites get a tower crane whose jib swings back and forth
+        if (this.era === 'modern' && this.mod && s >= 2) { const cp = this.local(b, -s / 2 - 0.15, -s / 2 + 0.2), cs = 0.65 + s * 0.2, sw = Math.sin(t * 0.35 + b.id) * 1.2 + b.id; R.push(B(this.mod.crane), cp[0], b.y, cp[1], 0, cs, cs, cs); R.push(B(this.mod.jib), cp[0], b.y, cp[1], sw, cs, cs, cs); }
+      }
+      if (this.era === 'modern' && this.mod && Sim.done(b) && !b.burnt) {
+        // turbines spin with the wind
+        if (b.type === 'windturbine') { const hp = this.local(b, 0, 0.21); R.push(B(this.mod.blades), hp[0], b.y + 2.34 * sy, hp[1], b.rot * Math.PI / 2, sx, sy, sz, 1, 1, 1, 0, 0, t * (1.2 + wind * 1.6) + b.id); }
+        // a crowd in the stands on match afternoons and big nights
+        if (b.type === 'stadium' && b.staff > 0 && this.crowdOn(S)) R.push(B(this.mod.crowd), Sim.center(b)[0], b.y, Sim.center(b)[1], b.rot * Math.PI / 2, 1, 1, 1);
       }
       if (this.era !== 'modern' && b.type === 'stable' && Sim.done(b)) {
         for (let k = 0; k < 2; k++) {
@@ -5591,6 +6128,39 @@ class World {
         R.push(HL, px, y + bob + 0.19 * hs, pz, ry, hs, hs, hs, col[0], col[1], col[2], 0, Math.sin(ph + off) * amp, 0);
       }
     };
+    // modern streets: lamps, signals, trees and bus stops
+    if (this.era === 'modern' && this.streets && this.mod) {
+      const M = this.mod, ST = this.streets, lit = night > 0.08;
+      for (const l of ST.lamps) { R.push(B(M.lamp), l.x, l.y, l.z, l.ry, 1, 1, 1); R.push(B(M.lampGlow), l.x, l.y, l.z, l.ry, 1, 1, 1, lit ? 1 : 0.7, lit ? 0.86 : 0.7, lit ? 0.62 : 0.68, lit ? 3 * night : 0); }
+      for (const tr of ST.trees) R.push(B(M.stree), tr.x, tr.y, tr.z, tr.ry, tr.s, tr.s, tr.s);
+      for (const st of ST.stops) R.push(B(M.busstop), st.x, st.y, st.z, st.ry, 1, 1, 1);
+      const COL = { r: [1, 0.22, 0.16], a: [1, 0.72, 0.15], g: [0.3, 1, 0.45] }, HY = { r: 0.475, a: 0.43, g: 0.385 };
+      for (const tl of ST.tl) {
+        for (const [ox, oz, ry, axis] of [[0.4, -0.4, Math.PI / 2, 'x'], [-0.4, 0.4, 0, 'z']]) {
+          const st = this.signal(tl.id, axis), c = COL[st];
+          R.push(B(M.tlight), tl.x + ox, tl.y, tl.z + oz, ry, 1, 1, 1);
+          R.push(B(M.bulb), tl.x + ox, tl.y + HY[st], tl.z + oz, ry, 1, 1, 1, c[0], c[1], c[2], 2.2);
+        }
+      }
+    }
+    if (this.era === 'modern' && this.mod) {
+      for (const b of S.b) {
+        if (b.type !== 'airfield' || !Sim.done(b) || !b.staff || b.burnt) continue;
+        const P = this.planePose(t + b.id * 7); if (!P) continue;
+        const [u, w, alt, hd, bank] = P, wp = this.local(b, 0.35 + w, u), gy = Math.max(b.y + 0.04, alt > 0.2 ? 0 : b.y + 0.04), ps = 1.6;
+        R.push(B(this.mod.plane), wp[0], b.y + 0.04 + alt, wp[1], b.rot * Math.PI / 2 + hd, ps, ps, ps, 1, 1, 1, 0, 0, bank);
+        if (night > 0.1) R.push(B(this.mod.carLights), wp[0], b.y + 0.15 + alt, wp[1], b.rot * Math.PI / 2 + hd, ps, ps, ps, 1, 1, 1, 3);
+      }
+    }
+    if (this.era === 'modern' && this.mod) {
+      const M = this.mod, lights = night > 0.1, blink = Math.floor(t * 6) % 2, MESH = { bus: M.bus, truck: M.truck, police: M.police, ambulance: M.ambulance, firetruck: M.firetruck, car: M.car };
+      for (const v of this.vehicles || []) {
+        const lane = v.parked ? 0.3 : 0.17, lx = v.x + Math.cos(v.ry) * lane, lz = v.z - Math.sin(v.ry) * lane, y = groundY(lx, lz), col = v.col || [1, 1, 1], vs = 1.35 * hsc;
+        R.push(B(MESH[v.kind] || M.car), lx, y, lz, v.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        if (lights) R.push(B(v.kind === 'bus' || v.kind === 'truck' || v.kind === 'firetruck' ? M.bigLights : M.carLights), lx, y, lz, v.ry, vs, vs, vs, 1, 1, 1, 2.4 * night + 0.4);
+        if (v.siren || v.kind === 'police' && v.parked) R.push(B(v.kind === 'police' ? M.siren : M.sirenTall), lx, y, lz, v.ry + (blink ? 0 : Math.PI), vs, vs, vs, 1, 1, 1, v.siren ? 3 : 0.4);
+      }
+    }
     const idleArms = a => Math.sin(t * 1.3 + a.id) * 0.05;
     for (const a of this.agents.concat(this.drillers(t))) {
       if (a.hidden || a.waitUntil) continue;
@@ -5604,6 +6174,7 @@ class World {
         // keep to the right-hand side of the road so traffic passes instead of overlapping
         const lane = a.mounted ? 0 : 0.17, lx = a.x + Math.cos(a.ry) * lane, lz = a.z - Math.sin(a.ry) * lane;
         R.push(B(a.mounted ? this.mod.acar : this.mod.car), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, col[0], col[1], col[2], 0);
+        if (!a.mounted && night > 0.1) R.push(B(this.mod.carLights), lx, groundY(lx, lz), lz, a.ry, vs, vs, vs, 1, 1, 1, 2.4 * night + 0.4);
         continue;
       }
       if ((a.riding && moving) || a.mounted) {
@@ -5661,7 +6232,7 @@ class World {
     }
     // horses grazing at the stables
     for (const b of S.b) {
-      if (b.type !== 'stable' || !Sim.done(b)) continue;
+      if (b.type !== 'stable' || !Sim.done(b) || this.era === 'modern') continue;
       for (let k = 0; k < 2; k++) {
         const w = t * 0.07 + k * 2.6 + b.id, walking = Math.sin(w * 1.3) > 0.2;
         const lx = 0.52 + Math.sin(w) * 0.2, lz = -0.3 + k * 0.62 + Math.cos(w * 0.7) * 0.18;
@@ -5800,6 +6371,8 @@ class World {
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, R.rTex); gl.uniform1i(P.u.uRoads, 3); gl.activeTexture(gl.TEXTURE0);
     const WX = this.wxv || {};
     gl.uniform1f(P.u.uModern, this.era === 'modern' ? 1 : 0);
+    gl.uniform1f(P.u.uNight, this.env ? this.env.night : 0);
+    if (R.lTex) { gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, R.lTex); gl.uniform1i(P.u.uLamp, 4); gl.activeTexture(gl.TEXTURE0); }
     gl.uniform1f(P.u.uWet, WX.wet || 0); gl.uniform1f(P.u.uCloud, WX.cloud || 0); gl.uniform2f(P.u.uCloudOff, this.cloudOff ? this.cloudOff[0] : 0, this.cloudOff ? this.cloudOff[1] : 0);
     for (const m of opaque) { gl.uniform1f(P.u.uTerrain, m === this.terrain ? 1 : 0); gl.uniform1f(P.u.uSway, this.treeSet.has(m) ? 1 : 0); R.draw(m); }
     gl.uniform1f(P.u.uTerrain, 0);
@@ -6450,6 +7023,8 @@ const I = {
   wood: '<svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="11" width="16" height="7" rx="3.5" fill="#a06a43"/><ellipse cx="19" cy="14.5" rx="2.6" ry="3.5" fill="#e3bc8d" stroke="#a06a43" stroke-width="1.4"/><rect x="5" y="5" width="13" height="6.5" rx="3.2" fill="#8b5a3c"/><ellipse cx="18" cy="8.25" rx="2.4" ry="3.2" fill="#e3bc8d" stroke="#8b5a3c" stroke-width="1.4"/></svg>',
   stone: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 17l3-8 5-3 6 2 3 7-3 4H7z" fill="#a8a29a" stroke="#7d776f" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 10l3 3 4-2" stroke="#7d776f" stroke-width="1.4" fill="none"/></svg>',
   food: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21V9" stroke="#b7862c" stroke-width="2" stroke-linecap="round"/><g fill="#e9b949" stroke="#b7862c" stroke-width="1.2"><ellipse cx="9.5" cy="9" rx="2" ry="3" transform="rotate(-25 9.5 9)"/><ellipse cx="14.5" cy="9" rx="2" ry="3" transform="rotate(25 14.5 9)"/><ellipse cx="9.5" cy="14" rx="2" ry="3" transform="rotate(-25 9.5 14)"/><ellipse cx="14.5" cy="14" rx="2" ry="3" transform="rotate(25 14.5 14)"/><ellipse cx="12" cy="5" rx="1.8" ry="2.8"/></g></svg>',
+  bolt: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M13.5 2.5L5 13.5h6l-1.5 8 8.5-11h-6z" fill="#f2c14e" stroke="#a8761b" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  crown: '<svg width="22" height="22" viewBox="0 0 24 24"><path d="M4 18l-1-10 5 4 4-7 4 7 5-4-1 10z" fill="#f2c14e" stroke="#a8761b" stroke-width="1.5" stroke-linejoin="round"/><path d="M4 18h16" stroke="#a8761b" stroke-width="1.8"/></svg>',
   pop: '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5" fill="#f1c9a5" stroke="#b98a68" stroke-width="1.4"/><path d="M5 20c0-4 3-7 7-7s7 3 7 7z" fill="#2a9d8f"/></svg>',
   face(h) { const c = h >= 70 ? '#8ac06a' : h >= 45 ? '#f4c95d' : '#f08a6c', m = h >= 70 ? 'M8 13.5q4 4 8 0' : h >= 45 ? 'M8.5 14.5h7' : 'M8 16q4-3.5 8 0'; return `<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="${c}" stroke="rgba(0,0,0,.18)" stroke-width="1.5"/><circle cx="9" cy="10" r="1.3" fill="#3b2f2a"/><circle cx="15" cy="10" r="1.3" fill="#3b2f2a"/><path d="${m}" stroke="#3b2f2a" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>`; },
   sun: '<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#f4c95d"/><g stroke="#f4a261" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></g></svg>',
@@ -6474,6 +7049,8 @@ const I = {
   homes: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/><path d="M6 10v10h12V10" fill="#f3e3c3" stroke="currentColor" stroke-width="2"/><rect x="10" y="14" width="4" height="6" fill="#c8553d"/></svg>',
   work: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M14 4l6 6-3 1-4-4z" fill="#a8a29a" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M15 8L4 19" stroke="#8b5a3c" stroke-width="3" stroke-linecap="round"/></svg>',
   services: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5z" fill="#f5f1e8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 10v8M10 10v8M14 10v8M18 10v8" stroke="currentColor" stroke-width="2"/><path d="M3 20h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="6.8" r="1" fill="#c8553d"/></svg>',
+  shops: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 10v10h16V10" fill="#f5f1e8" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 10l2-6h14l2 6z" fill="#c8553d" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 10V4M12 10V4M17 10V4" stroke="#f5f1e8" stroke-width="1.4"/><rect x="7" y="13" width="4" height="7" fill="#3e5c76"/><rect x="13" y="13" width="4" height="3.5" fill="#bcd3e0" stroke="currentColor" stroke-width="1.2"/></svg>',
+  power: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 3v18M12 3l-5 5M12 3l5 5M7 8h10M8.5 13h7M6 21l6-13 6 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><path d="M18.5 2.5l-2.5 4h2.4l-2 4" fill="none" stroke="#f2b33d" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
   town: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M6 21V8l6-5 6 5v13z" fill="#f5f1e8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 3v-1" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2" fill="#3e5c76"/><rect x="10" y="15" width="4" height="6" fill="#8b5a3c"/></svg>',
   demolish: '<svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 20l9-9" stroke="#8b5a3c" stroke-width="3" stroke-linecap="round"/><path d="M11 5l4-2 6 6-2 4z" fill="#a8a29a" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 18l2 2M19 15l2 1M13 21l1 1" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"/></svg>',
   raise: '<svg width="56" height="48" viewBox="0 0 56 48"><path d="M4 40l18-22 10 12 6-6 14 16z" fill="#8ac06a" stroke="#3b2f2a" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 4v14M22 10l6-6 6 6" stroke="#2a9d8f" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -6510,6 +7087,28 @@ const CATS = [
   { id: 'army', label: 'Army', items: ['barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'watchtower', 'guardhouse', { wall: 1, name: 'Palisade', note: '3 wood a tile', sw: 'repeating-linear-gradient(90deg,#7b5235 0 5px,#5e3b28 5px 7px)' }, { wall: 2, name: 'Stone wall', note: '4 stone, 2 gold a tile', sw: 'repeating-linear-gradient(0deg,#c9c0b0 0 6px,#a39d93 6px 8px)' }] },
   { id: 'demolish', label: 'Remove', tool: 'demolish' },
 ];
+// a modern island sorts its buildings the way a city builder does: industry, shops, leisure, services and utilities
+const MODERN_ITEMS = {
+  work: ['lumber', 'sawmill', 'quarry', 'mine', 'factory', 'blacksmith', 'stable', 'shipyard'],
+  shops: ['store', 'market', 'supermarket', 'cafe', 'tavern', 'gasstation', 'hotel', 'office', 'skyscraper'],
+  town: ['garden', 'plaza', 'sportsfield', 'cinema', 'stadium', 'port', 'lighthouse', 'airfield'],
+  services: ['chapel', 'clinic', 'school', 'library', 'academy', 'firestation', 'busdepot'],
+  power: ['well', 'windturbine', 'solarfarm', 'powerplant'],
+};
+let catsModern = null;
+function cats() {
+  if (Sim.eraOf(S) !== 'modern') return CATS;
+  if (!catsModern) {
+    const label = { work: 'Industry', town: 'Leisure', services: 'Services' };
+    catsModern = [];
+    for (const c of CATS) {
+      catsModern.push(MODERN_ITEMS[c.id] ? Object.assign({}, c, { items: MODERN_ITEMS[c.id], label: label[c.id] || c.label }) : c);
+      if (c.id === 'work') catsModern.push({ id: 'shops', label: 'Shops', items: MODERN_ITEMS.shops });
+      if (c.id === 'services') catsModern.push({ id: 'power', label: 'Utilities', items: MODERN_ITEMS.power });
+    }
+  }
+  return catsModern;
+}
 const BRUSH_TOOLS = ['raise', 'lower', 'flatten', 'smooth', 'plant', 'clear'];
 const HOUSE_NAMES = ['Cottage', 'Townhouse', 'Manor'];
 
@@ -6607,7 +7206,7 @@ const Amb = {
       wind: this.layer(white, 'bandpass', 520, 0.9), rain: this.layer(white, 'highpass', 2600, 0.5),
       hum: this.layer(white, 'bandpass', 620, 1.4),
     };
-    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 };
+    this.next = { gull: 4, bird: 2, cricket: 1, hammer: 1.5, cart: 12, foghorn: 15 , siren: 1, crowd: 2, prop: 3 };
   },
   set(l, v, k) { l.g.gain.setTargetAtTime(Math.max(0, v), Sfx.ctx.currentTime, k || 0.6); },
   update(dt) {
@@ -6640,6 +7239,7 @@ const Amb = {
       if (!night && near > 0.15 && S.b.some(b => b.build < 1)) { const n = 2 + Math.floor(Math.random() * 3); for (let i = 0; i < n; i++) { Sfx.noise(0.03, 2400, 0.05 * near, i * 0.2, W); Sfx.tone(620, 380, 0.05, 'triangle', 0.03 * near, i * 0.2, W); } }
     }
     if (due('foghorn')) { this.next.foghorn = 22 + Math.random() * 25; if (WV.fog > 0.6) { Sfx.tone(196, 194, 2.6, 'sine', 0.035, 0, W); Sfx.tone(392, 390, 2.2, 'sine', 0.01, 0.02, W); } }
+    this.city(dt, near);
     if (due('cart')) {
       const modern = Sim.eraOf(S) === 'modern';
       this.next.cart = (modern ? 5 : 10) + Math.random() * (modern ? 9 : 18);
@@ -6650,6 +7250,26 @@ const Amb = {
           if (Math.random() < 0.12) { const d = 0.4 + Math.random(); Sfx.tone(392, 390, 0.22, 'square', 0.008 * near, d, W); Sfx.tone(494, 492, 0.22, 'square', 0.006 * near, d, W); }
         } else for (let i = 0; i < 6; i++) Sfx.noise(0.05, 500 + Math.random() * 200, 0.03 * near * town, i * 0.13, W);
       }
+    }
+  },
+  // city sounds: sirens going by, a roar from the stadium on match days, a light plane droning overhead
+  city(dt, near) {
+    if (Sim.eraOf(S) !== 'modern' || !world) return;
+    const W = Sfx.world, due = k => (this.next[k] -= dt) <= 0, dist = (x, z) => Math.hypot(x - cam.tx, z - cam.tz);
+    if (due('siren')) {
+      this.next.siren = 1.6;
+      const v = (world.vehicles || []).filter(v => v.siren && !v.parked).sort((a, b) => dist(a.x, a.z) - dist(b.x, b.z))[0];
+      if (v && dist(v.x, v.z) < 22) { const k = (1 - dist(v.x, v.z) / 22) * 0.03, hi = v.kind === 'ambulance' ? 960 : 860; Sfx.tone(hi * 0.72, hi, 0.75, 'triangle', k, 0, W); Sfx.tone(hi, hi * 0.72, 0.75, 'triangle', k, 0.8, W); }
+    }
+    if (due('crowd')) {
+      this.next.crowd = 1.4 + Math.random() * 1.6;
+      const st = S.b.find(b => b.type === 'stadium' && b.staff > 0 && Sim.done(b));
+      if (st && world.crowdOn(S)) { const [x, z] = Sim.center(st), k = Math.max(0, 1 - dist(x, z) / 30); if (k > 0) { Sfx.noise(2.4, 700 + Math.random() * 300, 0.05 * k, 0, W); if (Math.random() < 0.25) Sfx.noise(1.4, 1200, 0.09 * k, 0.3, W); } }
+    }
+    if (due('prop')) {
+      this.next.prop = 0.9;
+      const af = S.b.find(b => b.type === 'airfield' && b.staff > 0 && Sim.done(b)); const P = af && world.planePose(world.now + af.id * 7);
+      if (P) { const wp = world.local(af, 0.35 + P[1], P[0]), k = Math.max(0, 1 - Math.hypot(wp[0] - cam.tx, wp[1] - cam.tz) / 26) * (P[2] > 0.2 || P[0] > -1.2 ? 1 : 0); if (k > 0) Sfx.tone(92 + P[2] * 2, 96 + P[2] * 2, 0.95, 'sawtooth', 0.008 * k, 0, W); }
     }
   },
   gull(v) {
@@ -6953,6 +7573,9 @@ function renderRes() {
   }
   h += `<div class="sep"></div><div class="r" data-r="pop" title="${Sim.eraText(S, 'Settlers')} / beds">${I.pop}<div><b>${p}<span style="font-size:13px;color:var(--ink-soft)">/${cap}</span></b><small class="rate">${Sim.eraText(S, 'settlers')}</small></div></div>`;
   h += `<div class="r" title="Happiness">${I.face(S.happy)}<div><b>${S.happy}</b><small class="rate">happy</small></div></div>`;
+  const pw = S.power;
+  if (pw) h += `<div class="r ${pw.ratio < 1 ? 'low' : ''}" data-r="power" title="Power: ${Math.round(pw.supply)} MW made, ${Math.round(pw.demand)} MW used">${I.bolt}<div><b>${Math.round(pw.supply)}<span style="font-size:13px;color:var(--ink-soft)">/${Math.round(pw.demand)}</span></b><small class="rate">MW</small></div></div>`;
+  h += rankBadge(p);
   const el = $('#res');
   if (el._h !== h) {
     el.innerHTML = eraH(h); el._h = h;
@@ -6962,6 +7585,29 @@ function renderRes() {
     }
   }
   renderStock();
+}
+// the city's rank, with progress toward the next one; tap for the full ladder
+function rankBadge(p) {
+  const k = S.rank !== undefined ? S.rank : Sim.rankOf(S), nx = Sim.RANKS[k + 1];
+  const pc = nx ? Math.max(0, Math.min(1, (p - Sim.RANKS[k].pop) / (nx.pop - Sim.RANKS[k].pop))) : 1;
+  return `<div class="r rank" data-r="rank" title="${esc(Sim.rankName(S, k))}${nx ? ' · next: ' + esc(Sim.rankName(S, k + 1)) + ' at ' + nx.pop : ''}">${I.crown}<div><b class="rk">${esc(Sim.rankName(S, k))}</b><i class="rbar"><i style="width:${Math.round(pc * 100)}%"></i></i></div></div>`;
+}
+function showRanks() {
+  const k = S.rank !== undefined ? S.rank : Sim.rankOf(S), p = Sim.pop(S);
+  let h = `<div class="ol-head"><h2>${esc(Sim.rankName(S, k))}</h2><button class="x" data-m="close" aria-label="Close">×</button></div><p class="lead">Grow your ${Sim.eraOf(S) === 'modern' ? 'town' : 'colony'} to climb the ranks. Each new rank pays a reward.</p><ol class="ranks">`;
+  Sim.RANKS.forEach((R, i) => { const st = i < k ? 'done' : i === k ? 'now' : ''; h += `<li class="${st}"><b>${esc(Sim.rankName(S, i))}</b><span>${R.pop ? R.pop + ' ' + Sim.eraText(S, 'settlers') : 'Where it begins'}</span><em>${R.gold ? '+' + R.gold + ' gold' : ''}</em></li>`; });
+  h += `</ol><p class="ol-sub">${Sim.RANKS[k + 1] ? `${Sim.RANKS[k + 1].pop - p} more ${Sim.eraText(S, 'settlers')} to become a ${esc(Sim.rankName(S, k + 1))}.` : 'The top rank. Well done!'}</p>`;
+  openModal(h);
+}
+function showRankUp(e) {
+  const prev = Sim.RANKS[e.rank - 1], now = Sim.RANKS[e.rank];
+  const unlocked = Sim.BUILDABLE.filter(t => { const T = TYPES[t]; return T.unlock && T.unlock > (prev ? prev.pop : 0) && T.unlock <= now.pop && (!T.era || T.era === Sim.eraOf(S)); });
+  openModal(`<div class="rankup"><div class="burst">${I.crown.replace(/width="22" height="22"/, 'width="64" height="64"')}</div><h2>${esc(Sim.rankName(S, e.rank))}!</h2>
+    <p class="lead">Your ${Sim.eraOf(S) === 'modern' ? 'town' : 'colony'} has grown into a ${esc(Sim.rankName(S, e.rank))}. The ${Sim.eraOf(S) === 'modern' ? 'council' : 'settlers'} sent you <b>${e.gold} gold</b> to celebrate.</p>
+    ${unlocked.length ? `<p class="ol-sub">Now you can build: ${unlocked.map(t => `<b>${esc(TYPES[t].name)}</b>`).join(', ')}.</p>` : ''}
+    <button class="btn primary" data-m="close" style="width:100%">Onward</button></div>`);
+  for (const b of S.b) if (Sim.done(b)) world.sparkle(b);
+  Sfx.play('victory');
 }
 // tap the resource bar for a breakdown of where things come from and what drives happiness
 function renderStock() {
@@ -7012,12 +7658,12 @@ function renderGoals() {
   if (el._h !== h) { el.innerHTML = eraH(h); el._h = h; }
 }
 function renderDock() {
-  const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish };
+  const icon = { select: I.select, land: I.land, nature: I.nature, road: I.road, homes: I.homes, food: I.food.replace('width="22" height="22"', 'width="26" height="26"'), work: I.work, town: I.town, services: I.services, army: I.army, demolish: I.demolish, shops: I.shops, power: I.power };
   const active = c => (c.tool && UI.tool === c.tool) || UI.cat === c.id;
-  $('#dock').innerHTML = CATS.map(c => `<button class="cat ${active(c) ? 'on' : ''}" data-cat="${c.id}" aria-label="${c.label}">${icon[c.id]}<span>${c.label}</span></button>`).join('');
+  $('#dock').innerHTML = cats().map(c => `<button class="cat ${active(c) ? 'on' : ''}" data-cat="${c.id}" aria-label="${c.label}">${icon[c.id]}<span>${c.label}</span></button>`).join('');
 }
 function renderTray() {
-  const tray = $('#tray'), cat = CATS.find(c => c.id === UI.cat);
+  const tray = $('#tray'), cat = cats().find(c => c.id === UI.cat);
   if (!cat || !cat.items) { tray.hidden = true; return; }
   tray.hidden = false;
   const p = Sim.pop(S);
@@ -7062,6 +7708,7 @@ function statusOf(b) {
     if (T.army) { const A = Sim.army(S), k = T.army, q = Sim.queued(S, k); if (b.staff === 0) return ['warn', 'No workers yet. Training needs a few staff.']; return ['ok', `${A.n[k]}/${Sim.armyCap(S, k)} ${Sim.TROOPS[k].name.toLowerCase()} trained${q ? `, ${q} in training` : ''}.`]; }
     if (b.type === 'warschool') return ['ok', 'Officers are ready. Research stronger troops from the Army panel.'];
     if (b.status === 'nofarm') return ['bad', 'No flour! Needs a farm with workers somewhere on the island.'];
+    if (b.status === 'nopower') return ['bad', `Not enough power: the grid makes ${Math.round(S.power.supply)} of the ${Math.round(S.power.demand)} MW the town needs. Build wind turbines, a solar farm or a power plant.`];
     if (b.status === 'nolumber') return ['bad', 'No logs coming in. Build a lumber camp within 8 tiles.'];
     const pd = perHour(b);
     if (pd) return ['ok', `Working: ${fmtRate(pd[0])} ${pd[1]} per hour.`];
@@ -7095,11 +7742,13 @@ function renderInsp() {
   const pd = perHour(b); if (pd) h += `<div><span>Per hour</span><b>${fmtRate(pd[0])} ${pd[1]}</b></div>`;
   if ((b.type === 'farm' || b.type === 'orchard') && Sim.done(b)) h += `<div><span>Next harvest</span><b>${Math.round((b.prog || 0) * 100)}%</b></div>`;
   if (!Sim.done(b)) h += `<div><span>Built</span><b>${Math.round(b.build * 100)}%</b></div>`;
+  if (S.power && T.gen) h += `<div><span>Power</span><b>${Math.round(Sim.genOf(S, b) * 10) / 10} MW</b></div>`;
+  if (S.power && T.power) h += `<div><span>Uses</span><b>${T.power} MW</b></div>`;
   h += '</div>';
   if (T.home) {
     const c = b.cov || {};
     const row = (ok, txt) => `<div><span class="dot ${ok ? 'y' : 'n'}">${ok ? glyph('check', 12) : ''}</span>${txt}</div>`;
-    const extra = (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
+    const extra = (c.bus ? row(1, 'Bus route') : '') + (c.cafe ? row(1, 'Café nearby') : '') + (c.fun ? row(1, 'Cinema or sports nearby') : '') + (c.stadium ? row(1, 'Near the stadium') : '') + (c.fire ? row(1, 'Fire station cover') : '') + (S.power && S.power.ratio < 1 ? row(0, 'Power cuts') : '') + (c.plaza ? row(1, 'Plaza nearby') : '') + (c.clinic ? row(1, 'Clinic nearby') : '') + (c.library ? row(1, 'Library nearby') : '') + (c.quay ? row(1, 'Harbour walk') : '') + (c.cobble ? row(1, 'Cobbled street') : '');
     if (b.type === 'villa') h += `<div class="checks">${row(c.garden || c.plaza, 'Garden or plaza nearby (villas insist)')}</div>`;
     if (b.type === 'apartment') h += `<div class="checks">${row(c.market, 'Market nearby (tenants insist)')}</div>`;
     h += `<div class="checks">${extra}${row(c.market, 'Market nearby')}${row(c.well, 'Well nearby')}${row(c.chapel, 'Chapel nearby')}${row(c.tavern, 'Tavern nearby')}${row(c.school, 'School nearby')}${row(c.garden, 'Garden nearby')}${row((b.trees || 0) >= 3, `Trees nearby (${b.trees || 0})`)}${row(!S.starving, 'Food in the stores')}</div>`;
@@ -7198,17 +7847,17 @@ function renderLabels() {
   for (const el of [...box.querySelectorAll('.fl')]) if (!world.labels.some(l => l.el === el)) el.remove();
   // status badges
   let k = 0;
-  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', burnt: glyph('fire', 13) + ' Repair' };
+  const icons = { noroad: 'No road', nostaff: 'No workers', notrees: 'No trees', nopower: 'No power', burnt: glyph('fire', 13) + ' Repair', rebuilding: glyph('fire', 13) + ' Firefighters rebuilding' };
   if (cam.dist < 75 && !Online.mode) for (const b of S.b) {
-    let st = b.burnt ? 'burnt' : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : null;
+    let st = b.burnt ? (Sim.eraOf(S) === 'modern' && Sim.fireCover(S, b) ? 'rebuilding' : 'burnt') : !Sim.done(b) ? 'building' : b.type !== 'hall' && !b.conn ? 'noroad' : TYPES[b.type].jobs && b.staff === 0 ? 'nostaff' : b.status === 'notrees' ? 'notrees' : b.status === 'nopower' ? 'nopower' : null;
     if (!st) continue;
     const [x, z] = Sim.center(b), p = project(x, b.y + (b.type === 'lighthouse' ? 3.3 : 1.6), z);
     if (!p || p[0] < -50 || p[1] < -50 || p[0] > cssW + 50 || p[1] > cssH + 50) continue;
     let el = labelPool[k];
     if (!el) { el = document.createElement('div'); el.className = 'badge'; box.appendChild(el); labelPool[k] = el; }
-    el.hidden = false; el.className = 'badge ' + (st === 'noroad' || st === 'burnt' ? 'bad' : st === 'building' ? 'bld' : '');
+    el.hidden = false; el.className = 'badge ' + (st === 'noroad' || st === 'burnt' || st === 'nopower' ? 'bad' : st === 'building' ? 'bld' : '');
     const txt = st === 'building' ? `Building ${Math.round(b.build * 100)}%` : icons[st];
-    if (el._t !== txt) { el.textContent = txt; el._t = txt; }
+    if (el._t !== txt) { el.innerHTML = txt; el._t = txt; }
     el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px';
     if (++k > 40) break;
   }
@@ -7224,7 +7873,7 @@ function setTool(tool) {
   renderAll();
 }
 function openCat(id) {
-  const cat = CATS.find(c => c.id === id); if (!cat) return;
+  const cat = cats().find(c => c.id === id); if (!cat) return;
   Sfx.play('click');
   if (cat.tool) { UI.cat = null; setTool(cat.tool); return; }
   if (UI.cat === id) { UI.cat = null; setTool('select'); return; }
@@ -7270,6 +7919,7 @@ function processEvents() {
   for (const e of evs) {
     if (e.type === 'toast') toast(e.text, e.kind === 'goal' ? 'goal' : e.kind === 'bad' ? 'bad' : e.kind === 'unlock' ? 'unlock' : '');
     if (e.type === 'goal') Sfx.play('goal');
+    if (e.type === 'rankup' && !Online.mode) { if (UI.meetingOpen || !$('#modal').hidden) UI.pendingRank = e; else showRankUp(e); }
     if (e.type === 'settlers') { Sfx.play('bell'); resync = true; }
     if (e.type === 'boat') Sfx.play('bell');
     if (e.type === 'unlock') renderTray();
@@ -7451,7 +8101,7 @@ function bindInput() {
   });
   $('#chat').addEventListener('pointerover', e => { const ln = e.target.closest('[data-chat]'); const c = ln && world.chat.find(x => x.id === +ln.dataset.chat); UI.hoverAgent = c ? c.a : null; });
   $('#chat').addEventListener('pointerleave', () => { UI.hoverAgent = null; });
-  $('#res').addEventListener('click', () => { UI.stockOpen = !UI.stockOpen; Sfx.init(); Sfx.play('click'); renderStock(); });
+  $('#res').addEventListener('click', e => { Sfx.init(); Sfx.play('click'); if (e.target.closest('[data-r=rank]')) { showRanks(); return; } UI.stockOpen = !UI.stockOpen; renderStock(); });
   $('#stock').addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
   $('#clock').addEventListener('click', e => { Sfx.init(); const b = e.target.closest('[data-speed]'); if (b) setSpeed(+b.dataset.speed); const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
   $('#goals').addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (a) act(a.dataset.act, a); });
@@ -7517,7 +8167,9 @@ function resize() { cssW = $('#gl').clientWidth; cssH = $('#gl').clientHeight; R
 /* ---------- Modals ---------- */
 function openModal(html) {
   html = eraH(html); const m = $('#modal'); m.classList.remove('ol'); if (!html.includes('Your army')) UI.armyOpen = false;  m.innerHTML = `<div class="card panel" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; hint(null); }
-function closeModal() { $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
+function rankLater() { if (!UI.pendingRank) return; const e = UI.pendingRank; UI.pendingRank = null; setTimeout(() => { if ($('#modal').hidden && !UI.savesOpen) showRankUp(e); else UI.pendingRank = e; }, 400); }
+function closeModal() {
+  setTimeout(rankLater, 0); $('#modal').hidden = true; $('#modal').classList.remove('ol'); UI.onlineOpen = false; UI.armyOpen = false; UI.introOpen = false; if (UI.confirm === 'new') UI.confirm = null; renderHint(); }
 function islandName() { const a = ['Gull', 'Saltmoss', 'Cinder', 'Bramble', 'Pebble', 'Hollow', 'Kelp', 'Juniper', 'Larkspur', 'Tidewell'], b = [' Isle', ' Cay', ' Island', ' Key']; return a[S.seed % a.length] + b[(S.seed >> 4) % b.length]; }
 function startMeeting() {
   if (!S.meeting || UI.meetingOpen) return;
@@ -7539,7 +8191,7 @@ function showMeeting() {
 }
 function chooseMeeting(id) {
   Sim.meetingChoose(S, id);
-  UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true;
+  UI.meetingOpen = false; $('#modal').classList.remove('meet'); $('#modal').hidden = true; rankLater();
   setSpeed(UI.preMeetSpeed || 1); Sfx.play('goal'); processEvents(); renderAll();
 }
 const ERA_CARDS = [
@@ -7881,8 +8533,15 @@ function renderOnline() {
   if (!Online.off) {
     const myEra = Sim.eraOf(homeS());
     const others = Online.islands.filter(x => x.id !== Online.me && (x.data.era || 'medieval') === myEra).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
+    // the leaderboard: the biggest islands in this era, you included
+    const ranked = Online.islands.filter(x => (x.data.era || 'medieval') === myEra && (+x.data.pop || 0) > 0).sort((a, b) => (+b.data.pop || 0) - (+a.data.pop || 0)).slice(0, 10);
+    if (ranked.length >= 2) {
+      const E = { era: myEra };
+      h += `<h3 class="ol-h">Biggest islands</h3><ol class="lb">` + ranked.map(x => { const pp = safeInt(x.data.pop, 1e6); return `<li class="${x.id === Online.me ? 'me' : ''}"><span>${esc(String(x.data.name || 'An island').slice(0, 28))}${x.id === Online.me ? ' (you)' : ''}</span><small>${esc(Sim.rankName(E, Sim.rankOf(E, pp)))} · ${pp}</small></li>`; }).join('') + `</ol>`;
+    }
     h += `<h3 class="ol-h">Players’ islands</h3>`;
-    if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
+    if (!others.length && window.claude && window.claude.web) h += `<p class="ol-sub">No one else has built a ${myEra} island yet. Share the game’s link with friends: anyone can play straight away, no account needed.</p>`;
+    else if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
       const d = x.data, block = raidBlock(x.id, d);
       h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · ${glyph('bow')} ${safeInt(d.towers, 99)} ${glyph('shield')} ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ' + glyph('swords') + ' ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' ' + glyph('wall') + ' ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>

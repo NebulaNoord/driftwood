@@ -25,6 +25,16 @@ Every island picks an era when it's founded and keeps it:
 - **Medieval:** cottages, markets, taverns, lumber camps and a clinic, with archers, cavalry and cannons.
 - **Modern:** family homes, townhouses, apartment towers, strip malls, corner shops, fast food, offices, factories, a hospital, a police station and a ferry port. Residents drive cars, and the army has riflemen, marksmen, armoured cars and tanks.
 
+Modern islands play like a small city builder:
+
+- **Power grid:** offices, factories, shops and homes draw power, and turbines, solar farms and power plants supply it. Shortages slow production and upset residents.
+- **Fire:** buildings outside fire-station coverage can catch fire. Fire stations send trucks and rebuild what burns nearby.
+- **Transport:** residents drive, and cars stop at traffic lights and queue. Bus depots run buses between stops, which makes nearby homes happier.
+- **City life:** delivery trucks, police patrols, ambulances, a stadium with match days, and an airfield with a plane flying circuits.
+- **Streets:** pavements, zebra crossings, traffic lights, street trees, and streetlights that light the road at night.
+
+Both eras have city ranks, from Outpost to Capital (medieval) or Settlement to Metropolis (modern), each with a gold reward. There's also a leaderboard of the biggest islands in each era.
+
 Both eras share the same simulation; a modern island renames and redraws each building (`MODERN` in `src/sim.js`, models in `src/modern_models.js`) and adds offices, factories and corner shops. Raids only happen between islands of the same era.
 
 ## Music

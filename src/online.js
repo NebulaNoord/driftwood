@@ -161,8 +161,15 @@ function renderOnline() {
   if (!Online.off) {
     const myEra = Sim.eraOf(homeS());
     const others = Online.islands.filter(x => x.id !== Online.me && (x.data.era || 'medieval') === myEra).sort((a, b) => (+b.data.at || 0) - (+a.data.at || 0));
+    // the leaderboard: the biggest islands in this era, you included
+    const ranked = Online.islands.filter(x => (x.data.era || 'medieval') === myEra && (+x.data.pop || 0) > 0).sort((a, b) => (+b.data.pop || 0) - (+a.data.pop || 0)).slice(0, 10);
+    if (ranked.length >= 2) {
+      const E = { era: myEra };
+      h += `<h3 class="ol-h">Biggest islands</h3><ol class="lb">` + ranked.map(x => { const pp = safeInt(x.data.pop, 1e6); return `<li class="${x.id === Online.me ? 'me' : ''}"><span>${esc(String(x.data.name || 'An island').slice(0, 28))}${x.id === Online.me ? ' (you)' : ''}</span><small>${esc(Sim.rankName(E, Sim.rankOf(E, pp)))} · ${pp}</small></li>`; }).join('') + `</ol>`;
+    }
     h += `<h3 class="ol-h">Players’ islands</h3>`;
-    if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
+    if (!others.length && window.claude && window.claude.web) h += `<p class="ol-sub">No one else has built a ${myEra} island yet. Share the game’s link with friends: anyone can play straight away, no account needed.</p>`;
+    else if (!others.length) h += `<p class="ol-sub">No one else has set sail yet. Invite friends from the <b>Share</b> menu, by email, as <b>Editors</b> (each needs a Claude account) and keep the public link off: people who join through a public link can visit but can’t raid. A friend’s island appears here the first time they open the game.</p>`;
     for (const x of others) {
       const d = x.data, block = raidBlock(x.id, d);
       h += `<div class="isl"><div class="isl-main"><b>${esc(String(d.name || 'An island').slice(0, 28))}</b><span>${esc(who(x.id))} · ${safeInt(d.pop, 1e6)} settlers · ${glyph('bow')} ${safeInt(d.towers, 99)} ${glyph('shield')} ${safeInt(d.guards, 99)}${safeInt(d.troops, 999) ? ' ' + glyph('swords') + ' ' + safeInt(d.troops, 999) : ''}${safeInt(d.walls, 9999) ? ' ' + glyph('wall') + ' ' + safeInt(d.walls, 9999) : ''} · ${fmtAgo(now - (+d.at || 0))}</span></div>

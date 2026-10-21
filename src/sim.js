@@ -43,13 +43,28 @@ const TYPES = {
   cavyard:    { name: 'Cavalry Yard', size: 2, jobs: 2, cost: { wood: 70, stone: 20, gold: 120 }, unlock: 50, build: 2.4, army: 'cav', desc: 'Trains mounted riders, 8 per yard. Fast, tough, and they carry the most loot.' },
   foundry:    { name: 'Cannon Foundry', size: 2, jobs: 3, cost: { wood: 60, stone: 80, gold: 200 }, unlock: 70, build: 3, army: 'can', desc: 'Casts cannons, 4 per foundry. They smash walls and buildings from long range.' },
   warschool:  { name: 'Military School', size: 2, jobs: 3, cost: { wood: 80, stone: 100, gold: 300 }, unlock: 40, unique: true, build: 3, desc: 'Officers train here. Research stronger troops and build bigger warships.' },
-  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
-  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
-  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
+  office:     { name: 'Office Block', size: 2, jobs: 10, cost: { wood: 40, stone: 80, gold: 200 }, prod: { gold: 6 }, unlock: 40, build: 3, era: 'modern', power: 2.5, desc: 'Desks, phones and meeting rooms: ten office jobs that pay well.' },
+  factory:    { name: 'Factory', size: 2, jobs: 10, cost: { wood: 60, stone: 60, gold: 150 }, prod: { gold: 4.5 }, unlock: 30, build: 3, era: 'modern', power: 4, desc: 'Ten industrial jobs on the production line. Noisy and smoky, so keep homes away.' },
+  store:      { name: 'Corner Shop', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 10, gold: 40 }, unlock: 10, build: 1, era: 'modern', power: 0.5, desc: 'A small shop. Homes within 6 tiles count as having shops nearby, like a strip mall but smaller.' },
+  // modern city: shops, leisure, services and the power grid. power = megawatts a working building draws, gen = megawatts it makes
+  supermarket: { name: 'Supermarket', size: 2, jobs: 6, radius: 11, cost: { wood: 40, stone: 60, gold: 180 }, prod: { food: 2 }, unlock: 60, build: 2.5, era: 'modern', power: 3, desc: 'Groceries for the neighbourhood. Homes within 11 tiles count as having shops nearby, and it adds 2 food an hour.' },
+  cafe:       { name: 'Café', size: 1, jobs: 2, radius: 6, cost: { wood: 15, stone: 15, gold: 60 }, unlock: 20, build: 1, era: 'modern', power: 0.5, desc: 'Coffee and pastries on the pavement. Homes within 6 tiles are happier.' },
+  gasstation: { name: 'Gas Station', size: 1, jobs: 2, cost: { wood: 15, stone: 25, gold: 80 }, prod: { gold: 1.6 }, unlock: 25, build: 1.2, era: 'modern', power: 1, desc: 'Fuel and snacks for the town’s drivers. Earns more on a busy road.' },
+  hotel:      { name: 'Hotel', size: 2, jobs: 6, cost: { wood: 50, stone: 80, gold: 260 }, prod: { gold: 5 }, unlock: 90, build: 3, era: 'modern', power: 3, desc: 'Visitors stay the night. Earns 50% more by the sea, a park or the stadium.' },
+  cinema:     { name: 'Cinema', size: 2, jobs: 3, radius: 12, cost: { wood: 40, stone: 60, gold: 220 }, unlock: 80, build: 2.5, era: 'modern', power: 2, desc: 'Films every evening. Homes within 12 tiles are happier and pay a little more.' },
+  sportsfield:{ name: 'Sports Field', size: 2, jobs: 0, radius: 9, cost: { wood: 20, stone: 10, gold: 70 }, unlock: 15, build: 1, era: 'modern', power: 0.5, desc: 'Football pitch and bleachers. Homes within 9 tiles are happier.' },
+  stadium:    { name: 'Stadium', size: 3, jobs: 8, radius: 32, unique: true, cost: { wood: 120, stone: 250, gold: 900 }, prod: { gold: 4 }, unlock: 220, build: 5, era: 'modern', power: 6, desc: 'The pride of the city. Every home within 32 tiles is happier, and Saturday match days bring a big crowd and big takings.' },
+  firestation:{ name: 'Fire Station', size: 2, jobs: 4, radius: 14, cost: { wood: 40, stone: 50, gold: 160 }, unlock: 40, build: 2, era: 'modern', power: 1.5, desc: 'Fire trucks on call. Nothing within 14 tiles catches fire, and burnt buildings nearby are repaired for free.' },
+  busdepot:   { name: 'Bus Depot', size: 2, jobs: 4, radius: 18, cost: { wood: 40, stone: 40, gold: 150 }, unlock: 50, build: 2, era: 'modern', power: 1.5, desc: 'City buses run along your roads. Homes within 18 tiles are happier and pay 5% more.' },
+  windturbine:{ name: 'Wind Turbine', size: 1, jobs: 0, cost: { wood: 20, stone: 20, gold: 90 }, unlock: 10, build: 1.2, era: 'modern', gen: 6, desc: 'Clean power: 6 MW, a little more in a strong wind.' },
+  solarfarm:  { name: 'Solar Farm', size: 2, jobs: 0, cost: { wood: 20, stone: 30, gold: 200 }, unlock: 60, build: 1.5, era: 'modern', gen: 14, desc: 'Rows of panels: 14 MW on a clear day, less under cloud, none at night.' },
+  powerplant: { name: 'Power Plant', size: 2, jobs: 6, cost: { wood: 60, stone: 120, gold: 400 }, unlock: 120, build: 3.5, era: 'modern', gen: 45, desc: 'A gas power plant: 45 MW day and night with a full crew. Noisy, so keep homes away.' },
+  skyscraper: { name: 'Office Tower', size: 2, jobs: 20, cost: { wood: 60, stone: 220, gold: 700 }, prod: { gold: 13 }, unlock: 200, build: 5, era: 'modern', power: 6, desc: 'A glass tower with twenty well-paid office jobs.' },
+  airfield:   { name: 'Airfield', size: 3, jobs: 5, unique: true, cost: { wood: 80, stone: 150, gold: 800 }, prod: { gold: 8 }, unlock: 160, build: 4, era: 'modern', power: 3, desc: 'Small planes bring tourists and take off over the island.' },
   guardhouse: { name: 'Guardhouse', size: 1, jobs: 3, cost: { wood: 40, stone: 25, gold: 60 }, unlock: 25, build: 1.4, guard: 'guards', desc: 'Three guards patrol nearby and rush out to fight raiders.' },
 };
-const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'stable', 'shipyard', 'store', 'market', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
-const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'store', 'market', 'factory', 'office', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
+const BUILDABLE = ['house', 'fishhut', 'rowhouse', 'villa', 'apartment', 'farm', 'orchard', 'bakery', 'dock', 'lumber', 'sawmill', 'quarry', 'mine', 'blacksmith', 'office', 'factory', 'skyscraper', 'stable', 'shipyard', 'store', 'market', 'supermarket', 'cafe', 'gasstation', 'hotel', 'cinema', 'sportsfield', 'stadium', 'firestation', 'busdepot', 'windturbine', 'solarfarm', 'powerplant', 'airfield', 'well', 'garden', 'plaza', 'tavern', 'chapel', 'clinic', 'school', 'library', 'academy', 'port', 'lighthouse', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool'];
+const JOB_ORDER = ['farm', 'orchard', 'dock', 'bakery', 'lumber', 'sawmill', 'quarry', 'powerplant', 'firestation', 'store', 'market', 'supermarket', 'cafe', 'gasstation', 'busdepot', 'factory', 'office', 'skyscraper', 'hotel', 'cinema', 'stadium', 'airfield', 'mine', 'stable', 'blacksmith', 'tavern', 'watchtower', 'guardhouse', 'barracks', 'archery', 'cavyard', 'foundry', 'warschool', 'clinic', 'school', 'library', 'academy', 'chapel', 'shipyard', 'port'];
 // raids: how much a raid can carry off, and how long an island is safe afterwards
 // the army: four kinds of troops, trained at their own buildings
 const TROOPS = {
@@ -534,17 +549,58 @@ function quayNear(S, b, r) {
   return false;
 }
 function cobbleNext(S, b) { for (const [i, j] of around(b)) if (S.road[ci(i, j)] === 3) return true; return false; }
+/* ---------------- Power (modern islands) ---------------- */
+// supply: the town hall's own hookup, turbines (more in wind), solar (by daylight and cloud), and a crewed power plant
+function genOf(S, b) {
+  const T = TYPES[b.type]; if (!T.gen || !done(b) || b.burnt) return 0;
+  if (b.type === 'windturbine') { const w = S.wx && S.wx.now ? S.wx.now.wind || 0.3 : 0.3; return T.gen * (0.75 + w * 0.8); }
+  if (b.type === 'solarfarm') { const h = S.t % DAY, sun = h > 6 && h < 19 ? Math.sin((h - 6) / 13 * Math.PI) : 0, k = wxKind(S); return T.gen * Math.min(1, sun * 1.4) * (k === 'clear' ? 1 : k === 'fair' ? 0.9 : k === 'cloudy' || k === 'fog' ? 0.5 : 0.3); }
+  if (T.jobs) return T.gen * (b.staff || 0) / T.jobs;
+  return T.gen;
+}
+function power(S) {
+  if (eraOf(S) !== 'modern') { S.power = null; return null; }
+  let supply = 10, demand = 0; // the town hall comes with a small grid hookup
+  for (const b of S.b) {
+    supply += genOf(S, b);
+    const T = TYPES[b.type];
+    if (!done(b) || b.burnt) continue;
+    if (T.power) demand += T.power;
+    if (T.home) demand += (b.res || 0) * 0.06;
+  }
+  const ratio = demand ? Math.min(1, supply / demand) : 1;
+  S.power = { supply: Math.round(supply * 10) / 10, demand: Math.round(demand * 10) / 10, ratio };
+  return S.power;
+}
+/* ---------------- City ranks: a reward each time the town grows into the next one ---------------- */
+const RANKS = [
+  { pop: 0, name: 'Outpost', modern: 'Settlement', gold: 0 }, { pop: 20, name: 'Hamlet', modern: 'Neighbourhood', gold: 150 },
+  { pop: 45, name: 'Village', modern: 'Suburb', gold: 300 }, { pop: 90, name: 'Town', modern: 'Town', gold: 500 },
+  { pop: 160, name: 'Market Town', modern: 'Large Town', gold: 800 }, { pop: 260, name: 'City', modern: 'City', gold: 1200 },
+  { pop: 400, name: 'Great City', modern: 'Big City', gold: 1800 }, { pop: 600, name: 'Capital', modern: 'Metropolis', gold: 3000 },
+];
+function rankOf(S, p) { p = p === undefined ? pop(S) : p; let r = 0; for (let k = 0; k < RANKS.length; k++) if (p >= RANKS[k].pop) r = k; return r; }
+function rankName(S, k) { const R = RANKS[k === undefined ? (S.rank || 0) : k]; return eraOf(S) === 'modern' ? R.modern : R.name; }
+function checkRank(S) {
+  const r = rankOf(S); if (S.rank === undefined) { S.rank = r; return; }
+  if (r <= S.rank) return;
+  S.rank = r; const R = RANKS[r];
+  S.gold += R.gold; S.stats.gold += R.gold;
+  say(S, `Your ${eraOf(S) === 'modern' ? 'town' : 'colony'} is now a ${rankName(S, r)}! +${R.gold} gold.`, 'goal');
+  ev(S, { type: 'rankup', rank: r, gold: R.gold });
+}
 function coverage(S) {
   const ok = (t, needStaff) => S.b.filter(b => b.type === t && b.conn && done(b) && !b.burnt && (!needStaff || b.staff > 0));
-  const L = { market: ok('market', 1).concat(ok('store', 1)), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
+  const L = { market: ok('market', 1).concat(ok('store', 1), ok('supermarket', 1)), cafe: ok('cafe', 1), fun: ok('cinema', 1).concat(ok('sportsfield')), stadium: ok('stadium', 1), fire: ok('firestation', 1), bus: ok('busdepot', 1), well: ok('well'), chapel: ok('chapel', 1), tavern: ok('tavern', 1), school: ok('school', 1), garden: ok('garden'), orchard: ok('orchard'),
     plaza: ok('plaza'), clinic: ok('clinic', 1), library: ok('library', 1), academy: ok('academy', 1) };
-  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory');
+  const noisy = S.b.filter(b => b.type === 'quarry' || b.type === 'mine' || b.type === 'blacksmith' || b.type === 'sawmill' || b.type === 'factory' || b.type === 'powerplant' || b.type === 'airfield');
   const light = S.b.some(b => b.type === 'lighthouse' && done(b));
   const p = pop(S), foodDays = p ? S.food / (p * EAT * 24) : 99;
   const foodMood = S.starving ? -22 : foodDays < 0.5 ? -6 : foodDays > 2 ? 8 : 3;
   S.foodMood = foodMood;
   const weather = { clear: 2, fair: 1, cloudy: 0, fog: 0, drizzle: -1, rain: -2, storm: -5 }[wxKind(S)] || 0;
   const fxh = fxHappy(S);
+  const pw = power(S), dark = pw ? 1 - pw.ratio : 0;
   let tot = 0, wsum = 0;
   for (const b of S.b) {
     const T = TYPES[b.type];
@@ -554,6 +610,7 @@ function coverage(S) {
       market: near('market'), well: near('well'), chapel: near('chapel'), tavern: near('tavern'), school: near('school'), garden: near('garden'),
       orchard: near('orchard', 3.5), plaza: near('plaza'), clinic: near('clinic'), library: near('library'), academy: near('academy'),
       quay: quayNear(S, b, 2), cobble: cobbleNext(S, b),
+      cafe: near('cafe'), fun: near('fun'), stadium: near('stadium'), fire: near('fire'), bus: b.conn && near('bus'),
     };
     let trees = 0;
     for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { const x = b.i + di, y = b.j + dj; if (inB(x, y) && S.tree[ci(x, y)]) trees++; }
@@ -562,6 +619,8 @@ function coverage(S) {
     if (c.market) hp += 10; if (c.well) hp += 6; if (c.chapel) hp += 8; if (c.tavern) hp += 8; if (c.school) hp += 5; if (c.garden) hp += 5;
     if (c.orchard) hp += 2; if (c.plaza) hp += 6; if (c.clinic) hp += 6; if (c.library) hp += 4; if (c.academy) hp += 3;
     if (c.quay) hp += 5; if (c.cobble) hp += 3;
+    if (c.cafe) hp += 4; if (c.fun) hp += 5; if (c.stadium) hp += 5; if (c.fire) hp += 3; if (c.bus) hp += 4;
+    if (dark > 0.02) hp -= Math.round(dark * 18);
     hp += Math.min(8, trees * 1.2);
     if (light) hp += 5;
     if (noisy.some(q => bDist(q, b) < 4.5)) hp -= 8;
@@ -599,6 +658,10 @@ function prodMult(S, b) {
   if (b.type === 'sawmill' && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) m = 0;
   if ((b.type === 'dock' || b.type === 'port' || b.type === 'shipyard') && quayNear(S, b, 2)) m *= 1.25;
   if (b.type === 'dock' && S.b.some(x => x.type === 'fishhut' && x.res > 0 && bDist(x, b) < 6)) m *= 1.1;
+  if (TYPES[b.type].power && S.power) m *= 0.4 + 0.6 * S.power.ratio;
+  if (b.type === 'hotel' && (distToWater(S, b.i + 1, b.j + 1, 5) <= 5 || S.b.some(x => (x.type === 'garden' || x.type === 'plaza' || x.type === 'stadium') && done(x) && bDist(x, b) <= 8))) m *= 1.5;
+  if (b.type === 'gasstation') { let r = 0; for (const [i, j] of around(b)) if (inB(i, j) && S.road[ci(i, j)]) r++; m *= 0.8 + Math.min(0.6, r * 0.1); }
+  if (b.type === 'stadium' && weekday(S) === 5 && S.t % DAY >= 14 && S.t % DAY < 18) m *= 6;
   const res = Object.keys(TYPES[b.type].prod || {})[0];
   return m * fxMult(S, res) * fxMult(S, b.type);
 }
@@ -622,7 +685,7 @@ function taxRate(S) {
   for (const b of S.b) {
     if (!b.res) continue;
     const c = b.cov || {};
-    tax += b.res * 0.05 * (TYPES[b.type].rich || 1) * (c.market ? 1.5 : 1) * (c.school ? 1.15 : 1) * (c.library ? 1.1 : 1) * (c.academy ? 1.2 : 1) * (0.5 + b.happy / 100);
+    tax += b.res * 0.05 * (TYPES[b.type].rich || 1) * (c.market ? 1.5 : 1) * (c.school ? 1.15 : 1) * (c.library ? 1.1 : 1) * (c.academy ? 1.2 : 1) * (c.bus ? 1.05 : 1) * (c.fun ? 1.04 : 1) * (0.5 + b.happy / 100);
   }
   return tax;
 }
@@ -1062,6 +1125,7 @@ function tick(S, dt) {
     else if (b.staff === 0) b.status = 'nostaff';
     else if (b.status !== 'notrees') b.status = '';
     if (b.type === 'bakery' && b.staff && !S.b.some(x => x.type === 'farm' && x.staff > 0 && done(x))) b.status = 'nofarm';
+    if (T.power && S.power && S.power.ratio < 0.75 && b.staff) b.status = 'nopower';
     if (b.type === 'sawmill' && b.staff && !S.b.some(x => x.type === 'lumber' && done(x) && bDist(x, b) <= TYPES.sawmill.radius)) b.status = 'nolumber';
     const pr = prodOf(S, b);
     if (!pr) continue;
@@ -1147,6 +1211,9 @@ function hourly(S) {
   S.fx = (S.fx || []).filter(f => f.until > S.t);
   staff(S); coverage(S); settleMood(S);
   const p = pop(S), R = rates(S);
+  checkRank(S);
+  if (S.power && S.power.ratio < 0.9 && hr >= 7 && hr <= 21) warnOnce(S, 'power', `The power grid is overloaded: ${Math.round(S.power.supply)} of ${Math.round(S.power.demand)} MW. Build wind turbines, a solar farm or a power plant.`);
+  if (eraOf(S) === 'modern') fires(S, hr, p);
   // morning: weather and the odd surprise
   if (hr === 5) {
     if (dayOf(S) > 0 && rnd(S) < 0.35) {
@@ -1226,6 +1293,28 @@ function hourly(S) {
     if (S.stats.days.length > 30) S.stats.days.shift();
   }
   checkGoals(S);
+}
+
+/* ---------------- Fires (modern islands) ----------------
+   Now and then a building outside every fire station's reach catches fire. A crewed fire station keeps its area safe
+   and repairs burnt buildings nearby, raid damage included, a few hours later. */
+function fireCover(S, b) { return S.b.some(f => f.type === 'firestation' && f.staff > 0 && f.conn && done(f) && !f.burnt && bDist(f, b) <= TYPES.firestation.radius); }
+function fires(S, hr, p) {
+  for (const b of S.b) {
+    if (!b.burnt || !fireCover(S, b)) { if (!b.burnt) b.fixAt = undefined; continue; }
+    if (b.fixAt === undefined) b.fixAt = S.t + 4;
+    else if (S.t >= b.fixAt) { b.burnt = 0; b.fixAt = undefined; say(S, `Firefighters have rebuilt the ${TYPES[b.type].name.toLowerCase()}.`, 'good'); ev(S, { type: 'repaired', id: b.id }); recompute(S); }
+  }
+  if (hr !== 13 || dayOf(S) < 4 || p < 40) return;
+  const risk = Math.min(0.35, 0.08 + S.b.length / 300);
+  if (rnd(S) > risk) return;
+  const pool = S.b.filter(b => b.type !== 'hall' && b.type !== 'pier' && done(b) && !b.burnt && TYPES[b.type].size <= 2 && !fireCover(S, b));
+  if (!pool.length) return;
+  const b = pool[Math.floor(rnd(S) * pool.length)];
+  b.burnt = 1; b.fireAt = S.t;
+  say(S, `Fire! The ${TYPES[b.type].name.toLowerCase()} burnt down. A fire station keeps everything within 14 tiles safe and rebuilds what burns.`, 'bad');
+  ev(S, { type: 'fire', id: b.id });
+  recompute(S);
 }
 
 /* ---------------- Town meetings ---------------- */
@@ -1376,7 +1465,7 @@ function unb64(str, Type, len) {
 function serialize(S) {
   return { v: 1, seed: S.seed, rng: S.rng, t: S.t, gold: S.gold, wood: S.wood, stone: S.stone, food: S.food,
     h: b64(S.h), road: b64(S.road), tree: b64(S.tree), treeG: b64(S.treeG), wall: S.wall ? b64(S.wall) : undefined, army: S.army || undefined,
-    era: eraOf(S), rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
+    era: eraOf(S), rank: S.rank || 0, rock: S.rock ? b64(S.rock) : undefined, wear: S.wear ? b64(S.wear) : undefined, wx: S.wx || undefined,
     b: S.b.map(b => ({ id: b.id, type: b.type, i: b.i, j: b.j, rot: b.rot, level: b.level, variant: b.variant, prog: b.prog, res: b.res, born: b.born, y: b.y, build: b.build === undefined ? 1 : b.build, happy: b.happy, shown: b.shown || 0, status: b.status === 'notrees' ? 'notrees' : '', burnt: b.burnt ? 1 : 0 })),
     nextId: S.nextId, goals: S.goals, pending: S.pending, starving: S.starving, news: S.news.slice(0, 20), stats: S.stats, landing: S.landing, startRoads: S.startRoads || 6, pierWarn: S.pierWarn === undefined ? -1 : S.pierWarn,
     weather: S.weather, fx: S.fx, meeting: S.meeting, promise: S.promise, week: S.week, warn: S.warn, mp: S.mp || undefined };
@@ -1421,7 +1510,7 @@ function deserialize(o) {
     weather: ['sun', 'cloud', 'rain'].includes(o.weather) ? o.weather : 'sun', fx: Array.isArray(o.fx) ? o.fx : [], meeting: o.meeting || null, promise: o.promise || null, week: o.week || null, warn: o.warn || {},
     mp: o.mp && typeof o.mp === 'object' ? o.mp : undefined, wall: o.wall ? unb64(o.wall, Uint8Array, N * N) : new Uint8Array(N * N),
     army: o.army && typeof o.army === 'object' ? o.army : undefined,
-    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval',
+    era: o.era === 'modern' || (o.era === 'ages' && o.age >= 1) ? 'modern' : 'medieval', rank: Number.isInteger(o.rank) ? Math.max(0, Math.min(7, o.rank)) : undefined,
   };
   attach(S);
   for (const r of (o.b || [])) {
@@ -1457,6 +1546,6 @@ const API = { N, V, TYPES, BUILDABLE, GOALS, COST, DIRS, UPGRADE, newGame, step,
   pop, capacity, costText, affordable, recompute, rockNear, rates, ROADS, QUAY_Y, HARBOUR, roadOk, upgradePier, shoreCell, prodOf, done, meetingChoose, openMeeting, WEEKDAYS, EAT, RESERVE, fxHappy, RAID, raidStash, defenseOf, applyRaid,
   TROOPS, TROOP_KEYS, PER_BUILDING, RESEARCH, BOATS, WALLS, army, troops, armyCap, queued, boatSlots, train, assign, research, upgradeBoat, defenders, loseTroops,
   wallOk, wallQuote, buildWall, removeWall, repairCost, repair, burnBuildings, WX, wxKind, genRock,
-  ERAS, eraOf, applyEra, eraText };
+  ERAS, eraOf, applyEra, eraText, power, genOf, RANKS, rankOf, rankName, fireCover };
 if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Sim = API;
 })(typeof window !== 'undefined' ? window : globalThis);
